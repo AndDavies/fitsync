@@ -6,7 +6,7 @@ import { supabase } from "@/utils/supabase/client";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const router = useRouter(); // Import Next.js router
+  const router = useRouter();
 
   const handleLogin = async () => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -17,8 +17,7 @@ export default function LoginPage() {
     if (error) {
       console.error("Error logging in:", error.message);
     } else {
-      // Redirect to the dashboard on successful login
-      router.push("/dashboard");
+      router.push("/dashboard"); // Redirect to the dashboard on successful login
     }
   };
 
@@ -62,7 +61,7 @@ export default function LoginPage() {
           </button>
         </form>
         <p className="mt-4 text-sm">
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <a href="/signup" className="text-indigo-600 hover:underline">
             Sign up
           </a>

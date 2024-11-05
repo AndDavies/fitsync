@@ -2,9 +2,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/utils/supabase/client";
+import Image from "next/image"; // Import Image from next/image
+import { User } from "@supabase/supabase-js"; // Import User type from Supabase
 
 const AthleteDashboard = () => {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null); // Use User type
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -33,10 +35,12 @@ const AthleteDashboard = () => {
         </h1>
         <div className="flex items-center space-x-4">
           <div className="text-sm">🔥 3-Day Streak</div>
-          <img
+          <Image
             src="/path-to-profile-icon.jpg"
             alt="Profile"
-            className="w-8 h-8 rounded-full"
+            width={32} // Specify width
+            height={32} // Specify height
+            className="rounded-full"
           />
         </div>
       </header>
