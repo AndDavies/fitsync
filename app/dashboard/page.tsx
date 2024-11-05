@@ -6,7 +6,7 @@ import Image from "next/image"; // Import Image from next/image
 import { User } from "@supabase/supabase-js"; // Import User type from Supabase
 
 const AthleteDashboard = () => {
-  const [user, setUser] = useState<User | null>(null); // Use User type
+  const [user, setUser] = useState<User | null>(null); // Specify User type
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
