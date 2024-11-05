@@ -15,7 +15,7 @@ export default function LoginPage() {
     });
 
     if (error) {
-      console.error("Error logging in:", error.message);
+      console.error("Error logging in:", error.message); // Just adding a comment for Git
     } else {
       router.push("/dashboard"); // Redirect to the dashboard on successful login
     }
