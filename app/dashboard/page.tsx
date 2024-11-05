@@ -14,8 +14,8 @@ const AthleteDashboard = () => {
     const fetchUser = async () => {
       const { data, error } = await supabase.auth.getUser();
       if (error || !data.user) {
-        router.push("/login"); // Redirect to login if not authenticated
-      } else {
+        router.push("/login"); // Redirect to login if not authenticated Just for some changes
+      } else { //Just need to make a change
         setUser(data.user);
       }
       setLoading(false);
