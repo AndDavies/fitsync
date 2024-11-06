@@ -40,69 +40,52 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* Main Content */}
-      <div className="flex flex-col lg:flex-row items-center justify-between px-8 lg:px-24 py-16 lg:py-24">
-        {/* Left Section with Images */}
-        <div className="flex flex-col space-y-4 lg:w-1/2">
-          <div className="flex space-x-4">
-            <Image
-              src="/images/landing_1.jpg"
-              alt="Workout Example 1"
-              width={300}
-              height={300}
-              className="rounded-md"
-            />
-            <Image
-              src="/images/landing_2.jpg"
-              alt="Workout Example 2"
-              width={300}
-              height={300}
-              className="rounded-md"
-            />
-            <Image
-              src="/images/landing_3.jpg"
-              alt="Workout Example 3"
-              width={300}
-              height={300}
-              className="rounded-md"
-            />
-          </div>
-          <div className="relative">
-            <Image
-              src="/images/landing_background.jpg"
-              alt="Main Workout Image"
-              width={400}
-              height={400}
-              className="rounded-md"
-            />
-            <span className="absolute top-0 left-0 text-sm text-gray-500">
-              Featured Workout
-            </span>
-          </div>
-        </div>
+      {/* Image Row Under Navbar */}
+      <div className="flex justify-center space-x-4 mt-8 px-8">
+        <Image
+          src="/images/landing_1.jpg"
+          alt="Workout Example 1"
+          width={300}
+          height={300}
+          className="rounded-md"
+        />
+        <Image
+          src="/images/landing_2.jpg"
+          alt="Workout Example 2"
+          width={300}
+          height={300}
+          className="rounded-md"
+        />
+        <Image
+          src="/images/landing_3.jpg"
+          alt="Workout Example 3"
+          width={300}
+          height={300}
+          className="rounded-md"
+        />
+      </div>
 
-        {/* Right Section with Headline and CTA */}
-        <div className="lg:w-1/2 lg:pl-16 mt-8 lg:mt-0">
-          <h2 className="text-4xl font-bold mb-4">
-            PERSONALIZED WORKOUT PLANS,
-            <br />
-            NO COACH NEEDED
-          </h2>
-          <p className="text-lg text-gray-600 mb-6">
-            Get gym-quality workout programming tailored to you in seconds.
-            Answer a few questions, set your goals, and watch FitSync craft
-            custom CrossFit, strength, or hypertrophy workouts—designed for
-            home, gym, or on the go. Start leveling up your fitness today.
-          </p>
-          <button
-            onClick={() => router.push("/signup")}
-            className="px-6 py-3 bg-orange-500 text-white text-lg rounded-md hover:bg-orange-600"
-          >
-            Create your workout plan now
-          </button>
-          <div className="mt-4 text-sm text-gray-500">
-            Rated 4.8 out of 5 by our users
-          </div>
+      {/* Main Content */}
+      <div className="flex flex-col items-center text-center px-8 lg:px-24 py-16">
+        <h2 className="text-4xl font-bold mb-4">
+          PERSONALIZED WORKOUT PLANS,
+          <br />
+          NO COACH NEEDED
+        </h2>
+        <p className="text-lg text-gray-600 mb-6 max-w-2xl">
+          Get gym-quality workout programming tailored to you in seconds.
+          Answer a few questions, set your goals, and watch FitSync craft
+          custom CrossFit, strength, or hypertrophy workouts—designed for
+          home, gym, or on the go. Start leveling up your fitness today.
+        </p>
+        <button
+          onClick={() => router.push("/signup")}
+          className="px-6 py-3 bg-orange-500 text-white text-lg rounded-md hover:bg-orange-600"
+        >
+          Create your workout plan now
+        </button>
+        <div className="mt-4 text-sm text-gray-500">
+          Rated 4.8 out of 5 by our users
         </div>
       </div>
     </div>
