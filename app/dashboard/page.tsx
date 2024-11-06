@@ -91,8 +91,14 @@ export default function Dashboard() {
           </div>
           
           <div className="bg-white p-4 rounded-lg shadow-md">
-            <h2 className="font-bold">Another Widget</h2>
+            <h2 className="font-bold">Connect with a Gym/Coach Near You</h2>
             {/* Additional widget placeholder */}
+            <p>
+                <ul>
+                    <li><a href="#" className="text-blue-500 text-sm">CrossFit Bytown</a></li>
+                    <li>613-222-9817</li>
+                </ul>
+            </p>
           </div>
         </main>
       </div>
