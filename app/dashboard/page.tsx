@@ -14,7 +14,7 @@ export default function Dashboard() {
             height={40}
             className="rounded-full"
           />
-          <h1 className="text-xl font-bold">Welcome back, DisplayName!</h1>
+          <h1 className="text-xl font-bold">Welcome back, Andrew!</h1>
         </div>
         <div className="text-sm">Ready to Crush Todays Workout?</div>
       </header>
@@ -35,11 +35,11 @@ export default function Dashboard() {
           {/* Widgets */}
           <div className="bg-white p-4 rounded-lg shadow-md">
             <h2 className="font-bold">Recent Activity</h2>
-            <ul className="text-sm mt-2">
-              <li>5:32 Fran</li>
-              <li>205# Clean & Jerk PR</li>
-              <li>Other Scores or Highlights</li>
-            </ul>
+            
+            - 5:32 Fran <br />
+            - 205# Clean & Jerk PR<br />
+            - Other Scores or Highlights<br />
+            
           </div>
           
           <div className="bg-white p-4 rounded-lg shadow-md">
@@ -93,12 +93,12 @@ export default function Dashboard() {
           <div className="bg-white p-4 rounded-lg shadow-md">
             <h2 className="font-bold">Connect with a Gym/Coach Near You</h2>
             {/* Additional widget placeholder */}
-            <p>
+            
                 <ul>
                     <li><a href="#" className="text-blue-500 text-sm">CrossFit Bytown</a></li>
                     <li>613-222-9817</li>
                 </ul>
-            </p>
+            
           </div>
         </main>
       </div>
