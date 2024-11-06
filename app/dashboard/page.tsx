@@ -16,7 +16,7 @@ export default function Dashboard() {
           />
           <h1 className="text-xl font-bold">Welcome back, DisplayName!</h1>
         </div>
-        <div className="text-sm">Ready to Crush Today's Workout?</div>
+        <div className="text-sm">Ready to Crush Todays Workout?</div>
       </header>
 
       {/* Main Content */}
