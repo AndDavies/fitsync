@@ -1,106 +1,106 @@
 "use client";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/utils/supabase/client";
-import Image from "next/image"; // Import Image from next/image
-import { User } from "@supabase/supabase-js"; // Import User type from Supabase
+import Image from "next/image";
 
-const AthleteDashboard = () => {
-  const [user, setUser] = useState<User | null>(null); // Specify User type
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (error || !data.user) {
-        router.push("/login"); // Redirect to login if not authenticated Just for some changes
-      } else { //Just need to make a change
-        setUser(data.user);
-      }
-      setLoading(false);
-    };
-
-    fetchUser();
-  }, [router]);
-
-  if (loading) return <p>Loading...</p>;
-
+export default function Dashboard() {
   return (
-    <div className="p-4 max-w-4xl mx-auto">
-      {/* Header Section */}
-      <header className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">
-          Welcome back, {user?.email || "Athlete"}!
-        </h1>
+    <div className="min-h-screen flex flex-col bg-gray-100">
+      {/* Header */}
+      <header className="flex justify-between items-center bg-white px-6 py-4 shadow-md">
         <div className="flex items-center space-x-4">
-          <div className="text-sm">🔥 3-Day Streak</div>
           <Image
-            src="/path-to-profile-icon.jpg"
+            src="/images/EB_05189_avatar.jpg" // Replace with your path
             alt="Profile"
-            width={32} // Specify width
-            height={32} // Specify height
+            width={40}
+            height={40}
             className="rounded-full"
           />
+          <h1 className="text-xl font-bold">Welcome back, DisplayName!</h1>
         </div>
+        <div className="text-sm">Ready to Crush Today's Workout?</div>
       </header>
 
-      {/* Main Dashboard Layout */}
-      <main className="space-y-4">
-        {/* Workout Generator Widget */}
-        <div className="bg-gray-100 p-4 rounded-lg shadow-md">
-          <h2 className="text-lg font-semibold mb-2">Workout Generator</h2>
-          <button className="bg-blue-500 text-white px-4 py-2 rounded">
-            Generate Workout
-          </button>
-          <div className="mt-2 text-sm">
-            <p>5 Rounds for Time: 10 Burpees, 15 Kettlebell Swings</p>
+      {/* Main Content */}
+      <div className="flex flex-grow">
+        {/* Left Navigation */}
+        <nav className="flex flex-col items-center bg-white w-20 py-4 shadow-md space-y-6">
+          <button>🏠</button>
+          <button>📊</button>
+          <button>🏆</button>
+          <button>🔔</button>
+          <button>⚙️</button>
+        </nav>
+
+        {/* Main Dashboard Container */}
+        <main className="flex-grow p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Widgets */}
+          <div className="bg-white p-4 rounded-lg shadow-md">
+            <h2 className="font-bold">Recent Activity</h2>
+            <ul className="text-sm mt-2">
+              <li>5:32 Fran</li>
+              <li>205# Clean & Jerk PR</li>
+              <li>Other Scores or Highlights</li>
+            </ul>
           </div>
-          <button className="bg-green-500 text-white mt-2 px-4 py-2 rounded">
-            Log Workout
-          </button>
-        </div>
-
-        {/* Performance Tracking Widget */}
-        <div className="bg-gray-100 p-4 rounded-lg shadow-md">
-          <h2 className="text-lg font-semibold mb-2">Performance Tracking</h2>
-          <ul className="text-sm space-y-1">
-            <li>Back Squat: 3x5 @ 200 lbs</li>
-            <li>Deadlift PR: 315 lbs</li>
-          </ul>
-          <a
-            href="/full-history"
-            className="text-blue-500 text-sm mt-2 block"
-          >
-            View Full History
-          </a>
-        </div>
-
-        {/* Goal Progress Widget */}
-        <div className="bg-gray-100 p-4 rounded-lg shadow-md">
-          <h2 className="text-lg font-semibold mb-2">Goal Progress</h2>
-          <div className="w-full bg-gray-300 rounded-full h-4">
-            <div
-              className="bg-green-500 h-4 rounded-full"
-              style={{ width: "80%" }}
-            ></div>
+          
+          <div className="bg-white p-4 rounded-lg shadow-md">
+            <h2 className="font-bold">Goal Tracker</h2>
+            <p>415# Deadlift</p>
+            {/* Include chart or progress indicator here */}
           </div>
-          <p className="text-sm mt-1">Squat 250 lbs - 80% complete</p>
-          <button className="bg-yellow-500 text-white mt-2 px-4 py-2 rounded">
-            Add New Goal
-          </button>
-        </div>
-      </main>
+          
+          <div className="bg-white p-4 rounded-lg shadow-md">
+            <h2 className="font-bold">Streak Indicator</h2>
+            <p>17 Consistent Days! 🔥</p>
+            <p>You’ve earned a Badge: 75%</p>
+          </div>
+          
+          <div className="bg-white p-4 rounded-lg shadow-md col-span-2">
+            <h2 className=" text-2xl font-extra-bold">WOD</h2>
+            <h3 className="text-lg font-bold">Warm Up</h3>
+            <p>2 Sets:
+                Hip Floss x 5 Reps<br />
+                Frog Hops x 20m<br />
+                Duck Walk x 20m<br />
+            </p>
+            <h3 className="text-lg font-bold">Strength: Back Squat</h3>
+            <p>Back Squat</p>
+            <p>Work to a 5 Rep Max</p>
+            <p>Time Cap: 10 Minutes</p>
+            <h3 className="text-lg font-bold">METCON</h3>
+            <p>50 D-Ball or Sandbag OTS...</p>
+            <button className="mt-4 bg-purple-600 text-white px-4 py-2 rounded">
+              Log Workout
+            </button>
+          </div>
+          
+          <div className="bg-white p-4 rounded-lg shadow-md">
+            <h2 className="font-bold">Progress Trackers</h2>
+            <p>
+                <ul>
+                    <li>Weight</li>
+                    <li>Body Fat</li>
+                    <li>VO2 Max</li>
+                </ul>
+            </p>
+            <a href="#" className="text-blue-500 text-sm">View Full Progress</a>
+          </div>
+          
+          <div className="bg-white p-4 rounded-lg shadow-md">
+            <h2 className="font-bold">Community</h2>
+            {/* Community widget placeholder */}
+          </div>
+          
+          <div className="bg-white p-4 rounded-lg shadow-md">
+            <h2 className="font-bold">Another Widget</h2>
+            {/* Additional widget placeholder */}
+          </div>
+        </main>
+      </div>
 
-      {/* Footer Navigation */}
-      <footer className="fixed bottom-0 w-full bg-white p-4 shadow-inner flex justify-around">
-        <button>🏠 Home</button>
-        <button>🏋️ Workouts</button>
-        <button>👥 Community</button>
-        <button>⚙️ Profile</button>
+      {/* Footer */}
+      <footer className="bg-white text-center py-4 shadow-inner">
+        <p className="text-sm text-gray-600">&copy; 2024 FitSync. All rights reserved.</p>
       </footer>
     </div>
   );
-};
-
-export default AthleteDashboard;
+}
