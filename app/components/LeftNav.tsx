@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { FiHome, FiSettings, FiBell } from "react-icons/fi";
-import { GiProgression } from "react-icons/gi";
+// import { GiProgression } from "react-icons/gi";
 import { GoTrophy } from "react-icons/go";
 import { CiCalendar } from "react-icons/ci";
 

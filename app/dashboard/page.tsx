@@ -1,14 +1,30 @@
 "use client";
-import Image from "next/image";
-import React, { useState } from 'react';
-import WorkoutBuilder from '../components/WorkoutBuilder';
-import WorkoutIdeas from "../components/WorkoutIdeas";
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Header from "../components/Header";
-import Accordion from '../components/Accordion';
 import LeftNav from '../components/LeftNav';
+import { useAuth } from '../context/AuthContext'; // Custom hook from AuthContext
 
 export default function Dashboard() {
-  const [workoutBuilderText, setWorkoutBuilderText] = useState('');
+  const router = useRouter();
+  const { session, isLoading } = useAuth(); // Using session and loading state from Supabase AuthContext
+
+  // Log session data for debugging
+  console.log('Session data:', session);
+  console.log('Loading status:', isLoading);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoading && !session) {
+      router.push('/login');
+    }
+  }, [isLoading, session, router]);
+
+  // Show a loading state while checking session
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
@@ -22,8 +38,8 @@ export default function Dashboard() {
 
         {/* Main Dashboard Container */}
         <main className="flex flex-grow p-6 space-x-4">
-          Dashboard Building....
-         
+          <h2>Welcome, {session?.user?.email}!</h2>
+          <p>Dashboard content goes here.</p>
         </main>
       </div>
 

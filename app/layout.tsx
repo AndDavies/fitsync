@@ -1,19 +1,20 @@
-"use client"; // Ensures the layout is a client component
+// app/layout.tsx
+"use client";
 
-import { SessionProvider } from 'next-auth/react';
+import { AuthProvider } from './context/AuthContext';
 import "./globals.css";
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
       <body className="antialiased">
-        <SessionProvider>
+        <AuthProvider>
           {children}
-        </SessionProvider>
+        </AuthProvider>
       </body>
     </html>
   );

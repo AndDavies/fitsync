@@ -1,5 +1,5 @@
 "use client";
-import Image from "next/image";
+// import Image from "next/image";
 import React, { useState } from 'react';
 import WorkoutBuilder from '../components/WorkoutBuilder';
 import WorkoutIdeas from "../components/WorkoutIdeas";
