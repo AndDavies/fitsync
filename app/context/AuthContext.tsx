@@ -1,6 +1,7 @@
+// app/context/AuthContext.tsx
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '../../utils/supabase/client';
-import { Session, Subscription } from '@supabase/supabase-js';
+import { Session } from '@supabase/supabase-js';  // Removed Subscription as it's not needed
 
 type AuthContextType = {
   session: Session | null;
@@ -30,7 +31,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // Cleanup the subscription on unmount
     return () => {
-      subscription.unsubscribe();
+      subscription.unsubscribe();  // This is fine; you don't need to import Subscription for this
     };
   }, []);
 
