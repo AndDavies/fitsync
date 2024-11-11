@@ -22,8 +22,21 @@ export default function Dashboard() {
 
         {/* Main Dashboard Container */}
         <main className="flex flex-grow p-6 space-x-4">
-          Dashboard Building....
-         
+          {/* Workout Builder */}
+          <div className="flex-none w-1/3">
+            <WorkoutBuilder workoutText={workoutBuilderText} setWorkoutText={setWorkoutBuilderText} />
+          </div>
+
+          {/* Accordion Container */}
+          <div className="flex-grow space-y-4">
+            <Accordion title="Metcon">
+              <WorkoutIdeas setWorkoutBuilderText={setWorkoutBuilderText} category="Metcon" />
+            </Accordion>
+            <Accordion title="Benchmarks">
+              <WorkoutIdeas setWorkoutBuilderText={setWorkoutBuilderText} category="Benchmark" />
+            </Accordion>
+            {/* Additional accordion sections can be added here */}
+          </div>
         </main>
       </div>
 
