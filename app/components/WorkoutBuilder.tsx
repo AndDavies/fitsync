@@ -22,17 +22,17 @@ const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ workoutText, setWorkout
     const lines = workoutText
       .split('\n')
       .filter((line) => line.trim() !== '')
-      .map((line, index) => {
-        const isFixed = index === 0;
-        return { id: `item-${index}`, content: line, isFixed };
-      });
+      .map((line, index) => ({
+        id: `item-${index}`,
+        content: line,
+        isFixed: index === 0,
+      }));
 
     setParsedLines(lines);
   };
 
   const handleDragEnd = (result: DropResult) => {
-    if (!result.destination) return;
-    if (result.source.index === 0) return;
+    if (!result.destination || result.source.index === 0) return;
 
     const items = Array.from(parsedLines);
     const [reorderedItem] = items.splice(result.source.index, 1);
@@ -42,10 +42,10 @@ const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ workoutText, setWorkout
   };
 
   return (
-    <div className="p-6 bg-gray-200 rounded-md shadow-md max-w-3xl mx-auto text-gray-900">
-      <h2 className="text-4xl font-extrabold mb-4 text-gray-800">Build Your Workout</h2>
+    <div className="p-6 bg-gray-50 rounded-md shadow-md max-w-3xl mx-auto text-gray-800 antialiased">
+      <h2 className="text-2xl font-semibold mb-4 text-gray-600">Build Your Workout</h2>
       <div className="mb-4">
-        <label htmlFor="workout-date" className="block text-base font-semibold mb-1 text-gray-700">
+        <label htmlFor="workout-date" className="block text-sm font-semibold mb-1 text-gray-500">
           Date
         </label>
         <input
@@ -53,11 +53,11 @@ const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ workoutText, setWorkout
           id="workout-date"
           value={workoutDate}
           onChange={(e) => setWorkoutDate(e.target.value)}
-          className="w-full p-2 border border-gray-400 bg-gray-100 text-sm text-gray-900 rounded-sm focus:outline-none focus:ring-1 focus:ring-gray-500"
+          className="w-full p-2 border border-gray-300 bg-gray-100 text-sm text-gray-800 rounded focus:outline-none focus:ring-1 focus:ring-gray-300"
         />
       </div>
       <div className="mb-4">
-        <label htmlFor="workout-input" className="block text-base font-semibold mb-1 text-gray-700">
+        <label htmlFor="workout-input" className="block text-sm font-semibold mb-1 text-gray-500">
           Workout Details
         </label>
         <textarea
@@ -65,13 +65,20 @@ const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ workoutText, setWorkout
           value={workoutText}
           onChange={(e) => setWorkoutText(e.target.value)}
           placeholder="Enter your workout details here..."
-          className="w-full p-2 border border-gray-400 bg-gray-100 text-sm text-gray-900 rounded-sm focus:outline-none focus:ring-1 focus:ring-gray-500 h-28"
+          className="w-full p-2 border border-gray-300 bg-gray-100 text-sm text-gray-800 rounded focus:outline-none focus:ring-1 focus:ring-gray-300 h-28"
         />
+      </div>
+      <div className="flex space-x-2 mt-3">
         <button
           onClick={handleParseWorkout}
-          className="mt-3 px-5 py-1.5 bg-gray-700 text-white font-bold rounded-sm hover:bg-gray-600 transition text-sm"
+          className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded hover:bg-gray-300 transition text-sm"
         >
           Continue
+        </button>
+        <button
+          className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 font-semibold rounded hover:bg-gray-400 transition text-sm"
+        >
+          Plan It
         </button>
       </div>
       <DragDropContext onDragEnd={handleDragEnd}>
@@ -80,13 +87,13 @@ const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ workoutText, setWorkout
             <div
               {...provided.droppableProps}
               ref={provided.innerRef}
-              className="space-y-1"
+              className="space-y-1 mt-6"
             >
               {parsedLines.map((line, index) => (
                 line.isFixed ? (
                   <div
                     key={line.id}
-                    className="p-2 border-b border-gray-400 bg-gray-300 font-bold text-sm text-gray-900"
+                    className="p-2 border-b border-gray-200 bg-gray-200 font-bold text-sm text-gray-700"
                   >
                     <span>{line.content}</span>
                   </div>
@@ -95,22 +102,21 @@ const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ workoutText, setWorkout
                     key={line.id}
                     draggableId={line.id}
                     index={index}
-                    isDragDisabled={!!line.isFixed}
                   >
                     {(provided, snapshot) => (
                       <div
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
-                        className={`p-2 border-b border-gray-400 bg-gray-100 text-sm text-gray-900 flex items-center ${
-                          snapshot.isDragging ? 'bg-gray-200' : ''
+                        className={`p-2 border-b border-gray-200 bg-gray-50 text-sm text-gray-700 flex items-center ${
+                          snapshot.isDragging ? 'bg-gray-100' : ''
                         }`}
                         style={{
                           ...provided.draggableProps.style,
                           transition: 'transform 0.1s ease',
                         }}
                       >
-                        <LiaBarsSolid className="text-gray-600 mr-2" />
+                        <LiaBarsSolid className="text-gray-400 mr-2" />
                         <span>{line.content}</span>
                       </div>
                     )}
@@ -122,9 +128,6 @@ const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ workoutText, setWorkout
           )}
         </Droppable>
       </DragDropContext>
-      <button className="mt-4 w-full px-5 py-1.5 bg-gray-700 text-white font-bold rounded-sm hover:bg-gray-600 transition text-sm">
-        Plan It
-      </button>
     </div>
   );
 };

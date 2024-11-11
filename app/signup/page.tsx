@@ -5,6 +5,9 @@ import { supabase } from "@/utils/supabase/client";
 export default function SignUpPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [bio, setBio] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
@@ -12,15 +15,37 @@ export default function SignUpPage() {
     setErrorMessage("");
     setSuccessMessage("");
 
-    const { error } = await supabase.auth.signUp({
+    if (!email || !password || !displayName) {
+      setErrorMessage("Email, password, and display name are required.");
+      return;
+    }
+
+    // Sign up in Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
     });
 
-    if (error) {
-      setErrorMessage(error.message);
-    } else {
-      setSuccessMessage("Account created successfully! Please check your email to confirm.");
+    if (authError) {
+      setErrorMessage(authError.message);
+      return;
+    }
+
+    // If signup is successful, insert into the user_profiles table
+    if (authData.user) {
+      const userId = authData.user.id; // Supabase Auth User ID
+      const { error: userProfileError } = await supabase.from("user_profiles").insert({
+        user_id: userId,           // Foreign key linked to Supabase Auth user ID
+        display_name: displayName,
+        phone,
+        bio,
+      });
+
+      if (userProfileError) {
+        setErrorMessage(userProfileError.message);
+      } else {
+        setSuccessMessage("Account created successfully! Please check your email to confirm.");
+      }
     }
   };
 
@@ -30,7 +55,7 @@ export default function SignUpPage() {
         <h2 className="text-3xl font-bold mb-6">Sign Up</h2>
         {errorMessage && <p className="text-red-600">{errorMessage}</p>}
         {successMessage && <p className="text-green-600">{successMessage}</p>}
-        <form className="space-y-4">
+        <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
           <div>
             <label htmlFor="email" className="block text-sm font-medium">
               Email
@@ -55,6 +80,44 @@ export default function SignUpPage() {
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+          <div>
+            <label htmlFor="displayName" className="block text-sm font-medium">
+              Display Name
+            </label>
+            <input
+              type="text"
+              id="displayName"
+              className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-indigo-200"
+              placeholder="Display name"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+            />
+          </div>
+          <div>
+            <label htmlFor="phone" className="block text-sm font-medium">
+              Phone (Optional)
+            </label>
+            <input
+              type="text"
+              id="phone"
+              className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-indigo-200"
+              placeholder="Phone number"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+          </div>
+          <div>
+            <label htmlFor="bio" className="block text-sm font-medium">
+              Bio (Optional)
+            </label>
+            <textarea
+              id="bio"
+              className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-indigo-200"
+              placeholder="Brief bio"
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
             />
           </div>
           <button

@@ -4,6 +4,7 @@ import { FiHome, FiSettings, FiBell } from "react-icons/fi";
 // import { GiProgression } from "react-icons/gi";
 import { GoTrophy } from "react-icons/go";
 import { CiCalendar } from "react-icons/ci";
+import { GiStrong } from "react-icons/gi";
 
 const LeftNav: React.FC = () => {
   return (
@@ -25,7 +26,7 @@ const LeftNav: React.FC = () => {
       </Link>
       <Link href="/workouts">
         <button className="hover:text-gray-200 transition">
-          <GoTrophy size={24} />
+          <GiStrong size={24} />
         </button>
       </Link>
       <Link href="/notifications">

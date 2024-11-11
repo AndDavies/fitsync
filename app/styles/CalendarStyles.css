@@ -1,0 +1,117 @@
+/* General anti-aliasing and font settings */
+* {
+    font-family: Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Calendar Container */
+  .rbc-calendar {
+    font-family: Arial, sans-serif;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Toolbar */
+  .rbc-toolbar {
+    background-color: #f9f9f9;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+  
+  .rbc-toolbar button {
+    background: none;
+    border: none;
+    font-size: 14px;
+    color: #555;
+    cursor: pointer;
+    margin: 0 4px;
+  }
+  
+  .rbc-toolbar button:hover {
+    color: #007bff;
+  }
+  
+  .rbc-toolbar-label {
+    font-weight: bold;
+    font-size: 16px;
+    color: #333;
+  }
+  
+  /* Header */
+  .rbc-header {
+    background-color: #fafafa;
+    color: #888;
+    font-weight: 500;
+    padding: 8px 0;
+    border-bottom: 1px solid #e0e0e0;
+    text-align: center;
+    font-size: 13px;
+  }
+  
+  /* Month View */
+  .rbc-month-view .rbc-day-bg {
+    background-color: white;
+  }
+  
+  .rbc-month-view .rbc-date-cell {
+    padding: 6px;
+    font-size: 12px;
+    text-align: right;
+    color: #444;
+  }
+  
+  .rbc-month-view .rbc-off-range-bg {
+    background-color: #f8f8f8;
+  }
+  
+  .rbc-month-view .rbc-off-range {
+    color: #ccc;
+  }
+  
+  /* Event Styling */
+  .rbc-event {
+    background-color: #007bff;
+    color: white;
+    padding: 2px 6px;
+    font-size: 11px;
+    border-radius: 4px;
+    text-align: center;
+  }
+  
+  /* Today Highlight */
+  .rbc-today {
+    background-color: #e0f3ff;
+    font-weight: 600;
+  }
+  
+  /* Selected Cell */
+  .rbc-selected-cell {
+    background-color: #cce5ff !important;
+  }
+  
+  /* Workout Details Sidebar */
+  .workout-details {
+    background-color: #f9f9f9;
+    padding: 16px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    font-size: 14px;
+    color: #555;
+    max-width: 200px; /* Narrower width */
+  }
+  
+  .workout-details h2 {
+    font-size: 16px;
+    color: #333;
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+  
+  .workout-details p {
+    font-size: 13px;
+    color: #666;
+  }
+  
