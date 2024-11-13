@@ -12,8 +12,12 @@ const config: Config = {
         background: "var(--background)",
         foreground: "var(--foreground)",
       },
+      fontFamily: {
+        sora: ["Sora", "sans-serif"], // Add Sora font family
+      },
     },
   },
   plugins: [],
 };
+
 export default config;

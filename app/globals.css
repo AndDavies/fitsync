@@ -1,6 +1,14 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* styles/globals.css */
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@100;200;300;400;500;600;700;800&display=swap');
+
+/* Set Sora as the default font for the entire site */
+body {
+  font-family: 'Sora', sans-serif;
+}
+
 
 :root {
   --background: #ffffff;
@@ -17,5 +25,7 @@
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Sora', sans-serif;
 }
+
+

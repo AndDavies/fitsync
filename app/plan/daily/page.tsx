@@ -1,16 +1,12 @@
-// app/plan/page.tsx
+// app/plan/daily/page.tsx
 "use client";
 
-import React, { useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import Header from "../components/Header";
-import LeftNav from "../components/LeftNav";
-import WorkoutCalendar from "../components/WorkoutCalendar";
+import React from 'react';
+import Header from "../../components/Header";
+import LeftNav from "../../components/LeftNav";
+import DailyView from "../../components/DailyView";
 
-export default function PlanPage() {
-  const searchParams = useSearchParams();
-  const date = searchParams.get('date') || undefined; // Convert null to undefined
-
+export default function DailyPage() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
       <Header />
@@ -18,7 +14,7 @@ export default function PlanPage() {
         <LeftNav />
         <main className="flex flex-grow p-6 space-x-4">
           <div className="flex-grow">
-            <WorkoutCalendar defaultDate={date} />
+            <DailyView />
           </div>
         </main>
       </div>

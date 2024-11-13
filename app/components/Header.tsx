@@ -3,46 +3,48 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { useAuth } from '../context/AuthContext';  // Use useAuth from your context
-import { supabase } from '@/utils/supabase/client'; // Import supabase client
+import { useAuth } from '../context/AuthContext';
+import { supabase } from '@/utils/supabase/client';
+import { useRouter } from 'next/navigation';
 
 const Header: React.FC = () => {
-  const { session, isLoading } = useAuth();  // Get session from AuthContext
+  const { session, isLoading, userData } = useAuth();
+  const router = useRouter();
 
-  // Show loading or session data
   if (isLoading) {
-    return <div>Loading...</div>;  // Or any loading state you prefer
+    return <div>Loading...</div>;
   }
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();  // Use Supabase's signOut method
+    await supabase.auth.signOut();
+    router.push('/login'); // Redirect to the login page after logging out
   };
 
   return (
-    <header className="flex justify-between items-center bg-gray-900 px-4 py-3 shadow-lg border-b border-gray-700 text-gray-100">
-      <div className="flex items-center space-x-3">
+    <header className="flex justify-between items-center bg-gray-900 px-6 py-2 shadow-md border-b border-gray-800 text-gray-100">
+      <div className="flex items-center space-x-2">
         <Image
-          src="/images/EB_05189_avatar.jpg" // Replace with your path
+          src="/images/EB_05189_avatar.jpg"
           alt="Profile"
-          width={36}
-          height={36}
-          className="rounded-full border border-gray-700"
+          width={32}
+          height={32}
+          className="rounded-full border border-gray-600"
         />
-        <h1 className="text-lg font-semibold">
-          Welcome back, {session?.user?.email || 'Guest'}!
+        <h1 className="text-sm font-medium text-gray-300">
+          Welcome back, {userData?.display_name || session?.user?.email || 'Guest'}!
         </h1>
       </div>
-      <div className="flex items-center space-x-4">
-        <span className="text-xs font-light">Ready to crush a workout?</span>
+      <div className="flex items-center space-x-3">
+        <span className="text-xs text-gray-400">Ready to crush a workout?</span>
         {session ? (
           <button
             onClick={handleSignOut}
-            className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition"
+            className="px-3 py-1 bg-red-500 text-xs text-white rounded hover:bg-red-600 transition"
           >
             Log Out
           </button>
         ) : (
-          <span className="text-xs">Not logged in</span>
+          <span className="text-xs text-gray-400">Not logged in</span>
         )}
       </div>
     </header>
