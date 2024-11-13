@@ -4,10 +4,14 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { supabase } from '@/utils/supabase/client';
 import { Session } from '@supabase/supabase-js';
 
+type UserData = {
+  display_name: string | null;
+  current_gym_id: string | null;
+};
+
 type AuthContextType = {
   session: Session | null;
-  displayName: string | null;
-  currentGymId: string | null;
+  userData: UserData | null;
   isLoading: boolean;
 };
 
@@ -15,8 +19,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
-  const [displayName, setDisplayName] = useState<string | null>(null);
-  const [currentGymId, setCurrentGymId] = useState<string | null>(null);
+  const [userData, setUserData] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -30,8 +33,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (error) {
         console.error("Error fetching user profile:", error.message);
       } else if (data) {
-        setDisplayName(data.display_name);
-        setCurrentGymId(data.current_gym_id);
+        setUserData({
+          display_name: data.display_name,
+          current_gym_id: data.current_gym_id,
+        });
       }
     };
 
@@ -57,8 +62,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (session) {
         fetchUserProfile(session.user.id).then(() => setIsLoading(false));
       } else {
-        setDisplayName(null);
-        setCurrentGymId(null);
+        setUserData(null);
         setIsLoading(false);
       }
     });
@@ -69,7 +73,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   return (
-    <AuthContext.Provider value={{ session, displayName, currentGymId, isLoading }}>
+    <AuthContext.Provider value={{ session, userData, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

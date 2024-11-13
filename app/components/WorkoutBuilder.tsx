@@ -51,7 +51,7 @@ const parseWorkoutText = (workoutText: string): WorkoutLine[] => {
 };
 
 const WorkoutBuilder: React.FC<{ workoutText: string; setWorkoutText: (text: string) => void }> = ({ workoutText, setWorkoutText }) => {
-  const { currentGymId, isLoading: authLoading } = useAuth(); 
+  const { userData, isLoading: authLoading } = useAuth(); // Access userData from context
   const [workoutDate, setWorkoutDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [parsedLines, setParsedLines] = useState<WorkoutLine[]>([]);
   const [isValidated, setIsValidated] = useState(false);
@@ -62,6 +62,7 @@ const WorkoutBuilder: React.FC<{ workoutText: string; setWorkoutText: (text: str
 
   // Fetch tracks based on currentGymId
   useEffect(() => {
+    const currentGymId = userData?.current_gym_id;
     if (!authLoading && currentGymId && isValidUUID(currentGymId)) {
       const fetchTracks = async () => {
         try {
@@ -82,7 +83,7 @@ const WorkoutBuilder: React.FC<{ workoutText: string; setWorkoutText: (text: str
       console.warn("currentGymId is either undefined or not a valid UUID:", currentGymId);
       setIsLoading(false);
     }
-  }, [currentGymId, authLoading]);
+  }, [userData, authLoading]);
 
   const handleParseWorkout = () => {
     const lines = parseWorkoutText(workoutText);
