@@ -26,8 +26,7 @@ const DailyView: React.FC = () => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [selectedTrack, setSelectedTrack] = useState<string | null>(null);
-  const [comment, setComment] = useState('');
-  const [comments, setComments] = useState<string[]>([]);
+
   const [scoringEnabled, setScoringEnabled] = useState(false);
 
   useEffect(() => {
