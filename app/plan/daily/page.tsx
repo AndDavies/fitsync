@@ -1,7 +1,7 @@
 // app/plan/daily/page.tsx
 "use client";
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import Header from "../../components/Header";
 import LeftNav from "../../components/LeftNav";
 import DailyView from "../../components/DailyView";
@@ -14,7 +14,9 @@ export default function DailyPage() {
         <LeftNav />
         <main className="flex flex-grow p-6 space-x-4">
           <div className="flex-grow">
-            <DailyView />
+            <Suspense fallback={<div>Loading Daily View...</div>}>
+              <DailyView />
+            </Suspense>
           </div>
         </main>
       </div>
