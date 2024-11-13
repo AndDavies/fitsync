@@ -27,7 +27,7 @@ const parseWorkoutText = (workoutText: string): WorkoutLine[] => {
   const parsedLines: WorkoutLine[] = [];
 
   lines.forEach((line, index) => {
-    let type: WorkoutLine['type'];  // Define type as one of the allowed values
+    let type: WorkoutLine['type'];
 
     if (index === 0) {
       type = 'focus';
@@ -42,7 +42,7 @@ const parseWorkoutText = (workoutText: string): WorkoutLine[] => {
     parsedLines.push({
       id: `item-${index}`,
       content: line.trim(),
-      type,  // Explicitly use the specific type
+      type,
       isFixed: index === 0,
     });
   });
@@ -51,7 +51,7 @@ const parseWorkoutText = (workoutText: string): WorkoutLine[] => {
 };
 
 const WorkoutBuilder: React.FC<{ workoutText: string; setWorkoutText: (text: string) => void }> = ({ workoutText, setWorkoutText }) => {
-  const { currentGymId, isLoading: authLoading } = useAuth();  // Access currentGymId from context
+  const { currentGymId, isLoading: authLoading } = useAuth(); 
   const [workoutDate, setWorkoutDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [parsedLines, setParsedLines] = useState<WorkoutLine[]>([]);
   const [isValidated, setIsValidated] = useState(false);
@@ -70,12 +70,10 @@ const WorkoutBuilder: React.FC<{ workoutText: string; setWorkoutText: (text: str
             .select('id, name')
             .eq('gym_id', currentGymId);
 
-          //if (error) throw error;
-
           setTracks(data || []);
           setIsLoading(false);
-        } catch (error) {
-          console.error('Error fetching tracks:');
+        } catch {
+          console.error('Error fetching tracks');
         }
       };
 

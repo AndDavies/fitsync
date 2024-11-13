@@ -11,7 +11,7 @@ type Workout = {
   scoring_set: string;
   scoring_type: string;
   advanced_scoring: string;
-  notes: string;
+  notes: string | null;
 };
 
 type Track = {
@@ -28,7 +28,6 @@ const DailyView: React.FC = () => {
   const [selectedTrack, setSelectedTrack] = useState<string | null>(null);
   const [comment, setComment] = useState('');
   const [comments, setComments] = useState<string[]>([]);
-  const [hasPosted, setHasPosted] = useState(false);
   const [scoringEnabled, setScoringEnabled] = useState(false);
 
   useEffect(() => {
@@ -43,16 +42,16 @@ const DailyView: React.FC = () => {
 
   const fetchWorkoutsForDate = async (selectedDate: string) => {
     console.log("Starting fetchWorkoutsForDate with date:", selectedDate);
-  
+
     const { data: userData, error: userError } = await supabase.auth.getUser();
     if (userError || !userData) {
       console.error("User not authenticated:", userError?.message);
       return;
     }
     const user = userData.user;
-  
+
     console.log("Authenticated user ID:", user.id);
-  
+
     const { data, error } = await supabase
       .from('scheduled_workouts')
       .select(`
@@ -66,16 +65,26 @@ const DailyView: React.FC = () => {
       `)
       .eq('user_id', user.id)
       .eq('date', selectedDate);
-  
+
     if (error) {
       console.error('Error fetching workouts:', error.message);
     } else if (data && data.length > 0) {
-      // Map the data to include the notes field from the workouts table
-      const formattedData = data.map((item: any) => ({
-        ...item,
-        notes: item.workouts ? item.workouts.notes : null
+      const formattedData = data.map((item: {
+        id: string;
+        workout_details: string;
+        scoring_set: string;
+        scoring_type: string;
+        advanced_scoring: string;
+        workouts: { notes: string }[] | null;
+      }) => ({
+        id: item.id,
+        workout_details: item.workout_details,
+        scoring_set: item.scoring_set,
+        scoring_type: item.scoring_type,
+        advanced_scoring: item.advanced_scoring,
+        notes: item.workouts && item.workouts[0] ? item.workouts[0].notes : null, // Access first element if available
       }));
-      
+
       console.log("Fetched workouts with notes:", formattedData);
       setWorkouts(formattedData);
     } else {
@@ -83,7 +92,6 @@ const DailyView: React.FC = () => {
       setWorkouts([]);
     }
   };
-  
 
   const fetchTracks = async () => {
     const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -98,10 +106,14 @@ const DailyView: React.FC = () => {
     if (error) {
       console.error('Error fetching tracks:', error.message);
     } else {
-      const fetchedTracks = data.map((item: any) => ({
+      const fetchedTracks = (data || []).map((item: {
+        track_id: string;
+        tracks: { name: string }[] | null;
+      }) => ({
         id: item.track_id,
-        name: item.tracks.name,
+        name: item.tracks && item.tracks[0] ? item.tracks[0].name : 'Unnamed Track', // Access first element if available
       }));
+
       console.log("Fetched tracks:", fetchedTracks);
       setTracks(fetchedTracks);
       if (fetchedTracks.length === 1) {
@@ -117,14 +129,6 @@ const DailyView: React.FC = () => {
   const handleSaveResult = async () => {
     setScoringEnabled(false);
     console.log("Score logged (placeholder)");
-  };
-
-  const handlePostComment = async () => {
-    if (!comment.trim()) return;
-
-    setComments([...comments, comment]);
-    setComment('');
-    setHasPosted(true);
   };
 
   return (
@@ -199,7 +203,7 @@ const DailyView: React.FC = () => {
             </div>
 
             <div className="mb-4 p-4 border rounded bg-gray-50">
-              <h4 className="font-semibold">Coach's Notes:</h4>
+              <h4 className="font-semibold">Coach&apos;s Notes:</h4>
               <p>{workout.notes || "No coach's notes available."}</p>
             </div>
           </div>
