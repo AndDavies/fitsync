@@ -65,12 +65,12 @@ const WorkoutBuilder: React.FC<{ workoutText: string; setWorkoutText: (text: str
     if (!authLoading && currentGymId && isValidUUID(currentGymId)) {
       const fetchTracks = async () => {
         try {
-          const { data, error } = await supabase
+          const { data } = await supabase
             .from('tracks')
             .select('id, name')
             .eq('gym_id', currentGymId);
 
-          if (error) throw error;
+          //if (error) throw error;
 
           setTracks(data || []);
           setIsLoading(false);
@@ -101,7 +101,7 @@ const WorkoutBuilder: React.FC<{ workoutText: string; setWorkoutText: (text: str
       return;
     }
 
-    const { data: workoutData, error: workoutError } = await supabase
+    const { data: workoutData } = await supabase
       .from('workouts')
       .select('workoutid')
       .eq('description', workoutText)
