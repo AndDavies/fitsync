@@ -61,50 +61,38 @@ const LeftNav: React.FC = () => {
       </button>
       <Link href="/dashboard" prefetch>
         <button className={`flex items-center w-full hover:text-gray-200 transition ${isExpanded ? 'pl-4' : 'justify-center'}`}>
-          <div className="mx-auto">
-            <HomeIcon />
-          </div>
-          {isExpanded && <span className="text-sm ml-2">Dashboard</span>}
+          <HomeIcon />
+          {isExpanded && <span className="text-sm ml-2 text-left">Dashboard</span>}
         </button>
       </Link>
       <Link href="/workouts" prefetch>
         <button className={`flex items-center w-full hover:text-gray-200 transition ${isExpanded ? 'pl-4' : 'justify-center'}`}>
-          <div className="mx-auto">
-            <ChartColumnIncreasingIcon />
-          </div>
-          {isExpanded && <span className="text-sm ml-2">Workouts</span>}
+          <ChartColumnIncreasingIcon />
+          {isExpanded && <span className="text-sm ml-2 text-left">Program Planning</span>}
         </button>
       </Link>
       <Link href="/plan" prefetch>
         <button className={`flex items-center w-full hover:text-gray-200 transition ${isExpanded ? 'pl-4' : 'justify-center'}`}>
-          <div className="mx-auto">
-            <CalendarCogIcon />
-          </div>
-          {isExpanded && <span className="text-sm ml-2">Plan</span>}
+          <CalendarCogIcon />
+          {isExpanded && <span className="text-sm ml-2 text-left">Programming Calendar</span>}
         </button>
       </Link>
       <Link href="/achievements" prefetch>
         <button className={`flex items-center w-full hover:text-gray-200 transition ${isExpanded ? 'pl-4' : 'justify-center'}`}>
-          <div className="mx-auto">
-            <GaugeIcon />
-          </div>
-          {isExpanded && <span className="text-sm ml-2">Achievements</span>}
+          <GaugeIcon />
+          {isExpanded && <span className="text-sm ml-2 text-left">Achievements</span>}
         </button>
       </Link>
       <Link href="/notifications" prefetch>
         <button className={`flex items-center w-full hover:text-gray-200 transition ${isExpanded ? 'pl-4' : 'justify-center'}`}>
-          <div className="mx-auto">
-            <BellIcon />
-          </div>
-          {isExpanded && <span className="text-sm ml-2">Notifications</span>}
+          <BellIcon />
+          {isExpanded && <span className="text-sm ml-2 text-left">Notifications</span>}
         </button>
       </Link>
       <Link href="/settings" prefetch>
         <button className={`flex items-center w-full hover:text-gray-200 transition ${isExpanded ? 'pl-4' : 'justify-center'}`}>
-          <div className="mx-auto">
-            <SettingsGearIcon />
-          </div>
-          {isExpanded && <span className="text-sm ml-2">Settings</span>}
+          <SettingsGearIcon />
+          {isExpanded && <span className="text-sm ml-2 text-left">Settings</span>}
         </button>
       </Link>
     </nav>

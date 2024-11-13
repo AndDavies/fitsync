@@ -41,18 +41,27 @@
   background-color: #f5f5f5; /* Light grey background for subtle contrast */
 }
 
+/* Adjust header styling */
 .rbc-header {
-  font-size: 1.2rem; /* Large font for readability */
+  font-size: 1rem; /* Adjust font size for better spacing */
   text-align: center;
-  font-weight: bold;
-  padding: 20px 0; /* Increased padding to ensure full date visibility */
-  background-color: #ffffff; /* White background for contrast */
-  color: #333333; /* Dark text for readability */
+  font-weight: 600; /* Slightly bold for readability */
+  padding: 8px 0; /* Set padding to create a tighter look */
+  background-color: #f5f5f5; /* Light grey background for minimal contrast */
+  color: #333333; /* Darker text color */
+  height: 50px; /* Fixed height for consistent header row */
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Centers text vertically and horizontally */
+  border-bottom: 1px solid #d3d3d3; /* Subtle line below header */
+}
+.rbc-today {
+  background-color: #ffe4e6; /* Light pink for the current day */
 }
 
-.rbc-header.rbc-today {
-  background-color: #ffccd5; /* Light pink for the current day header */
-  color: #333333; /* Dark text for contrast */
+/* Current day styling */
+.rbc-today .rbc-header {
+  background-color: #ffe4e6; /* Light pink for the current day */
 }
 
 .rbc-day-bg {

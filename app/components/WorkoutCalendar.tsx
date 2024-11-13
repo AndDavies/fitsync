@@ -1,43 +1,121 @@
-// components/WorkoutCalendar.tsx
 "use client";
 
-import { Calendar, momentLocalizer } from "react-big-calendar";
-import moment from "moment";
-import "react-big-calendar/lib/css/react-big-calendar.css";
-import "../styles/CalendarStyles.css";
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import { supabase } from '@/utils/supabase/client';
+import "../styles/CalStyles.css";
+import { format, startOfWeek, addDays, isToday } from "date-fns";
 
-const localizer = momentLocalizer(moment);
-
-type WorkoutCalendarProps = {
-  defaultDate?: string; // Optional default date in 'YYYY-MM-DD' format
+type Workout = {
+  id: string;
+  trackName: string;
+  workoutDetails: string;
+  date: string;
 };
 
-const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ defaultDate }) => {
-  const [initialDate, setInitialDate] = useState<Date | undefined>(undefined);
+type WeeklyWorkouts = {
+  [key: string]: Workout[];
+};
+
+const WorkoutCalendar: React.FC = () => {
+  const [workouts, setWorkouts] = useState<WeeklyWorkouts>({
+    sunday: [],
+    monday: [],
+    tuesday: [],
+    wednesday: [],
+    thursday: [],
+    friday: [],
+    saturday: [],
+  });
+  const [weekDates, setWeekDates] = useState<Date[]>([]);
 
   useEffect(() => {
-    if (defaultDate) {
-      setInitialDate(new Date(defaultDate)); // Set initial date based on query parameter
-    } else {
-      setInitialDate(new Date()); // Default to today if no date is provided
-    }
-  }, [defaultDate]);
+    const fetchWorkoutsWithTracks = async () => {
+      const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 0 });
+      const dates = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
+      setWeekDates(dates);
+
+      const startDate = format(currentWeekStart, "yyyy-MM-dd");
+      const endDate = format(addDays(currentWeekStart, 6), "yyyy-MM-dd");
+
+      // Step 1: Fetch workouts for the week with only track_id
+      const { data: workoutData, error: workoutError } = await supabase
+        .from("scheduled_workouts")
+        .select("id, date, workout_details, track_id")
+        .gte("date", startDate)
+        .lte("date", endDate)
+        .order("date", { ascending: true });
+
+      if (workoutError) {
+        console.error("Error fetching workouts:", workoutError.message);
+        return;
+      }
+
+      // Collect all unique track_ids from the workouts
+      const trackIds = Array.from(new Set(workoutData?.map((workout) => workout.track_id)));
+
+      // Step 2: Fetch track names for the unique track_ids
+      const { data: trackData, error: trackError } = await supabase
+        .from("tracks")
+        .select("id, name")
+        .in("id", trackIds);
+
+      if (trackError) {
+        console.error("Error fetching tracks:", trackError.message);
+        return;
+      }
+
+      // Create a map of track_id to track name for easy lookup
+      const trackMap = new Map(trackData?.map((track) => [track.id, track.name]));
+
+      // Group workouts by day and attach the track name
+      const groupedWorkouts: WeeklyWorkouts = {
+        sunday: [],
+        monday: [],
+        tuesday: [],
+        wednesday: [],
+        thursday: [],
+        friday: [],
+        saturday: [],
+      };
+
+      workoutData?.forEach((workout) => {
+        const workoutDate = new Date(workout.date);
+        const dayOfWeek = format(workoutDate, "EEEE").toLowerCase() as keyof WeeklyWorkouts;
+
+        groupedWorkouts[dayOfWeek].push({
+          id: workout.id,
+          trackName: trackMap.get(workout.track_id) || "No Track Name", // Look up track name in the map
+          workoutDetails: workout.workout_details,
+          date: workout.date,
+        });
+      });
+
+      setWorkouts(groupedWorkouts);
+    };
+
+    fetchWorkoutsWithTracks();
+  }, []);
+
+  if (weekDates.length === 0) return null; // Ensure weekDates is populated before rendering
 
   return (
-    <div className="calendar-container bg-white rounded-lg shadow-xl p-6">
-      <Calendar
-        localizer={localizer}
-        events={[]} // Ensure events are defined as all-day events if necessary
-        startAccessor="start"
-        endAccessor="end"
-        style={{ height: "80vh" }}
-        views={["month", "week", "day"]}
-        defaultView="week" // Set week view as default
-        date={initialDate} // Set the calendar date to the initialDate
-        showMultiDayTimes={false} // Hide times for all-day events
-        step={60} // Optional, define step interval for grid precision
-      />
+    <div className="weekly-calendar">
+      {Object.keys(workouts).map((day, index) => (
+        <div key={day} className={`day-column ${isToday(weekDates[index]) ? "highlight-today" : ""}`}>
+          <div className="day-content-wrapper">
+            <h3>
+              {format(weekDates[index], "EEE")} <br />
+              {format(weekDates[index], "dd MMM")}
+            </h3>
+            {workouts[day as keyof WeeklyWorkouts].map((workout) => (
+              <div key={workout.id} className="workout-item">
+                <strong>{workout.trackName}</strong>
+                <p>{workout.workoutDetails}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 };
