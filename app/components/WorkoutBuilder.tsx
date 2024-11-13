@@ -1,11 +1,10 @@
 // components/WorkoutBuilder.tsx
 
-import React, { useState } from 'react';
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
+import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/utils/supabase/client';
-import { LiaBarsSolid } from 'react-icons/lia';
+import { useAuth } from '../context/AuthContext';
 
 type WorkoutLine = {
   id: string;
@@ -14,156 +13,139 @@ type WorkoutLine = {
   isFixed?: boolean;
 };
 
-type WorkoutBuilderProps = {
-  workoutText: string;
-  setWorkoutText: (text: string) => void;
+type Track = {
+  id: string;  // UUID for track ID
+  name: string;
 };
 
-// Helper function to parse workout text
+// Helper function to validate UUID format
+const isValidUUID = (id: string) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(id);
+
+// Updated function to parse workout text and ensure correct types
 const parseWorkoutText = (workoutText: string): WorkoutLine[] => {
   const lines = workoutText.split('\n').filter((line) => line.trim());
   const parsedLines: WorkoutLine[] = [];
 
   lines.forEach((line, index) => {
+    let type: WorkoutLine['type'];  // Define type as one of the allowed values
+
     if (index === 0) {
-      parsedLines.push({
-        id: `item-${index}`,
-        content: line.trim(),
-        type: 'focus',
-        isFixed: true,
-      });
+      type = 'focus';
     } else if (/^\d+(-\d+)+$/.test(line.trim())) {
-      parsedLines.push({
-        id: `item-${index}`,
-        content: line.trim(),
-        type: 'sets',
-        isFixed: false,
-      });
+      type = 'sets';
     } else if (/RPE\s*\d+(-\d+)?/.test(line)) {
-      parsedLines.push({
-        id: `item-${index}`,
-        content: line.trim(),
-        type: 'intensity',
-        isFixed: false,
-      });
+      type = 'intensity';
     } else {
-      parsedLines.push({
-        id: `item-${index}`,
-        content: line.trim(),
-        type: 'details',
-        isFixed: false,
-      });
+      type = 'details';
     }
+
+    parsedLines.push({
+      id: `item-${index}`,
+      content: line.trim(),
+      type,  // Explicitly use the specific type
+      isFixed: index === 0,
+    });
   });
 
   return parsedLines;
 };
 
-// Scoring and advanced options hard-coded as arrays
-const SCORING_SETS_OPTIONS = Array.from({ length: 10 }, (_, i) => `${i + 1} sets`);
-const SCORING_TYPES_OPTIONS = [
-  'Time', 'Rounds + Reps', 'Reps', 'Load', 'Calories', 'Meters', 
-  'Check Box', 'Other', 'Not Scored'
-];
-const ADVANCED_SCORING_OPTIONS = ['Minimum', 'Maximum', 'Average'];
-const ORDER_TYPE_OPTIONS = ['Descending', 'Ascending'];
-
-const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ workoutText, setWorkoutText }) => {
+const WorkoutBuilder: React.FC<{ workoutText: string; setWorkoutText: (text: string) => void }> = ({ workoutText, setWorkoutText }) => {
+  const { currentGymId, isLoading: authLoading } = useAuth();  // Access currentGymId from context
   const [workoutDate, setWorkoutDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [parsedLines, setParsedLines] = useState<WorkoutLine[]>([]);
-  const [scoringSet, setScoringSet] = useState(SCORING_SETS_OPTIONS[0]);
-  const [scoreType, setScoreType] = useState(SCORING_TYPES_OPTIONS[0]);
-  const [advancedScoring, setAdvancedScoring] = useState(ADVANCED_SCORING_OPTIONS[0]);
-  const [orderType, setOrderType] = useState(ORDER_TYPE_OPTIONS[0]);
-
+  const [isValidated, setIsValidated] = useState(false);
+  const [tracks, setTracks] = useState<Track[]>([]);
+  const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+
+  // Fetch tracks based on currentGymId
+  useEffect(() => {
+    if (!authLoading && currentGymId && isValidUUID(currentGymId)) {
+      const fetchTracks = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('tracks')
+            .select('id, name')
+            .eq('gym_id', currentGymId);
+
+          if (error) throw error;
+
+          setTracks(data || []);
+          setIsLoading(false);
+        } catch (error) {
+          console.error('Error fetching tracks:');
+        }
+      };
+
+      fetchTracks();
+    } else if (!authLoading) {
+      console.warn("currentGymId is either undefined or not a valid UUID:", currentGymId);
+      setIsLoading(false);
+    }
+  }, [currentGymId, authLoading]);
 
   const handleParseWorkout = () => {
     const lines = parseWorkoutText(workoutText);
     setParsedLines(lines);
+    setIsValidated(lines.length > 0);
   };
 
   const handlePlanWorkout = async () => {
-    // Get the authenticated user
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+    if (!isValidated || !selectedTrackId) return;
 
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       alert('You need to be logged in to plan a workout.');
-      console.error('Error fetching user:', userError);
       return;
     }
 
-    // First, check if the workout exists in the workouts table or insert it
     const { data: workoutData, error: workoutError } = await supabase
       .from('workouts')
       .select('workoutid')
       .eq('description', workoutText)
       .single();
 
-    let workoutId;
-    
-    if (workoutError) {
-      // If the workout does not exist, insert it into the workouts table
+    let workoutId = workoutData?.workoutid;
+    if (!workoutId) {
       const { data: newWorkout, error: insertError } = await supabase
         .from('workouts')
-        .insert({
-          description: workoutText,
-          title: "Untitled Workout", // Default title
-        })
+        .insert({ description: workoutText, title: "Untitled Workout" })
         .select('workoutid')
         .single();
 
-      if (insertError || !newWorkout) {
-        console.error('Error inserting new workout:', insertError?.message);
-        alert(`There was an error creating the workout: ${insertError?.message}`);
+      if (insertError) {
+        alert(`Error creating the workout: ${insertError.message}`);
         return;
       }
-      workoutId = newWorkout.workoutid;
-    } else {
-      // If it exists, use the existing workoutid
-      workoutId = workoutData.workoutid;
+      workoutId = newWorkout?.workoutid;
     }
 
-    // Now, insert the workout into the scheduled_workouts table with the workout_id
     const { error: scheduleError } = await supabase
       .from('scheduled_workouts')
       .insert({
         user_id: user.id,
         date: workoutDate,
         workout_details: workoutText,
-        scoring_set: scoringSet,
-        scoring_type: scoreType,
-        advanced_scoring: advancedScoring,
-        order_type: orderType,
         status: 'planned',
-        workout_id: workoutId,  // Referencing the workout from workouts table
+        workout_id: workoutId,
+        track_id: selectedTrackId,
       });
 
     if (scheduleError) {
-      console.error('Error scheduling workout:', scheduleError.message);
-      alert(`There was an error scheduling the workout: ${scheduleError.message}`);
-      return;
+      alert(`Error scheduling the workout: ${scheduleError.message}`);
+    } else {
+      router.push(`/plan/daily?date=${workoutDate}`);
     }
-
-    // Redirect to the daily page with the date parameter
-    router.push(`/plan/daily?date=${workoutDate}`);
   };
 
-  const handleDragEnd = (result: DropResult) => {
-    if (!result.destination || result.source.index === 0) return;
-
-    const items = Array.from(parsedLines);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-
-    setParsedLines(items);
-  };
+  // Display a loading message until currentGymId is validated and tracks are fetched
+  if (isLoading) {
+    return <p>Loading workout builder...</p>;
+  }
 
   return (
-    
     <div className="p-6 bg-gray-50 rounded-md shadow-md max-w-3xl mx-auto text-gray-800 antialiased">
       <h2 className="text-2xl font-semibold mb-4 text-gray-600">Build Your Workout</h2>
       <div className="mb-4">
@@ -178,6 +160,27 @@ const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ workoutText, setWorkout
           className="w-full p-2 border border-gray-300 bg-gray-100 text-sm text-gray-800 rounded focus:outline-none focus:ring-1 focus:ring-gray-300"
         />
       </div>
+
+      {/* Track selection dropdown */}
+      <div className="mb-4">
+        <label htmlFor="track-select" className="block text-sm font-semibold mb-1 text-gray-500">
+          Select Track
+        </label>
+        <select
+          id="track-select"
+          value={selectedTrackId || ""}
+          onChange={(e) => setSelectedTrackId(e.target.value || null)}
+          className="w-full p-2 border border-gray-300 bg-gray-100 text-sm text-gray-800 rounded focus:outline-none focus:ring-1 focus:ring-gray-300"
+        >
+          <option value="" disabled>Select a track</option>
+          {tracks.map((track) => (
+            <option key={track.id} value={track.id}>
+              {track.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <div className="mb-4">
         <label htmlFor="workout-input" className="block text-sm font-semibold mb-1 text-gray-500">
           Workout Details
@@ -185,7 +188,10 @@ const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ workoutText, setWorkout
         <textarea
           id="workout-input"
           value={workoutText}
-          onChange={(e) => setWorkoutText(e.target.value)}
+          onChange={(e) => {
+            setWorkoutText(e.target.value);
+            setIsValidated(false);
+          }}
           placeholder="Enter your workout details here..."
           className="w-full p-2 border border-gray-300 bg-gray-100 text-sm text-gray-800 rounded focus:outline-none focus:ring-1 focus:ring-gray-300 h-28"
         />
@@ -193,66 +199,30 @@ const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ workoutText, setWorkout
       <div className="flex space-x-2 mt-3">
         <button
           onClick={handleParseWorkout}
-          className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded hover:bg-gray-300 transition text-sm"
+          className={`flex-1 px-4 py-2 font-semibold rounded transition text-sm ${
+            !isValidated ? 'bg-pink-200 text-gray-700 hover:bg-pink-300' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
         >
-          Continue
+          Validate
         </button>
         <button
           onClick={handlePlanWorkout}
-          className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 font-semibold rounded hover:bg-gray-400 transition text-sm"
+          disabled={!isValidated || !selectedTrackId}
+          className={`flex-1 px-4 py-2 font-semibold rounded transition text-sm ${
+            isValidated && selectedTrackId ? 'bg-pink-500 text-white hover:bg-pink-600' : 'bg-gray-300 text-gray-700 cursor-not-allowed'
+          }`}
         >
           Plan It
         </button>
       </div>
 
-      {/* Render parsed workout details */}
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <Droppable droppableId="workout-list">
-          {(provided) => (
-            <div
-              {...provided.droppableProps}
-              ref={provided.innerRef}
-              className="space-y-1 mt-6"
-            >
-              {parsedLines.map((line, index) => (
-                line.isFixed ? (
-                  <div
-                    key={line.id}
-                    className="p-2 border-b border-gray-200 bg-gray-200 font-bold text-sm text-gray-700"
-                  >
-                    <span>{line.content}</span>
-                  </div>
-                ) : (
-                  <Draggable
-                    key={line.id}
-                    draggableId={line.id}
-                    index={index}
-                  >
-                    {(provided, snapshot) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        {...provided.dragHandleProps}
-                        className={`p-2 border-b border-gray-200 bg-gray-50 text-sm text-gray-700 flex items-center ${
-                          snapshot.isDragging ? 'bg-gray-100' : ''
-                        }`}
-                        style={{
-                          ...provided.draggableProps.style,
-                          transition: 'transform 0.1s ease',
-                        }}
-                      >
-                        <LiaBarsSolid className="text-gray-400 mr-2" />
-                        <span>{line.content}</span>
-                      </div>
-                    )}
-                  </Draggable>
-                )
-              ))}
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>
+      <div className="space-y-1 mt-6">
+        {parsedLines.map((line) => (
+          <div key={line.id} className="p-2 border-b border-gray-200 bg-gray-50 text-sm text-gray-700">
+            {line.content}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

@@ -1,79 +1,75 @@
-// app/context/AuthContext.tsx
+// context/AuthContext.tsx
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { supabase } from '../../utils/supabase/client';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { supabase } from '@/utils/supabase/client';
 import { Session } from '@supabase/supabase-js';
 
 type AuthContextType = {
   session: Session | null;
+  displayName: string | null;
+  currentGymId: string | null;
   isLoading: boolean;
-  userData: { display_name: string | null } | null;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [userData, setUserData] = useState<{ display_name: string | null } | null>(null);
+  const [displayName, setDisplayName] = useState<string | null>(null);
+  const [currentGymId, setCurrentGymId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const getSession = async () => {
+    const fetchUserProfile = async (userId: string) => {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('display_name, current_gym_id')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        console.error("Error fetching user profile:", error.message);
+      } else if (data) {
+        setDisplayName(data.display_name);
+        setCurrentGymId(data.current_gym_id);
+      }
+    };
+
+    const setUpSession = async () => {
       const { data, error } = await supabase.auth.getSession();
       if (error) {
-        console.error("Error getting session:", error);
-      }
-      setSession(data.session);
-      setIsLoading(false);
-
-      if (data.session) {
-        console.log("Session exists. Fetching user data.");
-        fetchUserData(data.session.user.id);
-      }
-    };
-
-    const fetchUserData = async (userId: string) => {
-      try {
-        console.log("Attempting to fetch data for user_id:", userId);
-        const { data, error } = await supabase
-          .from('user_profiles')
-          .select('display_name')
-          .eq('user_id', userId)  // Use 'user_id' here
-          .single();
-
-        if (error) {
-          console.error('Error fetching user data from user_profiles:', error.message || error);
-        } else if (data) {
-          console.log("Successfully fetched user data:", data);
-          setUserData(data);
-        } else {
-          console.warn("User data not found for user_id:", userId);
-        }
-      } catch (err) {
-        console.error("Unexpected error fetching user data:", err);
-      }
-    };
-
-    getSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setIsLoading(false);
-
-      if (session) {
-        fetchUserData(session.user.id);
+        console.error("Error getting session:", error.message);
       } else {
-        setUserData(null);
+        setSession(data.session);
+        if (data.session) {
+          await fetchUserProfile(data.session.user.id);
+        }
+      }
+      setIsLoading(false);
+    };
+
+    setUpSession();
+
+    // Set up an auth state change listener
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setIsLoading(true);
+      if (session) {
+        fetchUserProfile(session.user.id).then(() => setIsLoading(false));
+      } else {
+        setDisplayName(null);
+        setCurrentGymId(null);
+        setIsLoading(false);
       }
     });
 
     return () => {
-      subscription.unsubscribe();
+      authListener.subscription.unsubscribe();
     };
   }, []);
 
   return (
-    <AuthContext.Provider value={{ session, isLoading, userData }}>
+    <AuthContext.Provider value={{ session, displayName, currentGymId, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
