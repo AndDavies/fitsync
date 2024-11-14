@@ -1,0 +1,68 @@
+.
+├── README.md
+├── app
+│   ├── components
+│   │   ├── Accordion.tsx
+│   │   ├── DailyView.tsx
+│   │   ├── Header.tsx
+│   │   ├── LeftNav.tsx
+│   │   ├── WorkoutBuilder.tsx
+│   │   ├── WorkoutCalendar.tsx
+│   │   ├── WorkoutIdeas.tsx
+│   │   └── icons
+│   ├── context
+│   │   ├── AuthContext.tsx
+│   │   └── CalendarContext.tsx
+│   ├── dashboard
+│   │   └── page.tsx
+│   ├── favicon.ico
+│   ├── fonts
+│   │   ├── GeistMonoVF.woff
+│   │   └── GeistVF.woff
+│   ├── globals.css
+│   ├── layout.tsx
+│   ├── login
+│   │   └── page.tsx
+│   ├── middleware.ts
+│   ├── page.tsx
+│   ├── plan
+│   │   ├── daily
+│   │   └── page.tsx
+│   ├── signup
+│   │   └── page.tsx
+│   ├── styles
+│   │   ├── CalStyles.css
+│   │   └── CalendarStyles.css
+│   └── workouts
+│       └── page.tsx
+├── middleware.ts
+├── next-env.d.ts
+├── next.config.ts
+├── package-lock.json
+├── package.json
+├── postcss.config.mjs
+├── project_structure.txt
+├── public
+│   ├── file.svg
+│   ├── globe.svg
+│   ├── images
+│   │   ├── Ascent_Logo.png
+│   │   ├── Ascent_Logo_collapsed.png
+│   │   ├── Ascent_Logo_trans.png
+│   │   ├── EB_05189_avatar.jpg
+│   │   ├── landing_1.jpg
+│   │   ├── landing_2.jpg
+│   │   ├── landing_3.jpg
+│   │   ├── landing_background.jpg
+│   │   ├── login
+│   │   └── workoutbuilder
+│   ├── next.svg
+│   ├── vercel.svg
+│   └── window.svg
+├── tailwind.config.ts
+├── tsconfig.json
+└── utils
+    └── supabase
+        └── client.ts
+
+19 directories, 47 files

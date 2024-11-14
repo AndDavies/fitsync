@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from '@/utils/supabase/client';
 import "../styles/CalStyles.css";
-import { format, startOfWeek, addDays, isToday } from "date-fns";
+import { format, startOfWeek, addDays, isToday, parseISO } from "date-fns";
 
 type Workout = {
   id: string;
@@ -16,7 +16,11 @@ type WeeklyWorkouts = {
   [key: string]: Workout[];
 };
 
-const WorkoutCalendar: React.FC = () => {
+type WorkoutCalendarProps = {
+  defaultDate?: string;
+};
+
+const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ defaultDate }) => {
   const [workouts, setWorkouts] = useState<WeeklyWorkouts>({
     sunday: [],
     monday: [],
@@ -29,15 +33,19 @@ const WorkoutCalendar: React.FC = () => {
   const [weekDates, setWeekDates] = useState<Date[]>([]);
 
   useEffect(() => {
-    const fetchWorkoutsWithTracks = async () => {
-      const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 0 });
+    const initializeWeekDates = () => {
+      // Use defaultDate if provided, otherwise use the current date
+      const initialDate = defaultDate ? parseISO(defaultDate) : new Date();
+      const currentWeekStart = startOfWeek(initialDate, { weekStartsOn: 0 });
       const dates = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
       setWeekDates(dates);
+      return { startDate: format(currentWeekStart, "yyyy-MM-dd"), endDate: format(addDays(currentWeekStart, 6), "yyyy-MM-dd") };
+    };
 
-      const startDate = format(currentWeekStart, "yyyy-MM-dd");
-      const endDate = format(addDays(currentWeekStart, 6), "yyyy-MM-dd");
+    const fetchWorkoutsWithTracks = async () => {
+      const { startDate, endDate } = initializeWeekDates();
 
-      // Step 1: Fetch workouts for the week with only track_id
+      // Fetch workouts for the week with only track_id
       const { data: workoutData, error: workoutError } = await supabase
         .from("scheduled_workouts")
         .select("id, date, workout_details, track_id")
@@ -53,7 +61,7 @@ const WorkoutCalendar: React.FC = () => {
       // Collect all unique track_ids from the workouts
       const trackIds = Array.from(new Set(workoutData?.map((workout) => workout.track_id)));
 
-      // Step 2: Fetch track names for the unique track_ids
+      // Fetch track names for the unique track_ids
       const { data: trackData, error: trackError } = await supabase
         .from("tracks")
         .select("id, name")
@@ -84,7 +92,7 @@ const WorkoutCalendar: React.FC = () => {
 
         groupedWorkouts[dayOfWeek].push({
           id: workout.id,
-          trackName: trackMap.get(workout.track_id) || "No Track Name", // Look up track name in the map
+          trackName: trackMap.get(workout.track_id) || "No Track Name",
           workoutDetails: workout.workout_details,
           date: workout.date,
         });
@@ -94,7 +102,7 @@ const WorkoutCalendar: React.FC = () => {
     };
 
     fetchWorkoutsWithTracks();
-  }, []);
+  }, [defaultDate]);
 
   if (weekDates.length === 0) return null; // Ensure weekDates is populated before rendering
 

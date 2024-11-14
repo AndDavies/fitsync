@@ -1,3 +1,4 @@
+// app/workouts/page.tsx
 "use client";
 // import Image from "next/image";
 import React, { useState } from 'react';
@@ -23,7 +24,7 @@ export default function Dashboard() {
         {/* Main Dashboard Container */}
         <main className="flex flex-grow p-6 space-x-4">
           {/* Workout Builder */}
-          <div className="flex-none w-1/3">
+          <div className="flex-none w-2/3">
             <WorkoutBuilder workoutText={workoutBuilderText} setWorkoutText={setWorkoutBuilderText} />
           </div>
 

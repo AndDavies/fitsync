@@ -19,6 +19,17 @@ type Track = {
   name: string;
 };
 
+// Helper function to parse workout details
+const parseWorkoutText = (workoutText: string): string[] => {
+  const lines = workoutText.split('\n').filter((line) => line.trim());
+  return lines;
+};
+
+// Helper function to parse notes text
+const parseNotesText = (notesText: string | null): string[] => {
+  return notesText ? notesText.split('\n').filter((line) => line.trim()) : [];
+};
+
 const DailyView: React.FC = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -26,30 +37,18 @@ const DailyView: React.FC = () => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [selectedTrack, setSelectedTrack] = useState<string | null>(null);
-
   const [scoringEnabled, setScoringEnabled] = useState(false);
 
   useEffect(() => {
     if (date) {
-      console.log("Fetching workouts for date:", date);
       fetchWorkoutsForDate(date);
       fetchTracks();
-    } else {
-      console.warn("No date provided in query parameters.");
     }
   }, [date]);
 
   const fetchWorkoutsForDate = async (selectedDate: string) => {
-    console.log("Starting fetchWorkoutsForDate with date:", selectedDate);
-
     const { data: userData, error: userError } = await supabase.auth.getUser();
-    if (userError || !userData) {
-      console.error("User not authenticated:", userError?.message);
-      return;
-    }
-    const user = userData.user;
-
-    console.log("Authenticated user ID:", user.id);
+    if (userError || !userData) return;
 
     const { data, error } = await supabase
       .from('scheduled_workouts')
@@ -59,65 +58,40 @@ const DailyView: React.FC = () => {
         scoring_set,
         scoring_type,
         advanced_scoring,
-        workout_id,
-        workouts (notes)
+        notes
       `)
-      .eq('user_id', user.id)
+      .eq('user_id', userData.user.id)
       .eq('date', selectedDate);
 
-    if (error) {
-      console.error('Error fetching workouts:', error.message);
-    } else if (data && data.length > 0) {
-      const formattedData = data.map((item: {
-        id: string;
-        workout_details: string;
-        scoring_set: string;
-        scoring_type: string;
-        advanced_scoring: string;
-        workouts: { notes: string }[] | null;
-      }) => ({
+    if (!error && data) {
+      const formattedData = data.map((item: any) => ({
         id: item.id,
         workout_details: item.workout_details,
         scoring_set: item.scoring_set,
         scoring_type: item.scoring_type,
         advanced_scoring: item.advanced_scoring,
-        notes: item.workouts && item.workouts[0] ? item.workouts[0].notes : null, // Access first element if available
+        notes: item.notes,
       }));
-
-      console.log("Fetched workouts with notes:", formattedData);
       setWorkouts(formattedData);
-    } else {
-      console.log("No workouts found for the specified date:", selectedDate);
-      setWorkouts([]);
     }
   };
 
   const fetchTracks = async () => {
     const { data: userData, error: userError } = await supabase.auth.getUser();
     if (userError || !userData) return;
-    const user = userData.user;
 
     const { data, error } = await supabase
       .from('user_tracks')
       .select('track_id, tracks(name)')
-      .eq('user_id', user.id);
+      .eq('user_id', userData.user.id);
 
-    if (error) {
-      console.error('Error fetching tracks:', error.message);
-    } else {
-      const fetchedTracks = (data || []).map((item: {
-        track_id: string;
-        tracks: { name: string }[] | null;
-      }) => ({
+    if (!error && data) {
+      const fetchedTracks = data.map((item: any) => ({
         id: item.track_id,
-        name: item.tracks && item.tracks[0] ? item.tracks[0].name : 'Unnamed Track', // Access first element if available
+        name: item.tracks && item.tracks[0] ? item.tracks[0].name : 'Unnamed Track',
       }));
-
-      console.log("Fetched tracks:", fetchedTracks);
       setTracks(fetchedTracks);
-      if (fetchedTracks.length === 1) {
-        setSelectedTrack(fetchedTracks[0].id); // Auto-select if only one track
-      }
+      if (fetchedTracks.length === 1) setSelectedTrack(fetchedTracks[0].id);
     }
   };
 
@@ -142,7 +116,6 @@ const DailyView: React.FC = () => {
         </button>
       </div>
 
-      {/* Track Selection */}
       {tracks.length > 1 && (
         <div className="mb-4">
           <label className="block text-sm font-semibold mb-1">Select Track:</label>
@@ -166,7 +139,9 @@ const DailyView: React.FC = () => {
             <div className="mb-4">
               <h3 className="text-xl font-bold">Workout Details</h3>
               <div className="bg-black text-white p-4 rounded font-semibold text-lg">
-                {workout.workout_details}
+                {parseWorkoutText(workout.workout_details).map((line, index) => (
+                  <p key={index}>{line}</p>
+                ))}
               </div>
             </div>
 
@@ -174,7 +149,7 @@ const DailyView: React.FC = () => {
               <h4 className="font-semibold">Scoring Method:</h4>
               <div className="flex items-center space-x-4">
                 <p className="text-gray-700">
-                  {workout.scoring_set}, {workout.scoring_type}, {workout.advanced_scoring}
+                  {workout.scoring_set} Set(s) of {workout.scoring_type}
                 </p>
                 <button
                   onClick={handleLogResultClick}
@@ -203,7 +178,13 @@ const DailyView: React.FC = () => {
 
             <div className="mb-4 p-4 border rounded bg-gray-50">
               <h4 className="font-semibold">Coach&apos;s Notes:</h4>
-              <p>{workout.notes || "No coach's notes available."}</p>
+              {workout.notes ? (
+                parseNotesText(workout.notes).map((line, index) => (
+                  <p key={index}>{line}</p>
+                ))
+              ) : (
+                <p>No coach's notes available.</p>
+              )}
             </div>
           </div>
         ))
