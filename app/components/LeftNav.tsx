@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import TallyScore from './TallyScore';
 import { HomeIcon } from './icons/home';
 import { CalendarCogIcon } from './icons/calendar-cog';
 import { ChartColumnIncreasingIcon } from './icons/chart-column-increasing';
@@ -38,6 +39,16 @@ const LeftNav: React.FC = () => {
 
   if (!isClient) return null;
 
+  // Placeholder data for the TallyScore component
+  const totalScore = 6452.75;
+  const percentage = 5;
+  const metrics = {
+    weeklyIncrease: 120,
+    loadIncrease: 20,
+    streak: 4,
+    restWarning: true,
+  };
+
   return (
     <nav
       className={`flex flex-col ${
@@ -53,12 +64,15 @@ const LeftNav: React.FC = () => {
           className="transition-all duration-300 ease-in-out"
         />
       </div>
+      
       <button
         onClick={toggleNav}
         className="self-end mr-2 mb-2 p-2 text-lg font-bold text-gray-700 bg-pink-200 rounded-full hover:bg-pink-300 focus:outline-none"
       >
         {isExpanded ? '<' : '>'}
       </button>
+
+      {/* Navigation Links */}
       <Link href="/dashboard" prefetch>
         <button className={`flex items-center w-full hover:text-gray-200 transition ${isExpanded ? 'pl-4' : 'justify-center'}`}>
           <HomeIcon />
@@ -95,6 +109,10 @@ const LeftNav: React.FC = () => {
           {isExpanded && <span className="text-sm ml-2 text-left">Settings</span>}
         </button>
       </Link>
+      {/* TallyScore component with placeholder data */}
+      {isExpanded && (
+        <TallyScore totalScore={totalScore} percentage={percentage} metrics={metrics} />
+      )}
     </nav>
   );
 };

@@ -12,7 +12,7 @@ type WorkoutLine = {
 };
 
 type Track = {
-  id: string;  // UUID for track ID
+  id: string;
   name: string;
 };
 
@@ -38,14 +38,18 @@ const WorkoutBuilder: React.FC<{ workoutText: string; setWorkoutText: (text: str
   const [isValidated, setIsValidated] = useState(false);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
-  const [scoringSet, setScoringSet] = useState<number>(1); // Default sets to 1
+  const [scoringSet, setScoringSet] = useState<number>(1);
   const [scoringType, setScoringType] = useState<string | null>(null);
   const [advancedScoring, setAdvancedScoring] = useState<string>('Maximum');
   const [orderType, setOrderType] = useState<string>('Descending');
-  const [isLoading, setIsLoading] = useState(true);
-  const [showTooltip, setShowTooltip] = useState(false); // Tooltip trigger
-  const [showNotesModal, setShowNotesModal] = useState(false); // Modal state
-  const [coachNotes, setCoachNotes] = useState<string>(''); // Coach's notes
+  const [isLoadingTracks, setIsLoadingTracks] = useState(true);
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [showNotesModal, setShowNotesModal] = useState(false);
+  const [coachNotes, setCoachNotes] = useState<string>('');
+  const [warmUp, setWarmUp] = useState<string>('');
+  const [coolDown, setCoolDown] = useState<string>('');
+  const [showWarmUp, setShowWarmUp] = useState(false);
+  const [showCoolDown, setShowCoolDown] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -55,23 +59,28 @@ const WorkoutBuilder: React.FC<{ workoutText: string; setWorkoutText: (text: str
 
   useEffect(() => {
     const currentGymId = userData?.current_gym_id;
+
     if (!authLoading && currentGymId && isValidUUID(currentGymId)) {
       const fetchTracks = async () => {
         try {
-          const { data } = await supabase
+          setIsLoadingTracks(true);
+          const { data, error } = await supabase
             .from('tracks')
             .select('id, name')
             .eq('gym_id', currentGymId);
-          setTracks(data || []);
-        } catch {
-          console.error('Error fetching tracks');
+
+          if (error) {
+            console.error("Error fetching tracks:", error.message);
+          } else {
+            setTracks(data || []);
+          }
+        } catch (error) {
+          console.error("Unexpected error fetching tracks:", error);
+        } finally {
+          setIsLoadingTracks(false);
         }
-        setIsLoading(false);
       };
       fetchTracks();
-    } else if (!authLoading) {
-      console.warn("currentGymId is either undefined or not a valid UUID:", currentGymId);
-      setIsLoading(false);
     }
   }, [userData, authLoading]);
 
@@ -79,31 +88,24 @@ const WorkoutBuilder: React.FC<{ workoutText: string; setWorkoutText: (text: str
     const lines = parseWorkoutText(workoutText);
     setParsedLines(lines);
     setIsValidated(lines.length > 0 && workoutName.trim() !== "");
-    if (!selectedTrackId || !scoringType || workoutName.trim() === "") setShowTooltip(true); // Trigger tooltip if fields are missing
+    if (!selectedTrackId || !scoringType || workoutName.trim() === "") setShowTooltip(true);
   };
 
   const handlePlanWorkout = async () => {
-    console.log("Plan It button clicked");
-  
-    if (!isValidated || !selectedTrackId || !scoringType || workoutName.trim() === "") {
-      console.log("Validation failed:", { isValidated, selectedTrackId, scoringType, workoutName });
-      return;
-    }
-  
+    if (!isValidated || !selectedTrackId || !scoringType || workoutName.trim() === "") return;
+
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
-      console.log("User authentication failed", userError);
       alert('You need to be logged in to plan a workout.');
       return;
     }
-    console.log("User authenticated:", user);
-  
+
     const { data: workoutData, error: selectError } = await supabase
       .from('workouts')
       .select('workoutid')
       .eq('description', workoutText)
       .single();
-  
+
     let workoutId = workoutData?.workoutid;
     if (!workoutId) {
       const { data: newWorkout, error: insertError } = await supabase
@@ -111,25 +113,23 @@ const WorkoutBuilder: React.FC<{ workoutText: string; setWorkoutText: (text: str
         .insert({ description: workoutText, title: workoutName })
         .select('workoutid')
         .single();
-  
+
       if (insertError) {
-        console.log("Error inserting new workout:", insertError);
         alert("There was an error creating the workout. Please try again.");
         return;
       }
       workoutId = newWorkout?.workoutid;
-      console.log("New workout created with ID:", workoutId);
-    } else {
-      console.log("Existing workout found with ID:", workoutId);
     }
-  
+
     const { error: scheduleError } = await supabase
       .from('scheduled_workouts')
       .insert({
         user_id: user.id,
         date: workoutDate,
         name: workoutName,
+        warm_up: warmUp,
         workout_details: workoutText,
+        cool_down: coolDown,
         status: 'planned',
         workout_id: workoutId,
         track_id: selectedTrackId,
@@ -137,44 +137,23 @@ const WorkoutBuilder: React.FC<{ workoutText: string; setWorkoutText: (text: str
         scoring_type: scoringType,
         advanced_scoring: advancedScoring,
         order_type: orderType,
-        notes: coachNotes, // Insert coach's notes
+        notes: coachNotes,
       });
-  
+
     if (scheduleError) {
-      console.log("Error scheduling workout:", scheduleError);
       alert("There was an error scheduling the workout. Please try again.");
     } else {
-      console.log("Workout scheduled successfully");
       router.push(`/plan/daily?date=${workoutDate}`);
     }
   };
-  
+
+  if (authLoading || isLoadingTracks) {
+    return <p>Loading...</p>;
+  }
 
   return (
     <div className="p-6 bg-gray-50 rounded-md shadow-md max-w-3xl mx-auto text-gray-800 antialiased">
       <h2 className="text-2xl font-semibold mb-4 text-gray-600">Build Your Workout</h2>
-
-      {/* Workout Name Input */}
-      <div className="mb-4">
-        <label htmlFor="workout-name" className="block text-sm font-semibold mb-1 text-gray-500">
-          Workout Name
-          {workoutName && <span className="text-green-500 ml-2">&#x2713;</span>}
-        </label>
-        <input
-          type="text"
-          id="workout-name"
-          value={workoutName}
-          onChange={(e) => setWorkoutName(e.target.value)}
-          placeholder="Enter the workout name"
-          className={`w-full p-2 border ${showTooltip && !workoutName ? 'border-red-500' : 'border-gray-300'} bg-gray-100 text-sm text-gray-800 rounded focus:outline-none focus:ring-1 focus:ring-gray-300`}
-        />
-        {showTooltip && !workoutName && (
-          <div className="text-xs text-yellow-800 mt-1">
-            <span>&#128073;</span> Workout name is required.
-          </div>
-        )}
-      </div>
-
       {/* Date Input */}
       <div className="mb-4">
         <label htmlFor="workout-date" className="block text-sm font-semibold mb-1 text-gray-500">
@@ -190,7 +169,23 @@ const WorkoutBuilder: React.FC<{ workoutText: string; setWorkoutText: (text: str
         />
       </div>
       
-      {/* Track Selection Dropdown with Tooltip */}
+      {/* Workout Name Input */}
+      <div className="mb-4">
+        <label htmlFor="workout-name" className="block text-sm font-semibold mb-1 text-gray-500">
+          Workout Name
+          {workoutName && <span className="text-green-500 ml-2">&#x2713;</span>}
+        </label>
+        <input
+          type="text"
+          id="workout-name"
+          value={workoutName}
+          onChange={(e) => setWorkoutName(e.target.value)}
+          placeholder="Enter the workout name"
+          className="w-full p-2 border border-gray-300 bg-gray-100 rounded"
+        />
+      </div>
+
+      {/* Track Selection Dropdown */}
       <div className="mb-4 relative">
         <label htmlFor="track-select" className="block text-sm font-semibold mb-1 text-gray-500">
           Select Track
@@ -206,11 +201,30 @@ const WorkoutBuilder: React.FC<{ workoutText: string; setWorkoutText: (text: str
           {tracks.map((track) => (
             <option key={track.id} value={track.id}>{track.name}</option>
           ))}
-        </select>
+       
+       </select>
         {showTooltip && !selectedTrackId && (
           <div className="absolute text-xs bg-yellow-100 border border-yellow-300 text-yellow-800 p-1 rounded -top-7 left-0">
             <span>&#128073;</span> Please select a track.
           </div>
+        )}
+      </div>
+      
+      {/* Warm Up Toggle and Input */}
+      <div className="mb-4">
+        <label htmlFor="warm-up-toggle" className="block text-sm font-semibold mb-1 text-gray-500">
+          <button onClick={() => setShowWarmUp(!showWarmUp)} className="text-blue-500">
+            {showWarmUp ? "Hide Warm Up" : "Add Warm Up"}
+          </button>
+        </label>
+        {showWarmUp && (
+          <textarea
+            id="warm-up"
+            value={warmUp}
+            onChange={(e) => setWarmUp(e.target.value)}
+            placeholder="Enter your warm-up details here..."
+            className="w-full p-2 border border-gray-300 bg-gray-100 rounded"
+          />
         )}
       </div>
 
@@ -230,6 +244,24 @@ const WorkoutBuilder: React.FC<{ workoutText: string; setWorkoutText: (text: str
           placeholder="Enter your workout details here..."
           className={`w-full p-2 border ${showTooltip && !workoutText ? 'border-red-500' : 'border-gray-300'} bg-gray-100 text-sm text-gray-800 rounded focus:outline-none focus:ring-1 focus:ring-gray-300 h-28`}
         />
+      </div>
+
+      {/* Cool Down Toggle and Input */}
+      <div className="mb-4">
+        <label htmlFor="cool-down-toggle" className="block text-sm font-semibold mb-1 text-gray-500">
+          <button onClick={() => setShowCoolDown(!showCoolDown)} className="text-blue-500">
+            {showCoolDown ? "Hide Cool Down" : "Add Cool Down"}
+          </button>
+        </label>
+        {showCoolDown && (
+          <textarea
+            id="cool-down"
+            value={coolDown}
+            onChange={(e) => setCoolDown(e.target.value)}
+            placeholder="Enter your cool-down details here..."
+            className="w-full p-2 border border-gray-300 bg-gray-100 rounded"
+          />
+        )}
       </div>
 
       {/* Scoring Options */}

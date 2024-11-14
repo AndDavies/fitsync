@@ -1,5 +1,3 @@
-// context/AuthContext.tsx
-
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/utils/supabase/client';
 import { Session } from '@supabase/supabase-js';
@@ -13,6 +11,7 @@ type AuthContextType = {
   session: Session | null;
   userData: UserData | null;
   isLoading: boolean;
+  fetchUserData: () => Promise<void>; // Lazy load user data function
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,58 +21,101 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [userData, setUserData] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    const fetchUserProfile = async (userId: string) => {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('display_name, current_gym_id')
-        .eq('user_id', userId)
-        .single();
+  /**
+   * Fetch user profile data based on the session's user ID.
+   */
+  const fetchUserData = async () => {
+    if (session && !userData) {
+      console.log("Attempting to fetch user data with session.user.id:", session.user.id);
+      try {
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .select('display_name, current_gym_id')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
 
-      if (error) {
-        console.error("Error fetching user profile:", error.message);
-      } else if (data) {
+        console.log("Fetched user profile data:", data);
+
+        if (error) {
+          console.error("Error fetching user profile data:", error.message);
+          throw error;
+        }
+
         setUserData({
-          display_name: data.display_name,
-          current_gym_id: data.current_gym_id,
+          display_name: data?.display_name ?? null,
+          current_gym_id: data?.current_gym_id ?? null,
         });
+      } catch (error) {
+        if (error instanceof Error) {
+          console.error("Failed to fetch user data:", error.message);
+        } else {
+          console.error("An unknown error occurred while fetching user data.");
+        }
+      } finally {
+        // Ensure isLoading is set to false once data is fetched
+        setIsLoading(false);
       }
-    };
+    }
+  };
 
+  /**
+   * Set up session data and authentication listener.
+   */
+  useEffect(() => {
     const setUpSession = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) {
-        console.error("Error getting session:", error.message);
-      } else {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+
         setSession(data.session);
+
         if (data.session) {
-          await fetchUserProfile(data.session.user.id);
+          console.log("Session exists in setUpSession, calling fetchUserData()");
+          await fetchUserData();
+        } else {
+          console.warn("Session is null in setUpSession.");
+          setIsLoading(false); // No session, set isLoading to false
+        }
+      } catch (error) {
+        if (error instanceof Error) {
+          console.error("Error getting session:", error.message);
+        } else {
+          console.error("An unknown error occurred while getting session.");
         }
       }
-      setIsLoading(false);
     };
 
     setUpSession();
 
-    // Set up an auth state change listener
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      console.log("Auth state changed. New session:", session);
       setSession(session);
+      setUserData(null); // Reset user data on session change
       setIsLoading(true);
+
       if (session) {
-        fetchUserProfile(session.user.id).then(() => setIsLoading(false));
+        await fetchUserData();
       } else {
-        setUserData(null);
-        setIsLoading(false);
+        setIsLoading(false); // Ensure isLoading is reset on logout
       }
     });
 
     return () => {
-      authListener.subscription.unsubscribe();
+      authListener?.subscription.unsubscribe();
     };
   }, []);
 
+  /**
+   * Fetch user data when session is updated.
+   */
+  useEffect(() => {
+    if (session && !userData) {
+      fetchUserData();
+    }
+  }, [session, userData]);
+
   return (
-    <AuthContext.Provider value={{ session, userData, isLoading }}>
+    <AuthContext.Provider value={{ session, userData, isLoading, fetchUserData }}>
       {children}
     </AuthContext.Provider>
   );
