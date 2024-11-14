@@ -2,14 +2,22 @@
 
 import React, { useState, useEffect } from "react";
 import { supabase } from '@/utils/supabase/client';
-import "../styles/CalStyles.css";
+import "../styles/CalendarStyles.css";
 import { format, startOfWeek, addDays, isToday, parseISO } from "date-fns";
 
 type Workout = {
   id: string;
   trackName: string;
   workoutDetails: string;
+  warmUp?: string;
+  coolDown?: string;
   date: string;
+};
+
+type WorkoutLine = {
+  id: string;
+  content: string;
+  type: 'focus' | 'sets' | 'intensity' | 'details';
 };
 
 type WeeklyWorkouts = {
@@ -18,6 +26,19 @@ type WeeklyWorkouts = {
 
 type WorkoutCalendarProps = {
   defaultDate?: string;
+};
+
+// Parsing workout details similar to WorkoutBuilder
+const parseWorkoutText = (workoutText: string): WorkoutLine[] => {
+  const lines = workoutText.split('\n').filter((line) => line.trim());
+  return lines.map((line, index) => ({
+    id: `item-${index}`,
+    content: line.trim(),
+    type: index === 0 ? 'focus' 
+          : /^\d+(-\d+)+$/.test(line.trim()) ? 'sets' 
+          : /RPE\s*\d+(-\d+)?/.test(line) ? 'intensity' 
+          : 'details',
+  }));
 };
 
 const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ defaultDate }) => {
@@ -34,7 +55,6 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ defaultDate }) => {
 
   useEffect(() => {
     const initializeWeekDates = () => {
-      // Use defaultDate if provided, otherwise use the current date
       const initialDate = defaultDate ? parseISO(defaultDate) : new Date();
       const currentWeekStart = startOfWeek(initialDate, { weekStartsOn: 0 });
       const dates = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
@@ -45,10 +65,9 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ defaultDate }) => {
     const fetchWorkoutsWithTracks = async () => {
       const { startDate, endDate } = initializeWeekDates();
 
-      // Fetch workouts for the week with only track_id
       const { data: workoutData, error: workoutError } = await supabase
         .from("scheduled_workouts")
-        .select("id, date, workout_details, track_id")
+        .select("id, date, workout_details, warm_up, cool_down, track_id")
         .gte("date", startDate)
         .lte("date", endDate)
         .order("date", { ascending: true });
@@ -58,10 +77,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ defaultDate }) => {
         return;
       }
 
-      // Collect all unique track_ids from the workouts
       const trackIds = Array.from(new Set(workoutData?.map((workout) => workout.track_id)));
-
-      // Fetch track names for the unique track_ids
       const { data: trackData, error: trackError } = await supabase
         .from("tracks")
         .select("id, name")
@@ -72,10 +88,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ defaultDate }) => {
         return;
       }
 
-      // Create a map of track_id to track name for easy lookup
       const trackMap = new Map(trackData?.map((track) => [track.id, track.name]));
-
-      // Group workouts by day and attach the track name
       const groupedWorkouts: WeeklyWorkouts = {
         sunday: [],
         monday: [],
@@ -93,7 +106,9 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ defaultDate }) => {
         groupedWorkouts[dayOfWeek].push({
           id: workout.id,
           trackName: trackMap.get(workout.track_id) || "No Track Name",
-          workoutDetails: workout.workout_details,
+          workoutDetails: parseWorkoutText(workout.workout_details).map(line => line.content).join('\n'),
+          warmUp: workout.warm_up ? parseWorkoutText(workout.warm_up).map(line => line.content).join('\n') : undefined,
+          coolDown: workout.cool_down ? parseWorkoutText(workout.cool_down).map(line => line.content).join('\n') : undefined,
           date: workout.date,
         });
       });
@@ -104,21 +119,43 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ defaultDate }) => {
     fetchWorkoutsWithTracks();
   }, [defaultDate]);
 
-  if (weekDates.length === 0) return null; // Ensure weekDates is populated before rendering
+  if (weekDates.length === 0) return null;
 
   return (
     <div className="weekly-calendar">
       {Object.keys(workouts).map((day, index) => (
-        <div key={day} className={`day-column ${isToday(weekDates[index]) ? "highlight-today" : ""}`}>
-          <div className="day-content-wrapper">
-            <h3>
-              {format(weekDates[index], "EEE")} <br />
+        <div
+          key={day}
+          className={`day-column ${isToday(weekDates[index]) ? "highlight-today" : ""}`}
+          style={isToday(weekDates[index]) ? { backgroundColor: "#f7cbe6" } : {}}
+        >
+          <div className="date-container">
+            <div className="day-header">
+              {format(weekDates[index], "EEE")}
+            </div>
+            <div className="day-date">
               {format(weekDates[index], "dd MMM")}
-            </h3>
+            </div>
+          </div>
+          <div className="day-content-wrapper">
             {workouts[day as keyof WeeklyWorkouts].map((workout) => (
               <div key={workout.id} className="workout-item">
-                <strong>{workout.trackName}</strong>
-                <p>{workout.workoutDetails}</p>
+                {workout.warmUp && (
+                  <div className="section">
+                    <div className="section-header">Warm Up</div>
+                    <pre className="section-content">{workout.warmUp}</pre>
+                  </div>
+                )}
+                <div className="section">
+                  <div className="section-header">{workout.trackName || "Workout Name"}</div>
+                  <pre className="section-content">{workout.workoutDetails}</pre>
+                </div>
+                {workout.coolDown && (
+                  <div className="section">
+                    <div className="section-header">Cool Down</div>
+                    <pre className="section-content">{workout.coolDown}</pre>
+                  </div>
+                )}
               </div>
             ))}
           </div>

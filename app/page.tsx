@@ -7,88 +7,103 @@ export default function LandingPage() {
   const router = useRouter();
 
   return (
-    <div className="relative min-h-screen bg-white text-gray-800">
+    <div className="relative min-h-screen bg-gray-100 text-gray-900">
       {/* Navigation Bar */}
-      <nav className="flex justify-between items-center px-6 py-4 shadow-md">
+      <nav className="flex justify-between items-center px-6 py-4 bg-gray-100 shadow-md">
         <div className="flex items-center space-x-6">
-          <h1 className="text-lg font-bold">FitSync</h1>
-          <a href="#" className="hover:underline">
+          <Image src="/images/Ascent_Logo_trans.png" alt="ASCENT Logo" width={100} height={50} />
+          <a href="#" className="text-gray-800 hover:text-pink-500 font-bold">
             Home
           </a>
-          <a href="#" className="hover:underline">
+          <a href="#" className="text-gray-800 hover:text-pink-500 font-bold">
             Services
           </a>
-          <a href="#" className="hover:underline">
+          <a href="#" className="text-gray-800 hover:text-pink-500 font-bold">
             About Us
           </a>
-          <a href="#" className="hover:underline">
+          <a href="#" className="text-gray-800 hover:text-pink-500 font-bold">
             Contact
           </a>
         </div>
         <div className="flex items-center space-x-4">
           <button
             onClick={() => router.push("/signup")}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md"
+            className="px-4 py-2 bg-pink-500 text-white font-bold rounded-md hover:bg-pink-600"
           >
             Join
           </button>
           <button
             onClick={() => router.push("/login")}
-            className="px-4 py-2 text-gray-700 border rounded-md"
+            className="px-4 py-2 text-gray-800 border border-pink-500 font-bold rounded-md hover:bg-pink-500 hover:text-white"
           >
             Login
           </button>
         </div>
       </nav>
 
-      {/* Image Row Under Navbar */}
-      <div className="flex justify-center space-x-4 mt-8 px-8">
+      {/* Hero Section with Image on the Left and Content on the Right */}
+      <div className="flex flex-col lg:flex-row items-center lg:items-start px-8 py-16 lg:space-x-8">
+        {/* Hero Image */}
+        <div className="lg:w-1/2 flex justify-center">
+          <Image
+            src="/images/landing_hero_image.jpg"
+            alt="Hero Workout Image"
+            width={700}
+            height={300}
+            className="rounded-md shadow-lg"
+          />
+        </div>
+
+        {/* Content Column */}
+        <div className="lg:w-1/2 text-left mt-8 lg:mt-0">
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">
+          Where Elite Fitness Meets Personalization
+          </h2>
+            <p className="text-lg text-gray-700 mb-6 max-w-lg">ASCENT brings you an unparalleled package for developing and programming workout plans.</p> 
+            <p className="text-lg text-gray-700 mb-6 max-w-lg">Leveraging CrossFit, StrongFit, and Functional Bodybuilding methodologies, our bespoke package connects you to elite training programs and coaches.</p>
+            <p className="text-lg text-gray-700 mb-6 max-w-lg">With a unique AI coach to guide your progress and backlinks to your gym and trainers, ASCENT helps you elevate your health and fitness to levels you've never imagined.</p>
+
+          <div className="flex items-center space-x-4">
+          <button
+            onClick={() => router.push("/signup")}
+            className="px-4 py-2 bg-pink-500 text-white font-bold rounded-md hover:bg-pink-600"
+          >
+            Join
+          </button>
+          <button
+            onClick={() => router.push("/login")}
+            className="px-4 py-2 text-gray-800 border border-pink-500 font-bold rounded-md hover:bg-pink-500 hover:text-white"
+          >
+            Login
+          </button>
+        </div>
+        </div>
+      </div>
+
+      {/* Image Gallery */}
+      {/* <div className="flex justify-center space-x-4 mt-8 px-8">
         <Image
           src="/images/landing_1.jpg"
           alt="Workout Example 1"
-          width={300}
-          height={300}
-          className="rounded-md"
+          width={250}
+          height={250}
+          className="rounded-md shadow-md"
         />
         <Image
           src="/images/landing_2.jpg"
           alt="Workout Example 2"
-          width={300}
-          height={300}
-          className="rounded-md"
+          width={250}
+          height={250}
+          className="rounded-md shadow-md"
         />
         <Image
           src="/images/landing_3.jpg"
           alt="Workout Example 3"
-          width={300}
-          height={300}
-          className="rounded-md"
+          width={250}
+          height={250}
+          className="rounded-md shadow-md"
         />
-      </div>
-
-      {/* Main Content */}
-      <div className="flex flex-col items-center text-center px-8 lg:px-24 py-16">
-        <h2 className="text-4xl font-bold mb-4">
-          PERSONALIZED WORKOUT PLANS,
-          <br />
-          NO COACH NEEDED
-        </h2>
-        <p className="text-lg text-gray-600 mb-6 max-w-2xl">
-          Get gym-quality workout programming tailored to you in seconds.
-          Answer a few questions, set your goals, and watch FitSync craft
-          custom CrossFit, strength, or hypertrophy workouts—designed for
-          home, gym, or on the go. Start leveling up your fitness today.
-        </p>
-        <button
-          onClick={() => router.push("/signup")}
-          className="px-6 py-3 bg-orange-500 text-white text-lg rounded-md hover:bg-orange-600"
-        >
-          Create your workout plan now
-        </button>
-        <div className="mt-4 text-sm text-gray-500">
-          Rated 4.8 out of 5 by our users
-        </div>
-      </div>
+      </div> */}
     </div>
   );
 }

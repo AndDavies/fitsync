@@ -1,6 +1,5 @@
 // app/workouts/page.tsx
 "use client";
-// import Image from "next/image";
 import React, { useState } from 'react';
 import WorkoutBuilder from '../components/WorkoutBuilder';
 import WorkoutIdeas from "../components/WorkoutIdeas";
@@ -22,14 +21,14 @@ export default function Dashboard() {
         <LeftNav />
 
         {/* Main Dashboard Container */}
-        <main className="flex flex-grow p-6 space-x-4">
+        <main className="flex flex-grow space-x-4">
           {/* Workout Builder */}
-          <div className="flex-none w-2/3">
+          <div className="flex-none w-2/3 p-4">
             <WorkoutBuilder workoutText={workoutBuilderText} setWorkoutText={setWorkoutBuilderText} />
           </div>
 
           {/* Accordion Container */}
-          <div className="flex-grow space-y-4">
+          <div className="flex-grow p-4">
             <Accordion title="Metcon">
               <WorkoutIdeas setWorkoutBuilderText={setWorkoutBuilderText} category="Metcon" />
             </Accordion>

@@ -1,112 +1,66 @@
 /* CalendarStyles.css */
-.rbc-calendar {
-  font-family: 'Arial Black', sans-serif; /* Bold, modern font */
-  border-radius: 12px; /* Rounded corners for modern look */
-  background-color: #ffffff; /* Clean, bright background */
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Strong shadow for depth */
-}
 
-.rbc-toolbar {
+.weekly-calendar {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  background-color: #333333; /* Dark background for contrast */
-  padding: 15px; /* Balanced padding */
-  color: #ffffff; /* White text for contrast */
-  font-weight: bold; /* Bold text for clarity */
 }
 
-.rbc-toolbar .rbc-btn-group {
-  background-color: transparent; /* Transparent button group */
+.day-column {
+  flex: 1;
+  padding: 10px;
+  margin: 5px;
+  border-radius: 8px;
+  background-color: #ffffff;
 }
 
-.rbc-btn {
-  background-color: #000000; /* Bold black button */
-  color: #ffffff; /* White text */
-  font-size: 1rem; /* Larger font for emphasis */
-  font-weight: bold;
-  border: none; /* No border for a clean look */
-  padding: 10px 20px; /* Spacious padding for prominence */
-  border-radius: 8px; /* Rounded for a professional touch */
-  cursor: pointer;
-  transition: background-color 0.3s ease;
+.highlight-today {
+  background-color: #f7cbe6; /* Light pink highlight for current day */
 }
 
-.rbc-btn:hover {
-  background-color: #555555; /* Darker grey on hover */
-}
-
-.rbc-month-view, .rbc-day-view {
-  border: none; /* Remove borders for cleaner layout */
-  background-color: #f5f5f5; /* Light grey background for subtle contrast */
-}
-
-/* Adjust header styling */
-.rbc-header {
-  font-size: 1rem; /* Adjust font size for better spacing */
+/* New date container styles */
+.date-container {
+  border-bottom: 2px solid #2e2e2e; /* Bottom border for date section */
+  padding-bottom: 5px;
+  margin-bottom: 10px;
   text-align: center;
-  font-weight: 600; /* Slightly bold for readability */
-  padding: 8px 0; /* Set padding to create a tighter look */
-  background-color: #f5f5f5; /* Light grey background for minimal contrast */
-  color: #333333; /* Darker text color */
-  height: 50px; /* Fixed height for consistent header row */
-  display: flex;
-  align-items: center;
-  justify-content: center; /* Centers text vertically and horizontally */
-  border-bottom: 1px solid #d3d3d3; /* Subtle line below header */
-}
-.rbc-today {
-  background-color: #ffe4e6; /* Light pink for the current day */
 }
 
-/* Current day styling */
-.rbc-today .rbc-header {
-  background-color: #ffe4e6; /* Light pink for the current day */
-}
-
-.rbc-day-bg {
-  background-color: transparent; /* Clear background */
-  border: none; /* Remove borders for minimalism */
-}
-
-/* Adjusting row and cell height for uniformity */
-.rbc-row {
-  min-height: 80px; /* Set minimum height for rows to align */
-}
-
-.rbc-day-slot {
-  border-right: none; /* Remove borders between days for cleaner look */
-}
-
-/* Event styling for clarity and spacing */
-.rbc-event {
-  background-color: #e0e0e0; /* Light grey background for events */
-  color: #333333; /* Dark text for readability */
+.day-header {
   font-weight: bold;
-  border-radius: 6px; /* Rounded for soft look */
-  padding: 8px; /* Moderate padding for comfort */
-  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.15); /* Subtle shadow for depth */
-  margin: 5px 0; /* Space between events */
-}
-
-/* Hide the time column for all-day events only */
-.rbc-time-column, .rbc-time-gutter {
-  display: none; /* Ensure time column is hidden */
-}
-
-/* Day view adjustments */
-.rbc-day-view .rbc-header {
-  font-size: 1.5rem; /* Larger font in day view */
-  padding: 20px; /* More padding for emphasis */
-}
-
-.rbc-day-view .rbc-header.rbc-today {
-  background-color: #ffccd5; /* Pink highlight for current day header */
+  font-size: 0.85rem; /* Slightly smaller font */
   color: #333333;
 }
 
-/* Simplify time indicator */
-.rbc-current-time-indicator {
-  background-color: #ffccd5; /* Light pink for current time indicator */
-  height: 2px; /* Thin line for subtle effect */
+.day-date {
+  font-size: 0.85rem;
+  color: #333333;
+}
+
+.workout-item {
+  margin-top: 10px;
+}
+
+.section {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-top: 10px;
+  background-color: #f9f9f9;
+}
+
+.section-header {
+  background-color: #a160e5;
+  color: white;
+  font-weight: bold;
+  padding: 6px; /* Slightly smaller padding */
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  text-align: center;
+  font-size: 0.8rem; /* Smaller font size for the header */
+}
+
+.section-content {
+  padding: 8px; /* Reduced padding */
+  text-align: left;
+  font-size: 0.75rem; /* Slightly smaller font size */
+  color: #333333;
 }
