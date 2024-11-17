@@ -3,6 +3,7 @@
 .weekly-calendar {
   display: flex;
   justify-content: space-between;
+  flex-direction: column;
 }
 
 .day-column {
