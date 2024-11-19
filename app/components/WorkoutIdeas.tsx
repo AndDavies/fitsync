@@ -1,11 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/utils/supabase/client'; // Importing from the centralized client
 import { MdOutlineContentCopy } from 'react-icons/md';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL as string,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
-);
 
 type WorkoutIdeasProps = {
   setWorkoutBuilderText: (text: string) => void;

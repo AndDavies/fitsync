@@ -103,10 +103,10 @@ const LeftNav: React.FC = () => {
           {isExpanded && <span className="text-sm ml-2 text-left">Notifications</span>}
         </button>
       </Link>
-      <Link href="/settings" prefetch>
+      <Link href="/users" prefetch>
         <button className={`flex items-center w-full hover:text-gray-200 transition ${isExpanded ? 'pl-4' : 'justify-center'}`}>
           <SettingsGearIcon />
-          {isExpanded && <span className="text-sm ml-2 text-left">Settings</span>}
+          {isExpanded && <span className="text-sm ml-2 text-left">User Management</span>}
         </button>
       </Link>
       {/* TallyScore component with placeholder data */}
