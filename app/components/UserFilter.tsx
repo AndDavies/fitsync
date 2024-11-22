@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/utils/supabase/client";
 import { useAuth } from "../context/AuthContext";
 import InviteModal from "../components/InviteModal";
+import EditUserModal from "../components/EditUserModal";
 
 // Helper function for UUID validation
 const isValidUUID = (id: string) =>
@@ -13,10 +14,15 @@ const isValidUUID = (id: string) =>
 type User = {
   user_id: string;
   display_name: string;
-  email: string;
-  join_date: string | null;
-  subscription_plan: string | null;
+  bio: string | null;
   role: string;
+  email: string;
+  phone_number: string | null;
+  emergency_contact: string | null;
+  subscription_plan: string | null;
+  goals: string | null;
+  notifications_enabled: boolean;
+  join_date: string | null;
   activity_level: string | null;
   last_login: string | null;
 };
@@ -27,6 +33,8 @@ const UserFilter: React.FC = () => {
   const [search, setSearch] = useState("");
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
@@ -49,7 +57,7 @@ const UserFilter: React.FC = () => {
         const { data, error } = await supabase
           .from("user_profiles")
           .select(
-            "user_id, display_name, email, join_date, subscription_plan, role, activity_level, last_login"
+            "user_id, display_name, bio, role, email, phone_number, emergency_contact, subscription_plan, goals, notifications_enabled, join_date, activity_level, last_login"
           )
           .eq("current_gym_id", currentGymId);
 
@@ -67,6 +75,11 @@ const UserFilter: React.FC = () => {
 
     fetchUsers();
   }, [userData, authLoading]);
+
+  const handleEditClick = (user: User) => {
+    setSelectedUser(user);
+    setIsEditModalOpen(true);
+  };
 
   const filteredUsers = users.filter(
     (user) =>
@@ -99,6 +112,33 @@ const UserFilter: React.FC = () => {
         <InviteModal onClose={() => setIsInviteModalOpen(false)} />
       )}
 
+      {/* Edit Modal */}
+      {isEditModalOpen && selectedUser && (
+        <EditUserModal
+          user={selectedUser}
+          onClose={() => setIsEditModalOpen(false)}
+          onUpdate={() => {
+            setIsEditModalOpen(false);
+            setSelectedUser(null);
+            // Refresh users after updating
+            const fetchUpdatedUsers = async () => {
+              const currentGymId = userData?.current_gym_id;
+
+              if (currentGymId && isValidUUID(currentGymId)) {
+                const { data, error } = await supabase
+                  .from("user_profiles")
+                  .select(
+                    "user_id, display_name, bio, role, email, phone_number, emergency_contact, subscription_plan, goals, notifications_enabled, join_date, activity_level, last_login"
+                  )
+                  .eq("current_gym_id", currentGymId);
+                if (!error) setUsers(data || []);
+              }
+            };
+            fetchUpdatedUsers();
+          }}
+        />
+      )}
+
       <input
         type="text"
         placeholder="Search users..."
@@ -119,14 +159,14 @@ const UserFilter: React.FC = () => {
               <th className="px-4 py-3 text-left font-medium">Role</th>
               <th className="px-4 py-3 text-left font-medium">Last Login</th>
               <th className="px-4 py-3 text-left font-medium">Activity Level</th>
+              <th className="px-4 py-3 text-left font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredUsers.map((user, index) => (
               <tr
                 key={user.user_id}
-                className="border-t hover:bg-gray-100 cursor-pointer transition duration-150"
-                onClick={() => router.push(`/users/${user.user_id}`)}
+                className="border-t hover:bg-gray-100 transition duration-150"
               >
                 <td className="px-4 py-3">{index + 1}</td>
                 <td className="px-4 py-3">{user.display_name}</td>
@@ -136,6 +176,14 @@ const UserFilter: React.FC = () => {
                 <td className="px-4 py-3">{user.role}</td>
                 <td className="px-4 py-3">{user.last_login || "N/A"}</td>
                 <td className="px-4 py-3">{user.activity_level || "Inactive"}</td>
+                <td className="px-4 py-3">
+                  <button
+                    onClick={() => handleEditClick(user)}
+                    className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+                  >
+                    Edit
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

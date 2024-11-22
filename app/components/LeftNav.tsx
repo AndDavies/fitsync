@@ -91,10 +91,10 @@ const LeftNav: React.FC = () => {
           {isExpanded && <span className="text-sm ml-2 text-left">Programming Calendar</span>}
         </button>
       </Link>
-      <Link href="/achievements" prefetch>
+      <Link href="/classes" prefetch>
         <button className={`flex items-center w-full hover:text-gray-200 transition ${isExpanded ? 'pl-4' : 'justify-center'}`}>
           <GaugeIcon />
-          {isExpanded && <span className="text-sm ml-2 text-left">Achievements</span>}
+          {isExpanded && <span className="text-sm ml-2 text-left">Class Management</span>}
         </button>
       </Link>
       <Link href="/notifications" prefetch>
