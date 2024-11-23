@@ -57,26 +57,32 @@ export default function LandingPage() {
         {/* Content Column */}
         <div className="lg:w-1/2 text-left mt-8 lg:mt-0">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
-          Where Elite Fitness Meets Personalization
+            Where Elite Fitness Meets Personalization
           </h2>
-            <p className="text-lg text-gray-700 mb-6 max-w-lg">ASCENT brings you an unparalleled package for developing and programming workout plans.</p> 
-            <p className="text-lg text-gray-700 mb-6 max-w-lg">Leveraging CrossFit, StrongFit, and Functional Bodybuilding methodologies, our bespoke package connects you to elite training programs and coaches.</p>
-            <p className="text-lg text-gray-700 mb-6 max-w-lg">With a unique AI coach to guide your progress and backlinks to your gym and trainers, ASCENT helps you elevate your health and fitness to levels you've never imagined.</p>
+          <p className="text-lg text-gray-700 mb-6 max-w-lg">
+            ASCENT brings you an unparalleled package for developing and programming workout plans.
+          </p>
+          <p className="text-lg text-gray-700 mb-6 max-w-lg">
+            Leveraging CrossFit, StrongFit, and Functional Bodybuilding methodologies, our bespoke package connects you to elite training programs and coaches.
+          </p>
+          <p className="text-lg text-gray-700 mb-6 max-w-lg">
+            With a unique AI coach to guide your progress and backlinks to your gym and trainers, ASCENT helps you elevate your health and fitness to levels you&apos;ve never imagined.
+          </p>
 
           <div className="flex items-center space-x-4">
-          <button
-            onClick={() => router.push("/signup")}
-            className="px-4 py-2 bg-pink-500 text-white font-bold rounded-md hover:bg-pink-600"
-          >
-            Join
-          </button>
-          <button
-            onClick={() => router.push("/login")}
-            className="px-4 py-2 text-gray-800 border border-pink-500 font-bold rounded-md hover:bg-pink-500 hover:text-white"
-          >
-            Login
-          </button>
-        </div>
+            <button
+              onClick={() => router.push("/signup")}
+              className="px-4 py-2 bg-pink-500 text-white font-bold rounded-md hover:bg-pink-600"
+            >
+              Join
+            </button>
+            <button
+              onClick={() => router.push("/login")}
+              className="px-4 py-2 text-gray-800 border border-pink-500 font-bold rounded-md hover:bg-pink-500 hover:text-white"
+            >
+              Login
+            </button>
+          </div>
         </div>
       </div>
 
