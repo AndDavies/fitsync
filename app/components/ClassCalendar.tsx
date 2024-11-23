@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/utils/supabase/client";
 import "../styles/CalendarStyles.css";
 import CreateClassModal from "./CreateClassModal";
@@ -67,12 +67,11 @@ const ClassCalendar: React.FC<ClassCalendarProps> = ({ currentGymId }) => {
     return isValid(date) ? format(date, "h:mm a") : "Invalid time";
   };
 
-  const fetchSchedules = async () => {
+  const fetchSchedules = useCallback(async () => {
     const startDate = format(startOfWeek(weekStartDate, { weekStartsOn: 0 }), "yyyy-MM-dd");
     const endDate = format(addDays(new Date(startDate), 6), "yyyy-MM-dd");
   
     try {
-      // Fetch schedules with reference to class_type_id
       const { data, error } = await supabase
         .from("class_schedules")
         .select("id, class_name, start_time, end_time, max_participants, class_type_id")
@@ -85,7 +84,6 @@ const ClassCalendar: React.FC<ClassCalendarProps> = ({ currentGymId }) => {
         return;
       }
   
-      // Fetch class types for color mapping
       const { data: classTypesData, error: classTypesError } = await supabase
         .from("class_types")
         .select("id, color")
@@ -96,13 +94,11 @@ const ClassCalendar: React.FC<ClassCalendarProps> = ({ currentGymId }) => {
         return;
       }
   
-      // Create a map of classTypeId to color for easy lookup
       const classTypeColorMap: { [key: string]: string } = {};
       classTypesData?.forEach((classType) => {
         classTypeColorMap[classType.id] = classType.color;
       });
   
-      // Now enhance each schedule with the color from class types
       const groupedSchedules: WeeklySchedule = {
         sunday: [],
         monday: [],
@@ -117,10 +113,10 @@ const ClassCalendar: React.FC<ClassCalendarProps> = ({ currentGymId }) => {
         const startTime = schedule.start_time ? parseISO(schedule.start_time) : null;
         if (startTime && isValid(startTime)) {
           const dayOfWeek = format(startTime, "EEEE").toLowerCase() as keyof WeeklySchedule;
-          const color = classTypeColorMap[schedule.class_type_id] || "#000000"; // Default color if not found
+          const color = classTypeColorMap[schedule.class_type_id] || "#000000";
           groupedSchedules[dayOfWeek].push({
             ...schedule,
-            color, // Add the color to the schedule object
+            color,
           });
         } else {
           console.warn("Skipping invalid schedule:", schedule);
@@ -131,9 +127,9 @@ const ClassCalendar: React.FC<ClassCalendarProps> = ({ currentGymId }) => {
     } catch (error) {
       console.error("Unexpected error:", error);
     }
-  };
+  }, [weekStartDate, currentGymId]);
 
-  const fetchClassTypes = async () => {
+  const fetchClassTypes = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("class_types")
@@ -149,7 +145,7 @@ const ClassCalendar: React.FC<ClassCalendarProps> = ({ currentGymId }) => {
     } catch (error) {
       console.error("Unexpected error:", error);
     }
-  };
+  }, [currentGymId]);
 
   useEffect(() => {
     const initializeWeekDates = () => {
@@ -172,7 +168,7 @@ const ClassCalendar: React.FC<ClassCalendarProps> = ({ currentGymId }) => {
 
   const handleSelectClassType = (classType: ClassType) => {
     if (selectedClassType?.id === classType.id) {
-      setSelectedClassType(null); // Deselect if clicking the same class type
+      setSelectedClassType(null);
     } else {
       setSelectedClassType(classType);
     }
@@ -182,7 +178,6 @@ const ClassCalendar: React.FC<ClassCalendarProps> = ({ currentGymId }) => {
     <div className="class-calendar-container p-6">
       {/* Widgets */}
       <div className="widget-container flex justify-between items-start py-6 space-x-6">
-        
         {/* Week Selection Widget */}
         <div className="week-selection-widget bg-gray-900 text-white p-4 rounded-3xl shadow-md flex flex-col items-center justify-center w-1/4 h-32">
           <div className="flex items-center justify-between w-full px-4">
@@ -280,7 +275,6 @@ const ClassCalendar: React.FC<ClassCalendarProps> = ({ currentGymId }) => {
             </button>
           </div>
         </div>
-
       </div>
 
       {/* Calendar Grid */}

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { supabase } from '@/utils/supabase/client';
 import { Session } from '@supabase/supabase-js';
 
@@ -24,7 +24,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   /**
    * Fetch user profile data based on the session's user ID.
    */
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
     if (session && !userData) {
       console.log("Attempting to fetch user data with session.user.id:", session.user.id);
       try {
@@ -56,7 +56,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setIsLoading(false);
       }
     }
-  };
+  }, [session, userData]);
 
   /**
    * Set up session data and authentication listener.
@@ -103,7 +103,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => {
       authListener?.subscription.unsubscribe();
     };
-  }, []);
+  }, [fetchUserData]);
 
   /**
    * Fetch user data when session is updated.
@@ -112,7 +112,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (session && !userData) {
       fetchUserData();
     }
-  }, [session, userData]);
+  }, [session, userData, fetchUserData]);
 
   return (
     <AuthContext.Provider value={{ session, userData, isLoading, fetchUserData }}>
