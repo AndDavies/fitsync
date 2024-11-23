@@ -154,6 +154,7 @@ const WorkoutBuilder: React.FC<{ workoutText: string; setWorkoutText: (text: str
   return (
     <div className="p-6 bg-gray-50 rounded-md shadow-md max-w-3xl mx-auto text-gray-800 antialiased">
       <h2 className="text-2xl font-semibold mb-4 text-gray-600">Build Your Workout</h2>
+      
       {/* Date Input */}
       <div className="mb-4">
         <label htmlFor="workout-date" className="block text-sm font-semibold mb-1 text-gray-500">
@@ -168,7 +169,7 @@ const WorkoutBuilder: React.FC<{ workoutText: string; setWorkoutText: (text: str
           className={`w-1/2 p-2 border ${showTooltip && !workoutDate ? 'border-red-500' : 'border-gray-300'} bg-gray-100 text-sm text-gray-800 rounded focus:outline-none focus:ring-1 focus:ring-gray-300`}
         />
       </div>
-      
+
       {/* Workout Name Input */}
       <div className="mb-4">
         <label htmlFor="workout-name" className="block text-sm font-semibold mb-1 text-gray-500">
@@ -201,15 +202,14 @@ const WorkoutBuilder: React.FC<{ workoutText: string; setWorkoutText: (text: str
           {tracks.map((track) => (
             <option key={track.id} value={track.id}>{track.name}</option>
           ))}
-       
-       </select>
+        </select>
         {showTooltip && !selectedTrackId && (
           <div className="absolute text-xs bg-yellow-100 border border-yellow-300 text-yellow-800 p-1 rounded -top-7 left-0">
             <span>&#128073;</span> Please select a track.
           </div>
         )}
       </div>
-      
+
       {/* Warm Up Toggle and Input */}
       <div className="mb-4">
         <label htmlFor="warm-up-toggle" className="block text-sm font-semibold mb-1 text-gray-500">
@@ -305,26 +305,26 @@ const WorkoutBuilder: React.FC<{ workoutText: string; setWorkoutText: (text: str
             onChange={(e) => setOrderType(e.target.value)}
             className="w-1/2 p-2 border border-gray-300 bg-gray-100 text-sm text-gray-800 rounded"
           >
-            <option value="Descending">Descending ("bigger scores first")</option>
-            <option value="Ascending">Ascending ("smaller scores first")</option>
+            <option value="Descending">Descending (&quot;bigger scores first&quot;)</option>
+            <option value="Ascending">Ascending (&quot;smaller scores first&quot;)</option>
           </select>
         </div>
       </div>
 
-      {/* Add Coach's Notes Button and Modal */}
+      {/* Add Coach&apos;s Notes Button and Modal */}
       <div className="mb-4">
         <button
           onClick={() => setShowNotesModal(true)}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
         >
-          Add Coach's Notes
+          Add Coach&apos;s Notes
         </button>
       </div>
 
       {showNotesModal && (
         <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded shadow-lg max-w-md w-full">
-            <h3 className="text-xl font-semibold mb-4">Coach's Notes</h3>
+            <h3 className="text-xl font-semibold mb-4">Coach&apos;s Notes</h3>
             <textarea
               value={coachNotes}
               onChange={(e) => setCoachNotes(e.target.value)}

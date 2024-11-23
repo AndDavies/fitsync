@@ -64,7 +64,14 @@ const DailyView: React.FC = () => {
       .eq('date', selectedDate);
 
     if (!error && data) {
-      const formattedData = data.map((item: any) => ({
+      const formattedData = data.map((item: {
+        id: string;
+        workout_details: string;
+        scoring_set: string;
+        scoring_type: string;
+        advanced_scoring: string;
+        notes: string | null;
+      }) => ({
         id: item.id,
         workout_details: item.workout_details,
         scoring_set: item.scoring_set,
@@ -86,9 +93,9 @@ const DailyView: React.FC = () => {
       .eq('user_id', userData.user.id);
 
     if (!error && data) {
-      const fetchedTracks = data.map((item: any) => ({
+      const fetchedTracks = data.map((item: { track_id: string; tracks: { name: string }[] }) => ({
         id: item.track_id,
-        name: item.tracks && item.tracks[0] ? item.tracks[0].name : 'Unnamed Track',
+        name: item.tracks && item.tracks.length > 0 ? item.tracks[0].name : 'Unnamed Track',
       }));
       setTracks(fetchedTracks);
       if (fetchedTracks.length === 1) setSelectedTrack(fetchedTracks[0].id);
@@ -183,7 +190,7 @@ const DailyView: React.FC = () => {
                   <p key={index}>{line}</p>
                 ))
               ) : (
-                <p>No coach's notes available.</p>
+                <p>No coach&apos;s notes available.</p>
               )}
             </div>
           </div>
