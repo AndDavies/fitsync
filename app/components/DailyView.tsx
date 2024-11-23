@@ -1,7 +1,7 @@
 // components/DailyView.tsx
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '@/utils/supabase/client';
 
@@ -30,7 +30,7 @@ const parseNotesText = (notesText: string | null): string[] => {
   return notesText ? notesText.split('\n').filter((line) => line.trim()) : [];
 };
 
-const DailyView: React.FC = () => {
+const DailyViewContent: React.FC = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const date = searchParams.get('date');
@@ -201,5 +201,11 @@ const DailyView: React.FC = () => {
     </div>
   );
 };
+
+const DailyView: React.FC = () => (
+  <Suspense fallback={<div>Loading...</div>}>
+    <DailyViewContent />
+  </Suspense>
+);
 
 export default DailyView;
