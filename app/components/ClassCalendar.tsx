@@ -58,15 +58,14 @@ const ClassCalendar: React.FC<ClassCalendarProps> = ({ currentGymId }) => {
   const [isClassTypeModalOpen, setIsClassTypeModalOpen] = useState(false);
   const [isNewSlotModalOpen, setIsNewSlotModalOpen] = useState(false);
   const [isTypicalWeekModalOpen, setIsTypicalWeekModalOpen] = useState(false);
-  const [isTypicalWeekMode, setIsTypicalWeekMode] = useState(false);
   const [classTypes, setClassTypes] = useState<ClassType[]>([]);
   const [selectedClassType, setSelectedClassType] = useState<ClassType | null>(null);
+
   const formatTime = (time: string | null) => {
     if (!time) return "Time not provided";
     const date = parseISO(time);
     return isValid(date) ? format(date, "h:mm a") : "Invalid time";
   };
-  
 
   const fetchSchedules = async () => {
     const startDate = format(startOfWeek(weekStartDate, { weekStartsOn: 0 }), "yyyy-MM-dd");
@@ -162,11 +161,10 @@ const ClassCalendar: React.FC<ClassCalendarProps> = ({ currentGymId }) => {
     initializeWeekDates();
     fetchSchedules();
     fetchClassTypes();
-  }, [weekStartDate, currentGymId]);
+  }, [weekStartDate, currentGymId, fetchClassTypes, fetchSchedules]);
 
   const goToPreviousWeek = () => setWeekStartDate((prevDate) => subWeeks(prevDate, 1));
   const goToNextWeek = () => setWeekStartDate((prevDate) => addWeeks(prevDate, 1));
-  //const toggleTypicalWeekMode = () => setIsTypicalWeekMode(!isTypicalWeekMode);
 
   const handleRefreshClassTypes = () => {
     fetchClassTypes();
@@ -182,7 +180,6 @@ const ClassCalendar: React.FC<ClassCalendarProps> = ({ currentGymId }) => {
 
   return (
     <div className="class-calendar-container p-6">
-      {/* Widgets */}
       {/* Widgets */}
       <div className="widget-container flex justify-between items-start py-6 space-x-6">
         
@@ -285,7 +282,6 @@ const ClassCalendar: React.FC<ClassCalendarProps> = ({ currentGymId }) => {
         </div>
 
       </div>
-
 
       {/* Calendar Grid */}
       <div className="calendar-grid mt-6 overflow-auto">

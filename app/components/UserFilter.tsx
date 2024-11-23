@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+// Removed unused import of useRouter
 import { supabase } from "@/utils/supabase/client";
 import { useAuth } from "../context/AuthContext";
 import InviteModal from "../components/InviteModal";
@@ -36,7 +36,6 @@ const UserFilter: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  //const router = useRouter();
 
   useEffect(() => {
     const fetchUsers = async () => {

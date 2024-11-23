@@ -73,7 +73,7 @@ const TypicalWeekModal: React.FC<TypicalWeekModalProps> = ({
         refreshSchedules(); // Refresh calendar after successful creation
         onClose(); // Close the modal upon success
       }
-    } catch (e) {
+    } catch {
       setError("Unexpected error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);

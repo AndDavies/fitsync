@@ -33,8 +33,7 @@ const CreateClassTypeModal: React.FC<CreateClassTypeModalProps> = ({
     "#fdcb6e", // Orange
   ];
 
-  const handleCreateClassType = async (e: React.FormEvent) => {
-    //e.preventDefault();
+  const handleCreateClassType = async () => {
     setIsSubmitting(true);
     setError(null);
 
@@ -55,7 +54,7 @@ const CreateClassTypeModal: React.FC<CreateClassTypeModalProps> = ({
         refreshClassTypes();
         onClose();
       }
-    } catch (e) {
+    } catch {
       setError("Unexpected error occurred. Please try again later.");
     } finally {
       setIsSubmitting(false);
@@ -79,7 +78,10 @@ const CreateClassTypeModal: React.FC<CreateClassTypeModalProps> = ({
           }`}
         >
           <h2 className="text-lg font-semibold mb-4">Create New Class Type</h2>
-          <form onSubmit={handleCreateClassType}>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            handleCreateClassType();
+          }}>
             <div className="mb-3">
               <label className="block mb-1 text-sm font-medium">Class Name</label>
               <input

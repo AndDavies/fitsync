@@ -25,8 +25,7 @@ const CreateNewSlotModal: React.FC<CreateNewSlotModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleCreateSlot = async (e: React.FormEvent) => {
-    //e.preventDefault();
+  const handleCreateSlot = async () => {
     setIsSubmitting(true);
     setError(null);
 
@@ -59,7 +58,7 @@ const CreateNewSlotModal: React.FC<CreateNewSlotModalProps> = ({
         refreshSchedules(); // Refresh calendar after successful creation
         onClose(); // Close the modal upon success
       }
-    } catch (e) {
+    } catch {
       setError("Unexpected error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);
@@ -70,7 +69,10 @@ const CreateNewSlotModal: React.FC<CreateNewSlotModalProps> = ({
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
       <div className="bg-white p-6 rounded-lg shadow-lg w-96">
         <h2 className="text-xl font-semibold mb-4">Create a New Slot</h2>
-        <form onSubmit={handleCreateSlot}>
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          handleCreateSlot();
+        }}>
           <div className="mb-4">
             <label className="block mb-2 font-medium">Date</label>
             <input
