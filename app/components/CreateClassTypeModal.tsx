@@ -34,7 +34,7 @@ const CreateClassTypeModal: React.FC<CreateClassTypeModalProps> = ({
   ];
 
   const handleCreateClassType = async (e: React.FormEvent) => {
-    e.preventDefault();
+    //e.preventDefault();
     setIsSubmitting(true);
     setError(null);
 

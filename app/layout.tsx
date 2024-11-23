@@ -2,6 +2,7 @@
 "use client";
 
 import { AuthProvider } from './context/AuthContext';
+import { NavProvider } from './context/NavContext';
 import "./globals.css";
 
 export default function RootLayout({
@@ -16,9 +17,11 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
       <body className="antialiased ">
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <NavProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </NavProvider>
       </body>
     </html>
   );

@@ -1,4 +1,3 @@
-// components/LeftNav.tsx
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -11,7 +10,7 @@ import { BellIcon } from './icons/bell';
 import { SettingsGearIcon } from './icons/settings-gear';
 
 const LeftNav: React.FC = () => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState<boolean | undefined>(undefined);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -23,21 +22,24 @@ const LeftNav: React.FC = () => {
       const savedState = localStorage.getItem('isExpanded');
       if (savedState !== null) {
         setIsExpanded(JSON.parse(savedState));
+      } else {
+        setIsExpanded(true); // Default state: expanded
       }
     }
   }, [isClient]);
 
   useEffect(() => {
-    if (isClient) {
+    if (isClient && isExpanded !== undefined) {
       localStorage.setItem('isExpanded', JSON.stringify(isExpanded));
     }
   }, [isExpanded, isClient]);
 
   const toggleNav = () => {
-    setIsExpanded(!isExpanded);
+    setIsExpanded((prev) => !prev);
   };
 
-  if (!isClient) return null;
+  // Don't render until `isExpanded` has been set to avoid mismatch
+  if (!isClient || isExpanded === undefined) return null;
 
   // Placeholder data for the TallyScore component
   const totalScore = 6452.75;
@@ -52,8 +54,8 @@ const LeftNav: React.FC = () => {
   return (
     <nav
       className={`flex flex-col ${
-        isExpanded ? 'items-start' : 'items-center'
-      } bg-gray-800 ${isExpanded ? 'w-48' : 'w-14'} py-3 shadow-md space-y-3 border-r border-gray-700 text-gray-500 transition-all duration-300 ease-in-out`}
+        isExpanded ? 'items-start w-60' : 'items-center w-14'
+      } bg-gray-800 py-3 shadow-md space-y-3 border-r border-gray-700 text-gray-500 transition-all duration-300 ease-in-out`}
     >
       <div className="flex items-center justify-center w-full mb-4">
         <Image

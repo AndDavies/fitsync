@@ -1,13 +1,11 @@
-// app/workouts/page.tsx
 "use client";
+
 import React, { useState } from 'react';
 import Header from "../components/Header";
 import LeftNav from '../components/LeftNav';
 import UserFilter from '../components/UserFilter';
 
 export default function Dashboard() {
-  const [workoutBuilderText, setWorkoutBuilderText] = useState('');
-
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
       {/* Header */}
@@ -19,8 +17,11 @@ export default function Dashboard() {
         <LeftNav />
 
         {/* Main Dashboard Container */}
-        <main className="flex flex-grow space-x-4 w-full border-2">
+        <main className="flex flex-grow p-4">
+          {/* User Filter */}
+          <div className="flex-grow">
             <UserFilter />
+          </div>
         </main>
       </div>
 

@@ -26,7 +26,7 @@ const CreateNewSlotModal: React.FC<CreateNewSlotModalProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const handleCreateSlot = async (e: React.FormEvent) => {
-    e.preventDefault();
+    //e.preventDefault();
     setIsSubmitting(true);
     setError(null);
 

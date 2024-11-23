@@ -36,7 +36,7 @@ const UserFilter: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
+  //const router = useRouter();
 
   useEffect(() => {
     const fetchUsers = async () => {

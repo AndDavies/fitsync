@@ -14,7 +14,6 @@ import {
   addDays,
   subWeeks,
   addWeeks,
-  isToday,
   isValid,
   parseISO,
 } from "date-fns";
@@ -167,7 +166,7 @@ const ClassCalendar: React.FC<ClassCalendarProps> = ({ currentGymId }) => {
 
   const goToPreviousWeek = () => setWeekStartDate((prevDate) => subWeeks(prevDate, 1));
   const goToNextWeek = () => setWeekStartDate((prevDate) => addWeeks(prevDate, 1));
-  const toggleTypicalWeekMode = () => setIsTypicalWeekMode(!isTypicalWeekMode);
+  //const toggleTypicalWeekMode = () => setIsTypicalWeekMode(!isTypicalWeekMode);
 
   const handleRefreshClassTypes = () => {
     fetchClassTypes();

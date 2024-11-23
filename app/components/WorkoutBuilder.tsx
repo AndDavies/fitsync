@@ -100,7 +100,7 @@ const WorkoutBuilder: React.FC<{ workoutText: string; setWorkoutText: (text: str
       return;
     }
 
-    const { data: workoutData, error: selectError } = await supabase
+    const { data: workoutData } = await supabase
       .from('workouts')
       .select('workoutid')
       .eq('description', workoutText)
