@@ -2,13 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 /* styles/globals.css */
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@100;200;300;400;500;600;700;800&display=swap');
+
 
 /* Set Sora as the default font for the entire site */
-body {
-  font-family: 'Sora', sans-serif;
+html, body {
+  font-family: 'Roboto', sans-serif;
+  line-height: 1.6; /* Optional for better readability */
+  -webkit-font-smoothing: antialiased; /* Optional for smoother text rendering */
 }
 
+/* Optional tweaks for typography */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700; /* Use a bold weight for headings */
+}
 
 :root {
   --background: #ffffff;
@@ -20,12 +26,6 @@ body {
     --background: #0a0a0a;
     --foreground: #ededed;
   }
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: 'Sora', sans-serif;
 }
 
 /* Modal Overlay */

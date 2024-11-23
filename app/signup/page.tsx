@@ -7,7 +7,7 @@ export default function SignUpPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState(""); // Updated variable name
   const [bio, setBio] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -38,7 +38,7 @@ export default function SignUpPage() {
       const { error: userProfileError } = await supabase.from("user_profiles").insert({
         user_id: userId,           // Foreign key linked to Supabase Auth user ID
         display_name: displayName,
-        phone,
+        phone_number: phoneNumber, // Updated column name to phone_number
         bio,
       });
 
@@ -105,8 +105,8 @@ export default function SignUpPage() {
               id="phone"
               className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-indigo-200"
               placeholder="Phone number"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              value={phoneNumber} // Updated to use phoneNumber state
+              onChange={(e) => setPhoneNumber(e.target.value)} // Updated to use setPhoneNumber
             />
           </div>
           <div>

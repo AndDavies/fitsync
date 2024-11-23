@@ -12,13 +12,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Sora:wght@100;200;300;400;500;600;700;800&display=swap"
-          rel="stylesheet"
-        />
+        
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
-      <body className="antialiased font-sora">
+      <body className="antialiased ">
         <AuthProvider>
           {children}
         </AuthProvider>
