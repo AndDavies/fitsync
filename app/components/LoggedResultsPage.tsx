@@ -56,6 +56,7 @@ const LoggedResultsPage: React.FC = () => {
         if (!data || data.length === 0) {
           setError("No workouts logged.");
         } else {
+          // Specify the data type explicitly to avoid using `any`
           setLoggedWorkouts(data as LoggedWorkout[]);
         }
       } catch (err) {
