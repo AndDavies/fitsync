@@ -2,7 +2,7 @@
 
 import React from "react";
 import ClassCalendar from "../components/ClassCalendar";
-import ClassListView from "../components/ClassListView";
+//import ClassListView from "../components/ClassListView";
 import { useAuth } from "../context/AuthContext";
 import Header from "../components/Header";
 import LeftNav from "../components/LeftNav";
