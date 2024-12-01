@@ -10,7 +10,7 @@ interface LoggedWorkout {
   id: string;
   scheduled_workout_id: string;
   date_logged: string;
-  result: string | { [key: string]: any }; // Result can either be a string or an object (JSONB)
+  result: string | { [key: string]: unknown }; // Result can either be a string or an object (JSONB)
   scoring_type: string;
   perceived_exertion: number;
   workout_focus: string;
