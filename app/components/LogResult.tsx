@@ -44,7 +44,7 @@ const LogResult: React.FC = () => {
             );
           }
         } catch (err) {
-          console.error("Error fetching workout data:", (err as any).message);
+          //console.error("Error fetching workout data:", (err as any).message);
           alert("Unable to load workout details.");
           router.push('/workouts');
         }
@@ -52,7 +52,7 @@ const LogResult: React.FC = () => {
     };
 
     fetchWorkoutData();
-  }, [workoutId]);
+  }, []);
 
   // Helper to determine the number of input fields required based on the scoring type
   function getFieldCountForScoringType(scoringType: string) {

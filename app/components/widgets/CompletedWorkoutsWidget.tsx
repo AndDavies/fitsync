@@ -70,7 +70,7 @@ const CompletedWorkoutsWidget: React.FC = () => {
     };
 
     fetchCompletedWorkouts();
-  }, [isLoading, userData?.user_id]);
+  }, [isLoading, userData]);
 
   if (isLoading || loading) {
     return (
