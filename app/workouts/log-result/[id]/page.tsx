@@ -5,6 +5,10 @@ import Header from "@/app/components/Header";
 import LeftNav from "@/app/components/LeftNav";
 import LogResult from "@/app/components/LogResult";
 
+interface LogResultProps {
+  workoutId: string;
+}
+
 export default function EditWorkoutPage() {
   const params = useParams();
   const workoutId = Array.isArray(params?.id) ? params.id[0] : params?.id;
@@ -35,7 +39,7 @@ export default function EditWorkoutPage() {
         <LeftNav />
         <main className="flex flex-grow space-x-4">
           <div className="flex-none w-2/3 p-4">
-            <LogResult workoutId={workoutId} />
+            <LogResult workoutId={workoutId as string} />
           </div>
         </main>
       </div>

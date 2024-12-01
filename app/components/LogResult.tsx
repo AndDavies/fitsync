@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/utils/supabase/client";
 import { useAuth } from "../context/AuthContext";
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
-const LogResult: React.FC = () => {
+interface LogResultProps {
+  workoutId: string;
+}
+
+const LogResult: React.FC<LogResultProps> = ({ workoutId }) => {
   const { userData } = useAuth();
   const router = useRouter();
-  const params = useParams();
-  const workoutId = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
   // State for workout data
   const [scoringSet, setScoringSet] = useState<number>(1);
@@ -44,7 +46,6 @@ const LogResult: React.FC = () => {
             );
           }
         } catch (err) {
-          //console.error("Error fetching workout data:", (err as any).message);
           alert("Unable to load workout details.");
           router.push('/workouts');
         }
@@ -52,7 +53,7 @@ const LogResult: React.FC = () => {
     };
 
     fetchWorkoutData();
-  }, []);
+  }, [workoutId]);
 
   // Helper to determine the number of input fields required based on the scoring type
   function getFieldCountForScoringType(scoringType: string) {
@@ -206,7 +207,6 @@ const LogResult: React.FC = () => {
       alert("There was an issue logging your workout result. Please try again.");
     }
   };
-
 
   return (
     <div className="log-result-container p-6 max-w-lg mx-auto bg-gray-900 text-white rounded-lg">
