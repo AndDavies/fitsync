@@ -91,6 +91,12 @@ const LeftNav: React.FC = () => {
           {isExpanded && <span className="text-sm ml-2 text-left">Dashboard</span>}
         </button>
       </Link>
+      <Link href="/workouts//logged-results/" prefetch>
+        <button className={`flex items-center w-full hover:text-gray-200 transition ${isExpanded ? 'pl-4' : 'justify-center'}`}>
+          <GaugeIcon />
+          {isExpanded && <span className="text-sm ml-2 text-left">Logged Results</span>}
+        </button>
+      </Link>
       <Link href="/workouts" prefetch>
         <button className={`flex items-center w-full hover:text-gray-200 transition ${isExpanded ? 'pl-4' : 'justify-center'}`}>
           <ChartColumnIncreasingIcon />

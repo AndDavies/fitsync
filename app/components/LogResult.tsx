@@ -14,6 +14,7 @@ const LogResult: React.FC<LogResultProps> = ({ workoutId }) => {
   // State for workout data
   const [scoringSet, setScoringSet] = useState<number>(1);
   const [scoringType, setScoringType] = useState<string>("");
+  const [advancedScoring, setAdvancedScoring] = useState<string>("");
   const [results, setResults] = useState<string[][]>([]);
   const [perceivedExertion, setPerceivedExertion] = useState<number>(5);
   const [notes, setNotes] = useState<string>("");
@@ -27,7 +28,7 @@ const LogResult: React.FC<LogResultProps> = ({ workoutId }) => {
         try {
           const { data, error } = await supabase
             .from('scheduled_workouts')
-            .select('scoring_set, scoring_type')
+            .select('scoring_set, scoring_type, advanced_scoring')
             .eq('id', workoutId)
             .single();
 
@@ -37,6 +38,7 @@ const LogResult: React.FC<LogResultProps> = ({ workoutId }) => {
             const setCount = parseInt(data.scoring_set) || 1;
             setScoringSet(setCount);
             setScoringType(data.scoring_type || "");
+            setAdvancedScoring(data.advanced_scoring || ""); // Setting advancedScoring here
 
             // Initialize results array with empty values based on the setCount and scoringType
             setResults(
@@ -174,32 +176,70 @@ const LogResult: React.FC<LogResultProps> = ({ workoutId }) => {
 
   // Handle submission of the logged workout results
   const handleSubmit = async () => {
-    const resultString = results.map((set) => set.join(":")).join(", ");
-    
+    const formattedResults = results.map((set) => {
+      switch (scoringType) {
+        case "Time":
+          return {
+            minutes: set[0],
+            seconds: set[1]
+          };
+        case "Rounds + Reps":
+          return {
+            rounds: set[0],
+            reps: set[1]
+          };
+        case "Load":
+          return {
+            weight: parseInt(set[0], 10),
+            unit: "lbs" // For now hardcoded; update based on actual input
+          };
+        case "Reps":
+          return {
+            reps: parseInt(set[0], 10)
+          };
+        case "Calories":
+          return {
+            calories: parseInt(set[0], 10)
+          };
+        case "Distance":
+          return {
+            distance: parseInt(set[0], 10)
+          };
+        case "Check Box":
+          return {
+            completed: set[0] === "1"
+          };
+        default:
+          return set.join(":");
+      }
+    });
+  
     try {
       const userId = userData?.user_id;
       if (!userId) {
         alert("You need to be logged in to log workout results.");
         return;
       }
-
-      // Assuming that `performed_at` should be the current date/time
+  
       const performedAt = new Date().toISOString(); 
-
+  
       const { error } = await supabase
         .from("workout_results")
         .insert({
           scheduled_workout_id: workoutId,
           user_profile_id: userId,
-          result: resultString,
+          result: formattedResults, // Using formatted results as JSON
           perceived_exertion: perceivedExertion,
           notes,
-          date_logged: new Date().toISOString(), // When the result was logged
-          date_performed: performedAt // Adding the `performed_at` field
+          date_logged: new Date().toISOString(),
+          date_performed: performedAt,
+          scoring_type: scoringType,
+          advanced_scoring: advancedScoring,
+          order_type: advancedScoring === "Max" ? "Descending" : "Ascending"
         });
-
+  
       if (error) throw error;
-
+  
       setLogSuccess("Successfully logged workout result!");
     } catch (err) {
       const error = err as Error;
@@ -207,6 +247,8 @@ const LogResult: React.FC<LogResultProps> = ({ workoutId }) => {
       alert("There was an issue logging your workout result. Please try again.");
     }
   };
+  
+  
 
   return (
     <div className="log-result-container p-6 max-w-lg mx-auto bg-gray-900 text-white rounded-lg">
