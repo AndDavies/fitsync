@@ -5,11 +5,12 @@ import { supabase } from "@/utils/supabase/client";
 import { useAuth } from "../context/AuthContext";
 import { format } from "date-fns";
 
+// Defining a type for the logged workout
 interface LoggedWorkout {
   id: string;
   scheduled_workout_id: string;
   date_logged: string;
-  result: string | { [key: string]: any }; // result can be a string or an object
+  result: string | { [key: string]: any }; // Result can either be a string or an object (JSONB)
   scoring_type: string;
   perceived_exertion: number;
   workout_focus: string;
@@ -55,7 +56,7 @@ const LoggedResultsPage: React.FC = () => {
         if (!data || data.length === 0) {
           setError("No workouts logged.");
         } else {
-          setLoggedWorkouts(data);
+          setLoggedWorkouts(data as LoggedWorkout[]);
         }
       } catch (err) {
         console.error("Unexpected error:", err);
@@ -86,7 +87,7 @@ const LoggedResultsPage: React.FC = () => {
       ); // Render the object as a formatted JSON string
     }
 
-    return "N/A"; // Default fallback
+    return "N/A"; // Default fallback if result type is unknown
   };
 
   if (loading || isLoading) {
