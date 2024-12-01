@@ -73,7 +73,7 @@ const UserFilter: React.FC = () => {
     };
 
     fetchUsers();
-  }, [userData, authLoading]);
+  }, [authLoading]);
 
   const handleEditClick = (user: User) => {
     setSelectedUser(user);

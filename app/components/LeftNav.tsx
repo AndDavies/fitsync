@@ -6,31 +6,38 @@ import { HomeIcon } from './icons/home';
 import { CalendarCogIcon } from './icons/calendar-cog';
 import { ChartColumnIncreasingIcon } from './icons/chart-column-increasing';
 import { GaugeIcon } from './icons/gauge';
-import { BellIcon } from './icons/bell';
 import { SettingsGearIcon } from './icons/settings-gear';
+import { useAuth } from '../context/AuthContext'; // Import AuthContext to access role and user data
 
 const LeftNav: React.FC = () => {
-  const [isExpanded, setIsExpanded] = useState<boolean | undefined>(undefined);
+  const [isExpanded, setIsExpanded] = useState<boolean>(true); // Default state
   const [isClient, setIsClient] = useState(false);
+  const { userData } = useAuth(); // Access user data (role and gym info)
 
+  /**
+   * Initialize `isClient` and `isExpanded` on the client side.
+   */
   useEffect(() => {
-    setIsClient(true);
-  }, []);
+    if (typeof window !== 'undefined') {
+      setIsClient(true);
 
-  useEffect(() => {
-    if (isClient) {
       const savedState = localStorage.getItem('isExpanded');
       if (savedState !== null) {
         setIsExpanded(JSON.parse(savedState));
-      } else {
-        setIsExpanded(true); // Default state: expanded
       }
     }
-  }, [isClient]);
+  }, []);
 
+  /**
+   * Persist `isExpanded` to localStorage, debounced to minimize writes.
+   */
   useEffect(() => {
-    if (isClient && isExpanded !== undefined) {
-      localStorage.setItem('isExpanded', JSON.stringify(isExpanded));
+    if (isClient) {
+      const timeout = setTimeout(() => {
+        localStorage.setItem('isExpanded', JSON.stringify(isExpanded));
+      }, 300); // Delay saving to localStorage by 300ms
+
+      return () => clearTimeout(timeout); // Cleanup timeout on dependency change
     }
   }, [isExpanded, isClient]);
 
@@ -38,8 +45,8 @@ const LeftNav: React.FC = () => {
     setIsExpanded((prev) => !prev);
   };
 
-  // Don't render until `isExpanded` has been set to avoid mismatch
-  if (!isClient || isExpanded === undefined) return null;
+  // Don't render until `isClient` is true
+  if (!isClient) return null;
 
   // Placeholder data for the TallyScore component
   const totalScore = 6452.75;
@@ -51,6 +58,9 @@ const LeftNav: React.FC = () => {
     restWarning: true,
   };
 
+  // Determine visibility of User Management link
+  const canManageUsers = userData?.role === 'admin' || userData?.role === 'coach';
+
   return (
     <nav
       className={`flex flex-col ${
@@ -59,14 +69,14 @@ const LeftNav: React.FC = () => {
     >
       <div className="flex items-center justify-center w-full mb-4">
         <Image
-          src={isExpanded ? "/images/Ascent_Logo_trans.png" : "/images/Ascent_Logo_collapsed.png"}
+          src={isExpanded ? '/images/Ascent_Logo_trans.png' : '/images/Ascent_Logo_collapsed.png'}
           alt="ASCENT Logo"
           width={isExpanded ? 120 : 40}
           height={40}
           className="transition-all duration-300 ease-in-out"
         />
       </div>
-      
+
       <button
         onClick={toggleNav}
         className="self-end mr-2 mb-2 p-2 text-lg font-bold text-gray-700 bg-pink-200 rounded-full hover:bg-pink-300 focus:outline-none"
@@ -84,7 +94,7 @@ const LeftNav: React.FC = () => {
       <Link href="/workouts" prefetch>
         <button className={`flex items-center w-full hover:text-gray-200 transition ${isExpanded ? 'pl-4' : 'justify-center'}`}>
           <ChartColumnIncreasingIcon />
-          {isExpanded && <span className="text-sm ml-2 text-left">Program Planning</span>}
+          {isExpanded && <span className="text-sm ml-2 text-left">Plan a Workout</span>}
         </button>
       </Link>
       <Link href="/plan" prefetch>
@@ -96,25 +106,22 @@ const LeftNav: React.FC = () => {
       <Link href="/classes" prefetch>
         <button className={`flex items-center w-full hover:text-gray-200 transition ${isExpanded ? 'pl-4' : 'justify-center'}`}>
           <GaugeIcon />
-          {isExpanded && <span className="text-sm ml-2 text-left">Class Management</span>}
+          {isExpanded && <span className="text-sm ml-2 text-left">Class Calendar</span>}
         </button>
       </Link>
-      <Link href="/notifications" prefetch>
-        <button className={`flex items-center w-full hover:text-gray-200 transition ${isExpanded ? 'pl-4' : 'justify-center'}`}>
-          <BellIcon />
-          {isExpanded && <span className="text-sm ml-2 text-left">Notifications</span>}
-        </button>
-      </Link>
-      <Link href="/users" prefetch>
-        <button className={`flex items-center w-full hover:text-gray-200 transition ${isExpanded ? 'pl-4' : 'justify-center'}`}>
-          <SettingsGearIcon />
-          {isExpanded && <span className="text-sm ml-2 text-left">User Management</span>}
-        </button>
-      </Link>
-      {/* TallyScore component with placeholder data */}
-      {isExpanded && (
-        <TallyScore totalScore={totalScore} percentage={percentage} metrics={metrics} />
+
+      {/* Conditional User Management Link */}
+      {canManageUsers && (
+        <Link href="/users" prefetch>
+          <button className={`flex items-center w-full hover:text-gray-200 transition ${isExpanded ? 'pl-4' : 'justify-center'}`}>
+            <SettingsGearIcon />
+            {isExpanded && <span className="text-sm ml-2 text-left">User Management</span>}
+          </button>
+        </Link>
       )}
+
+      {/* TallyScore component with placeholder data */}
+      {isExpanded && <TallyScore totalScore={totalScore} percentage={percentage} metrics={metrics} />}
     </nav>
   );
 };

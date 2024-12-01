@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/utils/supabase/client';
 import { useAuth } from '../context/AuthContext';
 
+// Types
 type WorkoutLine = {
   id: string;
   content: string;
@@ -32,6 +33,7 @@ const parseWorkoutText = (workoutText: string): WorkoutLine[] => {
 
 const WorkoutBuilder: React.FC<{ workoutText: string; setWorkoutText: (text: string) => void }> = ({ workoutText, setWorkoutText }) => {
   const { userData, isLoading: authLoading } = useAuth();
+  //const { isNavExpanded } = useNavContext();
   const [workoutName, setWorkoutName] = useState<string>('');
   const [workoutDate, setWorkoutDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [parsedLines, setParsedLines] = useState<WorkoutLine[]>([]);
@@ -42,7 +44,7 @@ const WorkoutBuilder: React.FC<{ workoutText: string; setWorkoutText: (text: str
   const [scoringType, setScoringType] = useState<string | null>(null);
   const [advancedScoring, setAdvancedScoring] = useState<string>('Maximum');
   const [orderType, setOrderType] = useState<string>('Descending');
-  const [isLoadingTracks, setIsLoadingTracks] = useState(true);
+  const [isLoadingTracks, setIsLoadingTracks] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [coachNotes, setCoachNotes] = useState<string>('');
@@ -52,46 +54,92 @@ const WorkoutBuilder: React.FC<{ workoutText: string; setWorkoutText: (text: str
   const [showCoolDown, setShowCoolDown] = useState(false);
   const router = useRouter();
 
+  // Update advanced scoring based on scoring type
   useEffect(() => {
-    if (scoringType === 'Time') setAdvancedScoring('Minimum');
-    else setAdvancedScoring('Maximum');
+    if (scoringType) {
+      setAdvancedScoring(scoringType === 'Time' ? 'Minimum' : 'Maximum');
+    }
   }, [scoringType]);
 
-  useEffect(() => {
-    const currentGymId = userData?.current_gym_id;
+  // Fetch tracks when user data is available
+useEffect(() => {
+  const fetchTracks = async () => {
+    if (authLoading || !userData) return;
 
-    if (!authLoading && currentGymId && isValidUUID(currentGymId)) {
-      const fetchTracks = async () => {
-        try {
-          setIsLoadingTracks(true);
-          const { data, error } = await supabase
-            .from('tracks')
-            .select('id, name')
-            .eq('gym_id', currentGymId);
+    try {
+      setIsLoadingTracks(true);
 
-          if (error) {
-            console.error("Error fetching tracks:", error.message);
-          } else {
-            setTracks(data || []);
-          }
-        } catch (error) {
-          console.error("Unexpected error fetching tracks:", error);
-        } finally {
-          setIsLoadingTracks(false);
+      let tracksData: Track[] = [];
+
+      if (userData.current_gym_id) {
+        const { data, error } = await supabase
+          .from('tracks')
+          .select('id, name')
+          .eq('gym_id', userData.current_gym_id);
+
+        if (error) {
+          console.error('Error fetching gym tracks:', error.message);
+        } else if (data) {
+          tracksData = data;
         }
-      };
-      fetchTracks();
-    }
-  }, [userData, authLoading]);
+      } else if (userData.user_id) {
+        const { data, error } = await supabase
+          .from('tracks')
+          .select('id, name')
+          .eq('user_id', userData.user_id);
 
-  const handleParseWorkout = () => {
+        if (error) {
+          console.error('Error fetching personal track:', error.message);
+        } else if (data?.length) {
+          tracksData = data;
+        } else {
+          // If no personal track exists, create one
+          const { data: newTrack, error: createError } = await supabase
+            .from('tracks')
+            .insert({
+              user_id: userData.user_id,
+              name: 'Personal Track',
+            })
+            .select('id, name')
+            .single();
+
+          if (createError) {
+            console.error('Error creating personal track:', createError.message);
+          } else if (newTrack) {
+            tracksData = [newTrack];
+          }
+        }
+      }
+
+      setTracks(tracksData); // Always set an array, even if empty
+    } catch (error) {
+      console.error('Unexpected error fetching tracks:', error);
+    } finally {
+      setIsLoadingTracks(false);
+    }
+  };
+
+  fetchTracks();
+}, [authLoading, userData]);
+
+
+  // Debounced function to avoid rapid re-renders during typing
+  const handleDebouncedSetWorkoutText = useCallback(
+    (text: string) => {
+      setWorkoutText(text);
+      setIsValidated(false);
+    },
+    [setWorkoutText]
+  );
+
+  const handleParseWorkout = useCallback(() => {
     const lines = parseWorkoutText(workoutText);
     setParsedLines(lines);
     setIsValidated(lines.length > 0 && workoutName.trim() !== "");
     if (!selectedTrackId || !scoringType || workoutName.trim() === "") setShowTooltip(true);
-  };
+  }, [workoutText, workoutName, selectedTrackId, scoringType]);
 
-  const handlePlanWorkout = async () => {
+  const handlePlanWorkout = useCallback(async () => {
     if (!isValidated || !selectedTrackId || !scoringType || workoutName.trim() === "") return;
 
     const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -145,14 +193,18 @@ const WorkoutBuilder: React.FC<{ workoutText: string; setWorkoutText: (text: str
     } else {
       router.push(`/plan/daily?date=${workoutDate}`);
     }
-  };
+  }, [isValidated, selectedTrackId, scoringType, workoutName, workoutDate, warmUp, workoutText, coolDown, advancedScoring, orderType, coachNotes, scoringSet, router]);
 
-  if (authLoading || isLoadingTracks) {
-    return <p>Loading...</p>;
+  if (authLoading) {
+    return <p>Loading authentication...</p>;
+  }
+
+  if (isLoadingTracks) {
+    return <p>Loading tracks...</p>;
   }
 
   return (
-    <div className="p-6 bg-gray-50 rounded-md shadow-md max-w-3xl mx-auto text-gray-800 antialiased">
+    <div className={`p-6 bg-gray-50 rounded-md shadow-md max-w-3xl mx-auto text-gray-800 antialiased transition-all duration-300`}>
       <h2 className="text-2xl font-semibold mb-4 text-gray-600">Build Your Workout</h2>
       
       {/* Date Input */}
@@ -237,10 +289,7 @@ const WorkoutBuilder: React.FC<{ workoutText: string; setWorkoutText: (text: str
         <textarea
           id="workout-input"
           value={workoutText}
-          onChange={(e) => {
-            setWorkoutText(e.target.value);
-            setIsValidated(false);
-          }}
+          onChange={(e) => handleDebouncedSetWorkoutText(e.target.value)}
           placeholder="Enter your workout details here..."
           className={`w-full p-2 border ${showTooltip && !workoutText ? 'border-red-500' : 'border-gray-300'} bg-gray-100 text-sm text-gray-800 rounded focus:outline-none focus:ring-1 focus:ring-gray-300 h-28`}
         />

@@ -7,6 +7,7 @@ import CreateClassModal from "./CreateClassModal";
 import CreateClassTypeModal from "./CreateClassTypeModal";
 import CreateNewSlotModal from "./CreateNewSlotModal";
 import TypicalWeekModal from "./TypicalWeekModal";
+import WeekSelector from "./WeekSelector";
 
 import {
   format,
@@ -68,8 +69,14 @@ const ClassCalendar: React.FC<ClassCalendarProps> = ({ currentGymId }) => {
   };
 
   const fetchSchedules = useCallback(async () => {
-    const startDate = format(startOfWeek(weekStartDate, { weekStartsOn: 0 }), "yyyy-MM-dd");
-    const endDate = format(addDays(new Date(startDate), 6), "yyyy-MM-dd");
+  // Get the start and end date in UTC
+  const startDate = new Date(
+    startOfWeek(weekStartDate, { weekStartsOn: 0 }).setHours(0, 0, 0, 0)
+  ).toISOString();
+  
+  const endDate = new Date(
+    addDays(startOfWeek(weekStartDate, { weekStartsOn: 0 }), 6).setHours(23, 59, 59, 999)
+  ).toISOString();
   
     try {
       const { data, error } = await supabase
@@ -179,27 +186,12 @@ const ClassCalendar: React.FC<ClassCalendarProps> = ({ currentGymId }) => {
       {/* Widgets */}
       <div className="widget-container flex justify-between items-start py-6 space-x-6">
         {/* Week Selection Widget */}
-        <div className="week-selection-widget bg-gray-900 text-white p-4 rounded-3xl shadow-md flex flex-col items-center justify-center w-1/4 h-32">
-          <div className="flex items-center justify-between w-full px-4">
-            <button onClick={goToPreviousWeek} className="text-blue-300 hover:text-blue-500 transition text-2xl">
-              &lt;
-            </button>
-            <div className="flex flex-col items-center">
-              <span className="week-label font-semibold text-md mb-1">Week Of</span>
-              <span className="week-date text-lg font-bold">{format(weekStartDate, "dd MMM yy")}</span>
-            </div>
-            <button onClick={goToNextWeek} className="text-blue-300 hover:text-blue-500 transition text-2xl">
-              &gt;
-            </button>
-          </div>
-          <button
-            onClick={() => setWeekStartDate(new Date())}
-            className="text-blue-300 hover:text-blue-500 transition text-sm mt-2"
-          >
-            Today
-          </button>
-        </div>
-
+        <WeekSelector
+          weekStartDate={weekStartDate}
+          onPreviousWeek={goToPreviousWeek}
+          onNextWeek={goToNextWeek}
+          onToday={() => setWeekStartDate(new Date())}
+        />
         {/* Class Type Widget */}
         <div className="class-type-widget bg-gray-900 text-white p-6 rounded-3xl shadow-md w-1/2 h-32 flex flex-col justify-between">
           <h3 className="text-lg font-semibold mb-2">Class Types</h3>

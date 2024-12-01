@@ -14,7 +14,7 @@ const Accordion: React.FC<AccordionProps> = ({ title, children }) => {
   };
 
   return (
-    <div className={`border border-gray-200 rounded-md shadow-sm mb-4 transition-all duration-300 ${isOpen ? 'h-96 overflow-y-auto' : 'h-12'}`}>
+    <div className={`border border-gray-200 rounded-md shadow-sm mb-4 transition-all duration-300 ${isOpen ? 'overflow-y-auto' : 'h-12'}`}>
       <div
         className="p-3 cursor-pointer bg-gray-100 text-gray-800 font-bold flex items-center"
         onClick={toggleAccordion}

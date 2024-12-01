@@ -15,33 +15,36 @@ export default function SignUpPage() {
   const handleSignUp = async () => {
     setErrorMessage("");
     setSuccessMessage("");
-
+  
     if (!email || !password || !displayName) {
       setErrorMessage("Email, password, and display name are required.");
       return;
     }
-
+  
     // Sign up in Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
     });
-
+  
     if (authError) {
       setErrorMessage(authError.message);
       return;
     }
-
+  
     // If signup is successful, insert into the user_profiles table
     if (authData.user) {
       const userId = authData.user.id; // Supabase Auth User ID
       const { error: userProfileError } = await supabase.from("user_profiles").insert({
-        user_id: userId,           // Foreign key linked to Supabase Auth user ID
+        user_id: userId,            // Foreign key linked to Supabase Auth user ID
         display_name: displayName,
-        phone_number: phoneNumber, // Updated column name to phone_number
-        bio,
+        phone_number: phoneNumber,  // Match the schema field
+        bio,                        // Optional
+        email,                      // Explicitly insert email
+        role: "member",             // Explicit role assignment (if needed)
+        created_at: new Date(),     // Assign created_at timestamp
       });
-
+  
       if (userProfileError) {
         setErrorMessage(userProfileError.message);
       } else {
@@ -49,6 +52,7 @@ export default function SignUpPage() {
       }
     }
   };
+  
 
   return (
     <div className="flex h-screen items-center justify-center">

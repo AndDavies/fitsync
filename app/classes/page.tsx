@@ -2,6 +2,7 @@
 
 import React from "react";
 import ClassCalendar from "../components/ClassCalendar";
+import ClassListView from "../components/ClassListView";
 import { useAuth } from "../context/AuthContext";
 import Header from "../components/Header";
 import LeftNav from "../components/LeftNav";
@@ -29,12 +30,14 @@ const ClassSchedulePage: React.FC = () => {
           <div className="w-full">
             {userData?.current_gym_id ? (
               <ClassCalendar currentGymId={userData.current_gym_id} />
+              //<ClassListView currentGymId={userData.current_gym_id} />
             ) : (
               <div className="flex items-center justify-center w-full h-full text-red-600 text-lg">
                 Error: No gym ID available for the current user.
               </div>
             )}
           </div>
+          
         </main>
       </div>
 

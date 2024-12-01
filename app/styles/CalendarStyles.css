@@ -39,6 +39,9 @@
 
 .workout-item {
   margin-top: 10px;
+  word-wrap: break-word; /* Ensures text breaks at appropriate places */
+  word-break: break-word; /* Fallback for older browsers */
+  overflow-wrap: break-word; /* Preferred modern property for wrapping text */
 }
 
 .section {
