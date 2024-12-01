@@ -110,7 +110,7 @@ const CompletedWorkoutsWidget: React.FC = () => {
               Perceived Exertion: {workout.perceived_exertion} / 10
             </div>
             {workout.notes && (
-              <div className="text-sm italic text-gray-400 mt-1">"{workout.notes}"</div>
+              <div className="text-sm italic text-gray-400 mt-1">&quot;{workout.notes}&quot;</div>
             )}
           </li>
         ))}
