@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import Header from "../components/Header";
 import LeftNav from '../components/LeftNav';
 import { useAuth } from '../context/AuthContext';
-import ClassesTodayWidget from '../components/ClassesTodayWidget';
+import ClassesTodayWidget from '../components/widgets/ClassesTodayWidget';
+import CompletedWorkoutsWidget from '../components/widgets/CompletedWorkoutsWidget';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -28,6 +29,7 @@ export default function Dashboard() {
         <LeftNav />
         <main className="flex flex-grow p-6 space-x-4">
           <ClassesTodayWidget />
+          <CompletedWorkoutsWidget />
         </main>
       </div>
       <footer className="bg-white text-center py-4 shadow-inner">

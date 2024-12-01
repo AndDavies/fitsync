@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import WorkoutBuilder from '../components/WorkoutBuilder';
 import WorkoutIdeas from "../components/WorkoutIdeas";
 import Header from "../components/Header";
-import Accordion from '../components/Accordion';
+import Accordion from '../components/widgets/Accordion';
 import LeftNav from '../components/LeftNav';
 
 export default function Dashboard() {

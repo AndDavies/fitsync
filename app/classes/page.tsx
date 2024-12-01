@@ -37,7 +37,16 @@ const ClassSchedulePage: React.FC = () => {
               </div>
             )}
           </div>
-          
+          {/* <div className="w-full">
+            {userData?.current_gym_id ? (
+              //<ClassCalendar currentGymId={userData.current_gym_id} />
+              //<ClassListView currentGymId={userData.current_gym_id} />
+            ) : (
+              <div className="flex items-center justify-center w-full h-full text-red-600 text-lg">
+                Error: No gym ID available for the current user.
+              </div>
+            )}
+          </div> */}
         </main>
       </div>
 
