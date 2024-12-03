@@ -1,4 +1,3 @@
-// app/signup/page.tsx
 "use client";
 import { useState } from "react";
 import { supabase } from "@/utils/supabase/client";
@@ -7,7 +6,7 @@ export default function SignUpPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState(""); // Updated variable name
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [bio, setBio] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -15,44 +14,60 @@ export default function SignUpPage() {
   const handleSignUp = async () => {
     setErrorMessage("");
     setSuccessMessage("");
-  
+
     if (!email || !password || !displayName) {
       setErrorMessage("Email, password, and display name are required.");
       return;
     }
-  
+
     // Sign up in Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
     });
-  
+
     if (authError) {
       setErrorMessage(authError.message);
       return;
     }
-  
+
     // If signup is successful, insert into the user_profiles table
     if (authData.user) {
       const userId = authData.user.id; // Supabase Auth User ID
-      const { error: userProfileError } = await supabase.from("user_profiles").insert({
-        user_id: userId,            // Foreign key linked to Supabase Auth user ID
-        display_name: displayName,
-        phone_number: phoneNumber,  // Match the schema field
-        bio,                        // Optional
-        email,                      // Explicitly insert email
-        role: "member",             // Explicit role assignment (if needed)
-        created_at: new Date(),     // Assign created_at timestamp
-      });
-  
+      const { error: userProfileError } = await supabase
+        .from("user_profiles")
+        .insert({
+          user_id: userId, // Foreign key linked to Supabase Auth user ID
+          display_name: displayName,
+          phone_number: phoneNumber, // Match the schema field
+          bio, // Optional
+          email, // Explicitly insert email
+          role: "member", // Explicit role assignment (if needed)
+          created_at: new Date(), // Assign created_at timestamp
+        });
+
       if (userProfileError) {
         setErrorMessage(userProfileError.message);
+        return;
+      }
+
+      // Insert a "Personal Track" for the user
+      const { error: trackError } = await supabase
+        .from("tracks")
+        .insert({
+          user_id: userId, // Associate track with the user's ID
+          name: "Personal Track", // Default track name
+          description: "This is your personal track for individual programming.", // Default description
+          created_at: new Date(), // Assign created_at timestamp
+        });
+
+      if (trackError) {
+        setErrorMessage(`Account created, but failed to create personal track: ${trackError.message}`);
       } else {
         setSuccessMessage("Account created successfully! Please check your email to confirm.");
       }
     }
   };
-  
 
   return (
     <div className="flex h-screen items-center justify-center">
@@ -109,8 +124,8 @@ export default function SignUpPage() {
               id="phone"
               className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-indigo-200"
               placeholder="Phone number"
-              value={phoneNumber} // Updated to use phoneNumber state
-              onChange={(e) => setPhoneNumber(e.target.value)} // Updated to use setPhoneNumber
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
             />
           </div>
           <div>

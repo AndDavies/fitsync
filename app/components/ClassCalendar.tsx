@@ -350,7 +350,7 @@ const ClassCalendar: React.FC<ClassCalendarProps> = ({ currentGymId }) => {
           isVisible={isClassTypeModalOpen}
           refreshClassTypes={handleRefreshClassTypes}
         />
-      )}
+      )} 
       {isNewSlotModalOpen && selectedClassType && (
         <CreateNewSlotModal
           onClose={() => setIsNewSlotModalOpen(false)}
@@ -372,3 +372,4 @@ const ClassCalendar: React.FC<ClassCalendarProps> = ({ currentGymId }) => {
 };
 
 export default ClassCalendar;
+ 

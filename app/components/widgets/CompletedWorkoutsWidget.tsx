@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/utils/supabase/client";
 import { useAuth } from "../../context/AuthContext";
-import { format } from "date-fns";
+import { format, startOfWeek, startOfMonth, startOfYear, endOfWeek, endOfMonth, endOfYear } from "date-fns";
+import { useRouter } from 'next/navigation';
 
 type WorkoutResult = {
   id: string;
-  scheduled_workout_id: string;
-  result: string;
   date_performed: string;
-  notes: string;
-  perceived_exertion: number;
 };
 
 const CompletedWorkoutsWidget: React.FC = () => {
@@ -17,6 +14,7 @@ const CompletedWorkoutsWidget: React.FC = () => {
   const [workouts, setWorkouts] = useState<WorkoutResult[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchCompletedWorkouts = async () => {
@@ -31,18 +29,11 @@ const CompletedWorkoutsWidget: React.FC = () => {
       }
 
       try {
-        // Debug: Log the userData to ensure user_id is correctly retrieved
-        console.log("userData:", userData);
-
         const { data, error } = await supabase
           .from("workout_results")
           .select(`
             id,
-            scheduled_workout_id,
-            result,
-            date_performed,
-            notes,
-            perceived_exertion
+            date_performed
           `)
           .eq("user_profile_id", userData.user_id)
           .order("date_performed", { ascending: false });
@@ -53,13 +44,10 @@ const CompletedWorkoutsWidget: React.FC = () => {
           return;
         }
 
-        // Debug: Log fetched data to check if it returns anything
-        console.log("Fetched workout data:", data);
-
         if (!data || data.length === 0) {
           setError("No completed workouts found.");
         } else {
-          setWorkouts(data);
+          setWorkouts(data as WorkoutResult[]);
         }
       } catch (err) {
         console.error("Unexpected error:", err);
@@ -71,6 +59,35 @@ const CompletedWorkoutsWidget: React.FC = () => {
 
     fetchCompletedWorkouts();
   }, [isLoading, userData]);
+
+  const calculateStats = () => {
+    const now = new Date();
+    const startOfCurrentWeek = startOfWeek(now, { weekStartsOn: 0 });
+    const endOfCurrentWeek = endOfWeek(now, { weekStartsOn: 0 });
+    const startOfCurrentMonth = startOfMonth(now);
+    const endOfCurrentMonth = endOfMonth(now);
+    const startOfCurrentYear = startOfYear(now);
+    const endOfCurrentYear = endOfYear(now);
+
+    const workoutsThisWeek = workouts.filter(workout =>
+      new Date(workout.date_performed) >= startOfCurrentWeek &&
+      new Date(workout.date_performed) <= endOfCurrentWeek
+    ).length;
+
+    const workoutsThisMonth = workouts.filter(workout =>
+      new Date(workout.date_performed) >= startOfCurrentMonth &&
+      new Date(workout.date_performed) <= endOfCurrentMonth
+    ).length;
+
+    const workoutsYearToDate = workouts.filter(workout =>
+      new Date(workout.date_performed) >= startOfCurrentYear &&
+      new Date(workout.date_performed) <= endOfCurrentYear
+    ).length;
+
+    return { workoutsThisWeek, workoutsThisMonth, workoutsYearToDate };
+  };
+
+  const stats = calculateStats();
 
   if (isLoading || loading) {
     return (
@@ -89,32 +106,37 @@ const CompletedWorkoutsWidget: React.FC = () => {
   }
 
   return (
-    <div className="bg-gray-900 text-white p-4 rounded-3xl shadow-md flex flex-col items-center justify-between w-1/4 h-80 overflow-hidden">
-      <div className="flex flex-col items-center mb-2">
-        <span className="text-md font-semibold">Completed Workouts</span>
-        <span className="text-lg font-bold">{format(new Date(), "MMMM yyyy")}</span>
+    <div className="bg-gray-900 text-white p-6 rounded-3xl shadow-md flex flex-col items-start h-auto">
+      <div className="mb-4 w-full">
+        <h2 className="text-lg font-bold mb-2">Completed Workouts</h2>
+        <p className="text-md font-semibold mb-1">
+          {format(new Date(), "MMMM yyyy")}
+        </p>
       </div>
-      <ul className="w-full px-4 overflow-y-auto space-y-2">
-        {workouts.map((workout) => (
-          <li
-            key={workout.id}
-            className="bg-gray-800 p-3 rounded-lg shadow-sm flex flex-col"
-          >
-            <div className="text-lg font-bold">
-              {workout.result.split(",")[0]} {/* Display a part of the result for a summary */}
-            </div>
-            <div className="text-sm text-gray-400">
-              {format(new Date(workout.date_performed), "EEEE, MMM d, yyyy")}
-            </div>
-            <div className="text-sm text-gray-500 mt-1">
-              Perceived Exertion: {workout.perceived_exertion} / 10
-            </div>
-            {workout.notes && (
-              <div className="text-sm italic text-gray-400 mt-1">&quot;{workout.notes}&quot;</div>
-            )}
-          </li>
-        ))}
-      </ul>
+
+      {/* Stats Display */}
+      <div className="flex flex-col items-start space-y-3 mb-4 w-full">
+        <div className="bg-gray-800 p-3 rounded-lg w-full shadow-md">
+          <span className="text-sm font-semibold">This Week:</span>
+          <span className="block text-lg font-bold">{stats.workoutsThisWeek}</span>
+        </div>
+        <div className="bg-gray-800 p-3 rounded-lg w-full shadow-md">
+          <span className="text-sm font-semibold">This Month:</span>
+          <span className="block text-lg font-bold">{stats.workoutsThisMonth}</span>
+        </div>
+        <div className="bg-gray-800 p-3 rounded-lg w-full shadow-md">
+          <span className="text-sm font-semibold">Year to Date:</span>
+          <span className="block text-lg font-bold">{stats.workoutsYearToDate}</span>
+        </div>
+      </div>
+
+      {/* Link to logged results page */}
+      <button
+        onClick={() => router.push('/workouts/logged-results')}
+        className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-300"
+      >
+        View Logged Results
+      </button>
     </div>
   );
 };

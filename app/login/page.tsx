@@ -1,4 +1,3 @@
-// app/login/page.tsx
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -7,16 +6,19 @@ import { supabase } from "@/utils/supabase/client";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState(""); // State to store error message
   const router = useRouter();
 
   const handleLogin = async () => {
+    setErrorMessage(""); // Clear any previous error messages
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
-      console.error("Error logging in:", error.message); // Just adding a comment for Git
+      setErrorMessage(error.message); // Set error message if login fails
     } else {
       router.push("/dashboard"); // Redirect to the dashboard on successful login
     }
@@ -26,7 +28,10 @@ export default function LoginPage() {
     <div className="flex h-screen items-center justify-center">
       <div className="max-w-md w-full p-6 bg-white shadow-md rounded-md">
         <h2 className="text-3xl font-bold mb-6">Sign In</h2>
-        <form className="space-y-4">
+        {errorMessage && (
+          <p className="text-red-600 mb-4">{errorMessage}</p> // Display error message if it exists
+        )}
+        <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
           <div>
             <label htmlFor="email" className="block text-sm font-medium">
               Email

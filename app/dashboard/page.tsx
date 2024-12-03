@@ -7,6 +7,7 @@ import LeftNav from '../components/LeftNav';
 import { useAuth } from '../context/AuthContext';
 import ClassesTodayWidget from '../components/widgets/ClassesTodayWidget';
 import CompletedWorkoutsWidget from '../components/widgets/CompletedWorkoutsWidget';
+import RSSFeedWidget from '../components/widgets/RSSFeedWidget';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -30,6 +31,7 @@ export default function Dashboard() {
         <main className="flex flex-grow p-6 space-x-4">
           <ClassesTodayWidget />
           <CompletedWorkoutsWidget />
+          <RSSFeedWidget />
         </main>
       </div>
       <footer className="bg-white text-center py-4 shadow-inner">
