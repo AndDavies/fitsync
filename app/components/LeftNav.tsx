@@ -8,11 +8,19 @@ import { ChartColumnIncreasingIcon } from './icons/chart-column-increasing';
 import { GaugeIcon } from './icons/gauge';
 import { SettingsGearIcon } from './icons/settings-gear';
 import { useAuth } from '../context/AuthContext'; // Import AuthContext to access role and user data
+import { supabase } from '@/utils/supabase/client';
+import { useRouter } from 'next/navigation';
 
 const LeftNav: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState<boolean>(true); // Default state
   const [isClient, setIsClient] = useState(false);
   const { userData } = useAuth(); // Access user data (role and gym info)
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push('/login'); // Redirect to the login page after logging out
+  };
 
   /**
    * Initialize `isClient` and `isExpanded` on the client side.
@@ -125,6 +133,12 @@ const LeftNav: React.FC = () => {
           </button>
         </Link>
       )}
+      <button
+      onClick={handleSignOut}
+      className="px-3 py-1 bg-red-500 text-xs text-white rounded hover:bg-red-600 transition"
+      >
+       Log Out
+      </button>
 
       {/* TallyScore component with placeholder data */}
       {isExpanded && <TallyScore totalScore={totalScore} percentage={percentage} metrics={metrics} />}

@@ -91,7 +91,7 @@ const CompletedWorkoutsWidget: React.FC = () => {
 
   if (isLoading || loading) {
     return (
-      <div className="bg-gray-900 text-white p-4 rounded-3xl shadow-md flex flex-col items-center justify-center w-1/4 h-32">
+      <div className="bg-slate-200 text-slate-900 p-4 rounded-3xl shadow-md flex flex-col items-center justify-center w-full h-32">
         <p>Loading completed workouts...</p>
       </div>
     );
@@ -99,14 +99,14 @@ const CompletedWorkoutsWidget: React.FC = () => {
 
   if (error) {
     return (
-      <div className="bg-gray-900 text-white p-4 rounded-3xl shadow-md flex flex-col items-center justify-center w-1/4 h-32">
+      <div className="bg-slate-200 text-slate-900 p-4 rounded-3xl shadow-md flex flex-col items-center justify-center w-full h-32">
         <p className="text-red-400">{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-900 text-white p-6 rounded-3xl shadow-md flex flex-col items-start h-auto">
+    <div className="bg-slate-200 text-slate-900 p-6 rounded-3xl shadow-md flex flex-col items-start h-auto">
       <div className="mb-4 w-full">
         <h2 className="text-lg font-bold mb-2">Completed Workouts</h2>
         <p className="text-md font-semibold mb-1">

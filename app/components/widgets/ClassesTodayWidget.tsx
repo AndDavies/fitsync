@@ -68,7 +68,7 @@ const ClassesTodayWidget: React.FC = () => {
 
   if (isLoading || loading) {
     return (
-      <div className="bg-gray-900 text-white p-4 rounded-3xl shadow-md flex flex-col items-center justify-center w-1/4 h-32">
+      <div className="bg-slate-200 text-slate-900 p-4 rounded-3xl shadow-md flex flex-col items-center justify-center w-full h-32">
         <p>Loading classes...</p>
       </div>
     );
@@ -76,14 +76,14 @@ const ClassesTodayWidget: React.FC = () => {
 
   if (error) {
     return (
-      <div className="bg-gray-900 text-white p-4 rounded-3xl shadow-md flex flex-col items-center justify-center w-1/4 h-32">
+      <div className="bg-slate-200 text-slate-900 p-4 rounded-3xl shadow-md flex flex-col items-center justify-center w-full h-32">
         <p className="text-red-400">{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-900 text-white p-4 rounded-3xl shadow-md flex flex-col items-center justify-between w-1/4 h-56">
+    <div className="bg-slate-200 text-slate-900 p-4 rounded-3xl shadow-md flex flex-col items-center justify-between w-full h-56">
       <div className="flex flex-col items-center mb-2">
         <span className="text-md font-semibold">Classes Scheduled For</span>
         <span className="text-lg font-bold">{format(new Date(), "EEEE, MMMM d, yyyy")}</span>

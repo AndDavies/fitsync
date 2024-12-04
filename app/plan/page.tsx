@@ -12,12 +12,13 @@ const PlanContent: React.FC = () => {
   const date = searchParams.get('date') || undefined; // Convert null to undefined
 
   return (
+    //<main className="flex flex-grow space-x-4">
     <div className="min-h-screen flex flex-col bg-gray-100">
       <Header />
       <div className="flex flex-grow">
         <LeftNav />
-        <main className="flex flex-grow p-6 space-x-4">
-          <div className="flex-grow">
+        <main className="flex flex-grow p-6 space-x-4 overflow-hidden">
+          <div className="flex-grow overflow-x-auto">
             <WorkoutCalendar defaultDate={date} />
           </div>
         </main>

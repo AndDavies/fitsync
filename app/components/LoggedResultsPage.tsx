@@ -101,11 +101,30 @@ const LoggedResultsPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="bg-gray-900 text-white p-4 rounded-3xl shadow-md flex flex-col items-center justify-center w-full">
-        <p className="text-red-400">{error}</p>
+      <div className="text-white p-4 rounded-3xl shadow-md flex flex-col items-center w-full">
+        <table className="w-full text-left bg-gray-800 rounded-lg overflow-hidden">
+          <thead>
+            <tr className="bg-gray-700 text-white">
+              <th className="px-4 py-2 font-semibold">Date Logged</th>
+              <th className="px-4 py-2 font-semibold">Result</th>
+              <th className="px-4 py-2 font-semibold">Scoring Type</th>
+              <th className="px-4 py-2 font-semibold">Perceived Exertion</th>
+              <th className="px-4 py-2 font-semibold">Workout Focus</th>
+              <th className="px-4 py-2 font-semibold">Expand Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colSpan={6} className="text-center text-red-400 py-8">
+                No workouts logged.
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     );
   }
+  
 
   return (
     <div className="text-white p-4 rounded-3xl shadow-md flex flex-col items-center w-full">

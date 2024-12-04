@@ -21,9 +21,9 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="flex justify-between items-center bg-gray-900 px-6 py-2 shadow-md border-b border-gray-800 text-gray-100">
+    <header className="flex justify-between items-center bg-gray-900 px-6 py-0 shadow-md border-b border-gray-800 text-gray-100">
       <div className="flex items-center space-x-2">
-        <Image
+        {/* <Image
           src="/images/EB_05189_avatar.jpg"
           alt="Profile"
           width={32}
@@ -45,7 +45,7 @@ const Header: React.FC = () => {
           </button>
         ) : (
           <span className="text-xs text-gray-400">Not logged in</span>
-        )}
+        )} */}
       </div>
     </header>
   );

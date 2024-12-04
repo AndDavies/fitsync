@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Header from "../components/Header";
-import LeftNav from '../components/LeftNav';
-import { useAuth } from '../context/AuthContext';
-import ClassesTodayWidget from '../components/widgets/ClassesTodayWidget';
-import CompletedWorkoutsWidget from '../components/widgets/CompletedWorkoutsWidget';
-import RSSFeedWidget from '../components/widgets/RSSFeedWidget';
+import LeftNav from "../components/LeftNav";
+import { useAuth } from "../context/AuthContext";
+import ClassesTodayWidget from "../components/widgets/ClassesTodayWidget";
+import CompletedWorkoutsWidget from "../components/widgets/CompletedWorkoutsWidget";
+import RSSFeedWidget from "../components/widgets/RSSFeedWidget";
+import WorkoutsToday from "../components/widgets/WorkoutsToday";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -15,7 +16,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!isLoading && !session) {
-      router.push('/login'); // Redirect if not logged in
+      router.push("/login"); // Redirect if not logged in
     }
   }, [isLoading, session, router]);
 
@@ -26,12 +27,18 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
       <Header />
-      <div className="flex flex-grow">
+      <div className="flex flex-grow ">
         <LeftNav />
-        <main className="flex flex-grow p-6 space-x-4">
-          <ClassesTodayWidget />
-          <CompletedWorkoutsWidget />
-          <RSSFeedWidget />
+        <main className="flex-grow p-6">
+  
+          {/* Responsive Grid Layout */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Widgets */}
+            <WorkoutsToday />
+            <CompletedWorkoutsWidget />
+            <ClassesTodayWidget />
+            <RSSFeedWidget />
+          </div>
         </main>
       </div>
       <footer className="bg-white text-center py-4 shadow-inner">

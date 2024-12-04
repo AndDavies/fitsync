@@ -1,7 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 /* styles/globals.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900&display=swap');
 
 
 /* Set Sora as the default font for the entire site */
@@ -9,6 +12,14 @@ html, body {
   font-family: 'Montserrat', sans-serif;
   line-height: 1.6; /* Optional for better readability */
   -webkit-font-smoothing: antialiased; /* Optional for smoother text rendering */
+}
+
+/* Add Poppins font */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap');
+
+/* Custom Poppins class */
+.font-poppins {
+  font-family: 'Poppins', sans-serif;
 }
 
 /* Optional tweaks for typography */
@@ -28,7 +39,6 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap');
 
 
 

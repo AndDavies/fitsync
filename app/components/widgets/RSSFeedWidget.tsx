@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from "react";
 import Parser from "rss-parser";
 
+// Define an interface for the Article type
+interface Article {
+  title: string;
+  link: string;
+  pubDate?: string; // Optional, as not all RSS feeds may have it
+  contentSnippet?: string; // Optional, as not all RSS feeds may have it
+}
+
 const RSSFeedWidget: React.FC = () => {
   const [articles, setArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);

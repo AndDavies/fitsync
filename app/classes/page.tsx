@@ -26,7 +26,7 @@ const ClassSchedulePage: React.FC = () => {
 
         {/* Main Dashboard Container */}
         <main className="flex flex-grow space-x-4">
-          {/* Workout Builder */}
+          {/* class calendar */}
           <div className="w-full">
             {userData?.current_gym_id ? (
               <ClassCalendar currentGymId={userData.current_gym_id} />

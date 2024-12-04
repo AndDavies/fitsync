@@ -283,6 +283,11 @@ const LogResult: React.FC<LogResultProps> = ({ workoutId }) => {
         />
         <div className="text-sm text-gray-400 mt-1">Rating: {perceivedExertion}</div>
       </div>
+      {/* 
+      
+      
+      
+      */}
 
       {/* Notes Input */}
       <div className="form-group mb-4">

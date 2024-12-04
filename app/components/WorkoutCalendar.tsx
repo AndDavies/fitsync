@@ -146,10 +146,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ defaultDate }) => {
         />
       </div>
       <div className="calendar-grid mt-6 overflow-auto">
-        <div
-          className="grid grid-cols-7 text-sm antialiased"
-          style={{ minWidth: "900px" }} // Set a fixed minimum width
-        >
+        <div className="grid grid-cols-7 text-sm antialiased">
           {weekDates.map((date, index) => (
             <div key={index} className="header-slot bg-gray-800 text-white py-2 px-4 text-center">
               <div className="font-semibold">{format(date, "EEE")}</div>
@@ -178,12 +175,21 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ defaultDate }) => {
                         Log Result
                       </Link>
                     ) : (
-                      <Link
-                        href={`/edit-workout/${workout.id}`}
-                        className="inline-block mt-2 text-sm text-blue-600 hover:underline"
-                      >
-                        Edit Workout
-                      </Link>
+                      // Show both "Log Result" and "Edit Workout" for admins
+                      <div>
+                        <Link
+                          href={`/workouts/log-result/${workout.id}`}
+                          className="inline-block mt-2 text-sm text-green-600 hover:underline"
+                        >
+                          Log Result
+                        </Link>
+                        <Link
+                          href={`/edit-workout/${workout.id}`}
+                          className="inline-block mt-2 text-sm text-blue-600 hover:underline ml-4"
+                        >
+                          Edit Workout
+                        </Link>
+                      </div>
                     )}
                   </div>
                 ))
