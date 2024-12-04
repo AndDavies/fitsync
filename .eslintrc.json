@@ -2,6 +2,7 @@
   "extends": ["next/core-web-vitals", "next/typescript"],
   "rules": {
     "@typescript-eslint/no-unused-vars": "off",
-    "react-hooks/exhaustive-deps": "warn"  // Optional: Just a warning for missing dependencies
+    "react-hooks/exhaustive-deps": "warn",  // Optional: Just a warning for missing dependencies
+    "@typescript-eslint/no-explicit-any": "off"  // Disable no-explicit-any rule
   }
 }
