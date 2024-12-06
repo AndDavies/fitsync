@@ -106,7 +106,7 @@ const CompletedWorkoutsWidget: React.FC = () => {
   }
 
   return (
-    <div className="bg-slate-200 text-slate-900 p-6 rounded-3xl shadow-md flex flex-col items-start h-auto">
+    <div className="bg-slate-200 text-slate-900 p-6 rounded-3xl shadow-md flex flex-col items-start h-auto w-auto">
       <div className="mb-4 w-full">
         <h2 className="text-lg font-bold mb-2">Completed Workouts</h2>
         <p className="text-md font-semibold mb-1">
@@ -116,15 +116,15 @@ const CompletedWorkoutsWidget: React.FC = () => {
 
       {/* Stats Display */}
       <div className="flex flex-col items-start space-y-3 mb-4 w-full">
-        <div className="bg-gray-800 p-3 rounded-lg w-full shadow-md">
+        <div className="bg-gray-800 text-gray-300 p-3 rounded-lg w-full shadow-md">
           <span className="text-sm font-semibold">This Week:</span>
           <span className="block text-lg font-bold">{stats.workoutsThisWeek}</span>
         </div>
-        <div className="bg-gray-800 p-3 rounded-lg w-full shadow-md">
+        <div className="bg-gray-800 text-gray-300 p-3 rounded-lg w-full shadow-md">
           <span className="text-sm font-semibold">This Month:</span>
           <span className="block text-lg font-bold">{stats.workoutsThisMonth}</span>
         </div>
-        <div className="bg-gray-800 p-3 rounded-lg w-full shadow-md">
+        <div className="bg-gray-800 text-gray-300 p-3 rounded-lg w-full shadow-md">
           <span className="text-sm font-semibold">Year to Date:</span>
           <span className="block text-lg font-bold">{stats.workoutsYearToDate}</span>
         </div>

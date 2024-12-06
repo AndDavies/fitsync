@@ -37,6 +37,24 @@
   color: #333333;
 }
 
+.day-slot {
+  width: 100%;
+  height: auto; /* Or a fixed height if needed */
+  box-sizing: border-box;
+  overflow: hidden; /* Prevent content overflow */
+}
+
+.calendar-grid {
+  width: 100%; /* Ensure it doesn't expand */
+  max-width: 100%; /* Optional: Prevent overflow */
+}
+
+.workout-calendar-container {
+  width: 100%;
+  max-width: 1200px; /* Adjust based on your design */
+  margin: 0 auto; /* Center within the page */
+}
+
 .workout-item {
   margin-top: 10px;
   word-wrap: break-word; /* Ensures text breaks at appropriate places */

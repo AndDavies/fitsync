@@ -25,6 +25,7 @@ const WorkoutsTodayWidget: React.FC = () => {
     if (!userData) return;
 
     const today = new Date().toISOString().split("T")[0]; // Get today's date in YYYY-MM-DD format
+    //console.log(today);
 
     try {
       let tracksData;
@@ -106,7 +107,7 @@ const WorkoutsTodayWidget: React.FC = () => {
   }
 
   return (
-    <div className="bg-slate-200 text-slate-900 p-4 rounded-3xl shadow-md flex flex-col items-center justify-between w-full border-2">
+    <div className="bg-slate-200 text-slate-900 p-4 rounded-3xl shadow-md flex flex-col items-center align-top justify-between">
       <div className="flex flex-col items-center mb-2">
         <span className="text-md font-semibold">Workouts Scheduled For</span>
         <span className="text-lg font-bold">{format(new Date(), "EEEE, MMMM d, yyyy")}</span>

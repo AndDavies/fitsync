@@ -83,7 +83,7 @@ const ClassesTodayWidget: React.FC = () => {
   }
 
   return (
-    <div className="bg-slate-200 text-slate-900 p-4 rounded-3xl shadow-md flex flex-col items-center justify-between w-full h-56">
+    <div className="bg-slate-200 text-slate-900 p-4 rounded-3xl shadow-md flex flex-col items-center justify-between w-auto">
       <div className="flex flex-col items-center mb-2">
         <span className="text-md font-semibold">Classes Scheduled For</span>
         <span className="text-lg font-bold">{format(new Date(), "EEEE, MMMM d, yyyy")}</span>

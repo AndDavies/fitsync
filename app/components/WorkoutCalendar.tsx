@@ -155,7 +155,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ defaultDate }) => {
           ))}
 
           {weekDates.map((date, index) => (
-            <div key={index} className="day-slot border p-2 bg-white">
+            <div key={index} className="day-slot border p-2 bg-white ">
               {workouts[format(date, "EEEE").toLowerCase() as keyof WeeklyWorkouts]?.length > 0 ? (
                 workouts[format(date, "EEEE").toLowerCase() as keyof WeeklyWorkouts].map((workout) => (
                   <div key={workout.id} className="workout-item p-2 border-l-4 rounded-md mb-2">
