@@ -4,6 +4,14 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/utils/supabase/client';
 import { useAuth } from '../context/AuthContext';
 
+// A simple spinner component
+const Spinner: React.FC = () => (
+  <div className="flex justify-center items-center h-64">
+    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+    <p className="ml-3 text-gray-700">Loading...</p>
+  </div>
+);
+
 // Types
 type WorkoutLine = {
   id: string;
@@ -18,7 +26,8 @@ type Track = {
 };
 
 // Helper function for UUID validation
-const isValidUUID = (id: string) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(id);
+const isValidUUID = (id: string) =>
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(id);
 
 // Parsing workout details
 const parseWorkoutText = (workoutText: string): WorkoutLine[] => {
@@ -26,14 +35,23 @@ const parseWorkoutText = (workoutText: string): WorkoutLine[] => {
   return lines.map((line, index) => ({
     id: `item-${index}`,
     content: line.trim(),
-    type: index === 0 ? 'focus' : /^\d+(-\d+)+$/.test(line.trim()) ? 'sets' : /RPE\s*\d+(-\d+)?/.test(line) ? 'intensity' : 'details',
+    type:
+      index === 0
+        ? 'focus'
+        : /^\d+(-\d+)+$/.test(line.trim())
+        ? 'sets'
+        : /RPE\s*\d+(-\d+)?/.test(line)
+        ? 'intensity'
+        : 'details',
     isFixed: index === 0,
   }));
 };
 
-const WorkoutBuilder: React.FC<{ workoutText: string; setWorkoutText: (text: string) => void }> = ({ workoutText, setWorkoutText }) => {
+const WorkoutBuilder: React.FC<{ workoutText: string; setWorkoutText: (text: string) => void }> = ({
+  workoutText,
+  setWorkoutText,
+}) => {
   const { userData, isLoading: authLoading } = useAuth();
-  //const { isNavExpanded } = useNavContext();
   const [workoutName, setWorkoutName] = useState<string>('');
   const [workoutDate, setWorkoutDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [parsedLines, setParsedLines] = useState<WorkoutLine[]>([]);
@@ -62,70 +80,70 @@ const WorkoutBuilder: React.FC<{ workoutText: string; setWorkoutText: (text: str
   }, [scoringType]);
 
   // Fetch tracks when user data is available
-useEffect(() => {
-  const fetchTracks = async () => {
-    if (authLoading || !userData) return;
+  useEffect(() => {
+    const fetchTracks = async () => {
+      if (authLoading || !userData) return;
 
-    try {
-      setIsLoadingTracks(true);
+      try {
+        setIsLoadingTracks(true);
 
-      let tracksData: Track[] = [];
+        let tracksData: Track[] = [];
 
-      if (userData.current_gym_id) {
-        const { data, error } = await supabase
-          .from('tracks')
-          .select('id, name')
-          .eq('gym_id', userData.current_gym_id);
-
-        if (error) {
-          console.error('Error fetching gym tracks:', error.message);
-        } else if (data) {
-          tracksData = data;
-        }
-      } else if (userData.user_id) {
-        const { data, error } = await supabase
-          .from('tracks')
-          .select('id, name')
-          .eq('user_id', userData.user_id);
-
-        if (error) {
-          console.error('Error fetching personal track:', error.message);
-        } else if (data?.length) {
-          tracksData = data;
-        } else {
-          // If no personal track exists, create one
-          const { data: newTrack, error: createError } = await supabase
+        if (userData.current_gym_id) {
+          const { data, error } = await supabase
             .from('tracks')
-            .insert({
-              user_id: userData.user_id,
-              name: 'Personal Track',
-            })
             .select('id, name')
-            .single();
+            .eq('gym_id', userData.current_gym_id);
 
-          if (createError) {
-            console.error('Error creating personal track:', createError.message);
-          } else if (newTrack) {
-            tracksData = [newTrack];
+          if (error) {
+            console.error('Error fetching gym tracks:', error.message);
+          } else if (data) {
+            tracksData = data;
+          }
+        } else if (userData.user_id) {
+          const { data, error } = await supabase
+            .from('tracks')
+            .select('id, name')
+            .eq('user_id', userData.user_id);
+
+          if (error) {
+            console.error('Error fetching personal track:', error.message);
+          } else if (data?.length) {
+            tracksData = data;
+          } else {
+            // If no personal track exists, create one
+            const { data: newTrack, error: createError } = await supabase
+              .from('tracks')
+              .insert({
+                user_id: userData.user_id,
+                name: 'Personal Track',
+              })
+              .select('id, name')
+              .single();
+
+            if (createError) {
+              console.error('Error creating personal track:', createError.message);
+            } else if (newTrack) {
+              tracksData = [newTrack];
+            }
           }
         }
+
+        setTracks(tracksData);
+      } catch (error) {
+        console.error('Unexpected error fetching tracks:', error);
+      } finally {
+        setIsLoadingTracks(false);
       }
+    };
 
-      setTracks(tracksData); // Always set an array, even if empty
-    } catch (error) {
-      console.error('Unexpected error fetching tracks:', error);
-    } finally {
-      setIsLoadingTracks(false);
-    }
-  };
-
-  fetchTracks();
-}, [authLoading, userData]);
-
+    fetchTracks();
+  }, [authLoading, userData]);
 
   // Debounced function to avoid rapid re-renders during typing
   const handleDebouncedSetWorkoutText = useCallback(
     (text: string) => {
+      // You can implement an actual debounce here using a ref or a debounce utility if needed.
       setWorkoutText(text);
       setIsValidated(false);
     },
@@ -135,14 +153,17 @@ useEffect(() => {
   const handleParseWorkout = useCallback(() => {
     const lines = parseWorkoutText(workoutText);
     setParsedLines(lines);
-    setIsValidated(lines.length > 0 && workoutName.trim() !== "");
-    if (!selectedTrackId || !scoringType || workoutName.trim() === "") setShowTooltip(true);
+    setIsValidated(lines.length > 0 && workoutName.trim() !== '');
+    if (!selectedTrackId || !scoringType || workoutName.trim() === '') setShowTooltip(true);
   }, [workoutText, workoutName, selectedTrackId, scoringType]);
 
   const handlePlanWorkout = useCallback(async () => {
-    if (!isValidated || !selectedTrackId || !scoringType || workoutName.trim() === "") return;
+    if (!isValidated || !selectedTrackId || !scoringType || workoutName.trim() === '') return;
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
     if (userError || !user) {
       alert('You need to be logged in to plan a workout.');
       return;
@@ -163,7 +184,7 @@ useEffect(() => {
         .single();
 
       if (insertError) {
-        alert("There was an error creating the workout. Please try again.");
+        alert('There was an error creating the workout. Please try again.');
         return;
       }
       workoutId = newWorkout?.workoutid;
@@ -189,24 +210,35 @@ useEffect(() => {
       });
 
     if (scheduleError) {
-      alert("There was an error scheduling the workout. Please try again.");
+      alert('There was an error scheduling the workout. Please try again.');
     } else {
       router.push(`/plan/daily?date=${workoutDate}`);
     }
-  }, [isValidated, selectedTrackId, scoringType, workoutName, workoutDate, warmUp, workoutText, coolDown, advancedScoring, orderType, coachNotes, scoringSet, router]);
+  }, [
+    isValidated,
+    selectedTrackId,
+    scoringType,
+    workoutName,
+    workoutDate,
+    warmUp,
+    workoutText,
+    coolDown,
+    advancedScoring,
+    orderType,
+    coachNotes,
+    scoringSet,
+    router,
+  ]);
 
-  if (authLoading) {
-    return <p>Loading authentication...</p>;
-  }
-
-  if (isLoadingTracks) {
-    return <p>Loading tracks...</p>;
+  // Show a unified loading spinner if still loading auth or tracks
+  if (authLoading || isLoadingTracks) {
+    return <Spinner />;
   }
 
   return (
     <div className={`p-6 bg-gray-50 rounded-md shadow-md max-w-3xl mx-auto text-gray-800 antialiased transition-all duration-300`}>
       <h2 className="text-2xl font-semibold mb-4 text-gray-600">Build Your Workout</h2>
-      
+
       {/* Date Input */}
       <div className="mb-4">
         <label htmlFor="workout-date" className="block text-sm font-semibold mb-1 text-gray-500">
@@ -246,13 +278,17 @@ useEffect(() => {
         </label>
         <select
           id="track-select"
-          value={selectedTrackId || ""}
+          value={selectedTrackId || ''}
           onChange={(e) => setSelectedTrackId(e.target.value || null)}
           className={`w-1/2 p-2 border ${showTooltip && !selectedTrackId ? 'border-red-500' : 'border-gray-300'} bg-gray-100 text-sm text-gray-800 rounded`}
         >
-          <option value="" disabled>Select a track</option>
+          <option value="" disabled>
+            Select a track
+          </option>
           {tracks.map((track) => (
-            <option key={track.id} value={track.id}>{track.name}</option>
+            <option key={track.id} value={track.id}>
+              {track.name}
+            </option>
           ))}
         </select>
         {showTooltip && !selectedTrackId && (
@@ -266,7 +302,7 @@ useEffect(() => {
       <div className="mb-4">
         <label htmlFor="warm-up-toggle" className="block text-sm font-semibold mb-1 text-gray-500">
           <button onClick={() => setShowWarmUp(!showWarmUp)} className="text-blue-500">
-            {showWarmUp ? "Hide Warm Up" : "Add Warm Up"}
+            {showWarmUp ? 'Hide Warm Up' : 'Add Warm Up'}
           </button>
         </label>
         {showWarmUp && (
@@ -299,7 +335,7 @@ useEffect(() => {
       <div className="mb-4">
         <label htmlFor="cool-down-toggle" className="block text-sm font-semibold mb-1 text-gray-500">
           <button onClick={() => setShowCoolDown(!showCoolDown)} className="text-blue-500">
-            {showCoolDown ? "Hide Cool Down" : "Add Cool Down"}
+            {showCoolDown ? 'Hide Cool Down' : 'Add Cool Down'}
           </button>
         </label>
         {showCoolDown && (
@@ -328,14 +364,20 @@ useEffect(() => {
           </select>
           <span>of</span>
           <select
-            value={scoringType || ""}
+            value={scoringType || ''}
             onChange={(e) => setScoringType(e.target.value)}
             className={`w-1/2 p-2 border ${showTooltip && !scoringType ? 'border-red-500' : 'border-gray-300'} bg-gray-100 text-sm text-gray-800 rounded`}
           >
-            <option value="" disabled>Select type</option>
-            {["Time", "Rounds + Reps", "Reps", "Load", "Calories", "Metres", "Check Box", "Not Scored"].map((type) => (
-              <option key={type} value={type}>{type}</option>
-            ))}
+            <option value="" disabled>
+              Select type
+            </option>
+            {['Time', 'Rounds + Reps', 'Reps', 'Load', 'Calories', 'Metres', 'Check Box', 'Not Scored'].map(
+              (type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              )
+            )}
           </select>
         </div>
       </div>
@@ -344,7 +386,11 @@ useEffect(() => {
       <div className="mb-4">
         <label className="block text-sm font-semibold mb-1 text-gray-500">Advanced Scoring Options</label>
         <div className="flex space-x-2">
-          <select value={advancedScoring} disabled className="w-1/2 p-2 border border-gray-300 bg-gray-100 text-sm text-gray-800 rounded">
+          <select
+            value={advancedScoring}
+            disabled
+            className="w-1/2 p-2 border border-gray-300 bg-gray-100 text-sm text-gray-800 rounded"
+          >
             <option value="Minimum">Minimum</option>
             <option value="Maximum">Maximum</option>
           </select>
@@ -354,26 +400,26 @@ useEffect(() => {
             onChange={(e) => setOrderType(e.target.value)}
             className="w-1/2 p-2 border border-gray-300 bg-gray-100 text-sm text-gray-800 rounded"
           >
-            <option value="Descending">Descending (&quot;bigger scores first&quot;)</option>
-            <option value="Ascending">Ascending (&quot;smaller scores first&quot;)</option>
+            <option value="Descending">Descending ("bigger scores first")</option>
+            <option value="Ascending">Ascending ("smaller scores first")</option>
           </select>
         </div>
       </div>
 
-      {/* Add Coach&apos;s Notes Button and Modal */}
+      {/* Add Coach's Notes Button and Modal */}
       <div className="mb-4">
         <button
           onClick={() => setShowNotesModal(true)}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
         >
-          Add Coach&apos;s Notes
+          Add Coach's Notes
         </button>
       </div>
 
       {showNotesModal && (
         <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded shadow-lg max-w-md w-full">
-            <h3 className="text-xl font-semibold mb-4">Coach&apos;s Notes</h3>
+            <h3 className="text-xl font-semibold mb-4">Coach's Notes</h3>
             <textarea
               value={coachNotes}
               onChange={(e) => setCoachNotes(e.target.value)}
@@ -381,8 +427,18 @@ useEffect(() => {
               className="w-full p-2 border border-gray-300 bg-gray-100 text-sm text-gray-800 rounded h-28 focus:outline-none focus:ring-1 focus:ring-gray-300"
             />
             <div className="flex justify-end mt-4 space-x-2">
-              <button onClick={() => setShowNotesModal(false)} className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition">Cancel</button>
-              <button onClick={() => setShowNotesModal(false)} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition">Save</button>
+              <button
+                onClick={() => setShowNotesModal(false)}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => setShowNotesModal(false)}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+              >
+                Save
+              </button>
             </div>
           </div>
         </div>
@@ -392,14 +448,20 @@ useEffect(() => {
       <div className="flex space-x-2 mt-3">
         <button
           onClick={handleParseWorkout}
-          className={`flex-1 px-4 py-2 font-semibold rounded transition text-sm ${!isValidated ? 'bg-pink-200 text-gray-700 hover:bg-pink-300' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+          className={`flex-1 px-4 py-2 font-semibold rounded transition text-sm ${
+            !isValidated ? 'bg-pink-200 text-gray-700 hover:bg-pink-300' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
         >
           Validate
         </button>
         <button
           onClick={handlePlanWorkout}
-          disabled={!isValidated || !selectedTrackId || !scoringType || workoutName.trim() === ""}
-          className={`flex-1 px-4 py-2 font-semibold rounded transition text-sm ${isValidated && selectedTrackId && scoringType && workoutName.trim() !== "" ? 'bg-pink-500 text-white hover:bg-pink-600' : 'bg-gray-300 text-gray-700 cursor-not-allowed'}`}
+          disabled={!isValidated || !selectedTrackId || !scoringType || workoutName.trim() === ''}
+          className={`flex-1 px-4 py-2 font-semibold rounded transition text-sm ${
+            isValidated && selectedTrackId && scoringType && workoutName.trim() !== ''
+              ? 'bg-pink-500 text-white hover:bg-pink-600'
+              : 'bg-gray-300 text-gray-700 cursor-not-allowed'
+          }`}
         >
           Plan It
         </button>

@@ -1,10 +1,12 @@
 // app/workouts/page.tsx
 "use client";
 import React, { useState } from 'react';
-import WorkoutBuilder from '../components/WorkoutBuilder';
-import WorkoutIdeas from "../components/WorkoutIdeas";
+// import WorkoutBuilder from '../components/WorkoutBuilder';
+import PlanWorkoutPage from '../components/PlanWorkoutPage';
+//import WorkoutIdeas from "../components/WorkoutIdeas";
 import Header from "../components/Header";
-import Accordion from '../components/widgets/Accordion';
+//import Accordion from '../components/widgets/Accordion';
+import { Toaster } from 'react-hot-toast';
 import LeftNav from '../components/LeftNav';
 
 export default function Dashboard() {
@@ -22,13 +24,16 @@ export default function Dashboard() {
 
         <main className="flex flex-grow items-start p-0">
           {/* Workout Builder Container */}
-          <div className="flex-none border-4 w-1/2">
-            <WorkoutBuilder workoutText={workoutBuilderText} setWorkoutText={setWorkoutBuilderText} />
+          <div className="flex-none border-4 w-full">
+            {/* <WorkoutBuilder workoutText={workoutBuilderText} setWorkoutText={setWorkoutBuilderText} /> */}
+            <Toaster position="top-right" />
+            <PlanWorkoutPage />
+            
           </div>
 
           {/* Accordion Container */}
-          <div className="flex-none border-4 w-1/3">
-            <Accordion title="Metcon">
+          {/* <div className="flex-none border-4 w-1/3"> */}
+            {/* <Accordion title="Metcon">
               <WorkoutIdeas setWorkoutBuilderText={setWorkoutBuilderText} category="Metcon" />
             </Accordion>
             <Accordion title="Benchmarks">
@@ -42,9 +47,9 @@ export default function Dashboard() {
             </Accordion>
             <Accordion title="Intervals">
               <WorkoutIdeas setWorkoutBuilderText={setWorkoutBuilderText} category="Intervals" />
-            </Accordion>
+            </Accordion> */}
             {/* Additional accordion sections can be added here */}
-          </div>
+          {/* </div> */}
         </main>
 
 

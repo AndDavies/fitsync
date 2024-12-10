@@ -1,20 +1,201 @@
+// WorkoutIdeas.tsx
+"use client";
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/utils/supabase/client';
 import { MdOutlineContentCopy } from 'react-icons/md';
+import { parseWorkoutDescription } from './parseWorkout'; // Use parseWorkoutDescription for detailed view
+import WorkoutDisplay from './WorkoutDisplay';
+
+// Import Geist UI components
+import { Card, Input, Text, Spacer } from '@geist-ui/core';
+// We'll try Button from Geist. If errors occur, revert to <button>
+import { Button } from '@geist-ui/core';
+
+type Workout = {
+  title: string;
+  description: Record<string, any> | null;
+};
 
 type WorkoutIdeasProps = {
-  setWorkoutBuilderText: (text: string) => void;
+  setWorkoutBuilderText: (text: string) => void; // updates parent's workoutDetails
   category: string;
 };
 
+function formatReps(reps: any) {
+  if (Array.isArray(reps)) {
+    return reps.join('-');
+  }
+  return reps ?? '';
+}
+
+function formatWeight(weight: any) {
+  if (!weight) return '';
+  if (typeof weight === 'string') return weight;
+  if (weight.rx && weight.scaled) {
+    return `(${weight.rx}/${weight.scaled})`;
+  } else if (weight.rx) {
+    return `(${weight.rx})`;
+  }
+  return '';
+}
+
+function formatMovements(movements: any[]): string[] {
+  return movements.map((mov) => {
+    let line = '';
+
+    if (mov.minute) {
+      line += `${mov.minute.toUpperCase()}: `;
+    }
+
+    if (mov.duration_seconds) {
+      line += `${mov.duration_seconds}s `;
+    }
+
+    if (mov.distance) {
+      line += `${mov.distance} `;
+    } else if (mov.reps !== undefined && mov.reps !== 'Max') {
+      line += `${formatReps(mov.reps)} `;
+    } else if (mov.reps === 'Max') {
+      line += `Max `;
+    }
+
+    if (mov.name) {
+      line += mov.name;
+    }
+
+    if (mov.weight) {
+      line += ` ${formatWeight(mov.weight)}`;
+    }
+
+    return line.trim();
+  });
+}
+
+function formatWorkoutBlock(block: any): string[] {
+  const lines: string[] = [];
+  if (block.movements && Array.isArray(block.movements)) {
+    lines.push(...formatMovements(block.movements));
+  } else if (block.name && block.reps) {
+    const repsString = Array.isArray(block.reps) ? block.reps.join('-') : block.reps;
+    let line = `${block.name}: ${repsString}`;
+    if (block.weight) {
+      line += ` ${formatWeight(block.weight)}`;
+    }
+    lines.push(line);
+  }
+  return lines;
+}
+
+function formatDescription(description: Record<string, any> | null): string {
+  if (!description) return '';
+
+  const { type, duration, workout } = description;
+  let lines: string[] = [];
+
+  const shortDuration = duration ? duration.replace(' minutes', '') : '';
+
+  switch (type) {
+    case 'Strength':
+      lines.push('STRENGTH');
+      if (workout && Array.isArray(workout)) {
+        for (const block of workout) {
+          lines.push(...formatWorkoutBlock(block));
+        }
+      }
+      break;
+
+    case 'EMOM':
+      lines.push(`EMOM ${shortDuration}`);
+      if (workout && Array.isArray(workout)) {
+        for (const block of workout) {
+          if (block.movements) lines.push(...formatMovements(block.movements));
+        }
+      }
+      break;
+
+    case 'Accessory':
+      lines.push('ACCESSORY');
+      if (workout && Array.isArray(workout)) {
+        for (const block of workout) {
+          if (block.rounds) lines.push(`${block.rounds} ROUNDS:`);
+          if (block.movements) lines.push(...formatMovements(block.movements));
+        }
+      }
+      break;
+
+    case 'Hero WOD':
+      lines.push('HERO WOD');
+      if (workout && Array.isArray(workout)) {
+        for (const block of workout) {
+          if (block.movements) lines.push(...formatMovements(block.movements));
+        }
+      }
+      break;
+
+    case 'Conditioning':
+      lines.push('CONDITIONING');
+      if (workout && Array.isArray(workout)) {
+        for (const block of workout) {
+          if (block.rounds) lines.push(`${block.rounds} ROUNDS:`);
+          if (block.movements) lines.push(...formatMovements(block.movements));
+        }
+      }
+      break;
+
+    case 'MetCon':
+      lines.push('METCON');
+      if (workout && Array.isArray(workout)) {
+        for (const block of workout) {
+          if (block.rounds) lines.push(`${block.rounds} ROUNDS:`);
+          if (block.movements) lines.push(...formatMovements(block.movements));
+        }
+      }
+      break;
+
+    case 'AMRAP':
+      lines.push(`AMRAP ${shortDuration || ''}`.trim());
+      if (workout && Array.isArray(workout)) {
+        for (const block of workout) {
+          if (block.movements) lines.push(...formatMovements(block.movements));
+        }
+      }
+      break;
+
+    case 'Weightlifting':
+      lines.push(`WEIGHTLIFTING ${shortDuration}`);
+      if (workout && Array.isArray(workout)) {
+        for (const block of workout) {
+          if (block.format) lines.push(block.format.toUpperCase());
+          if (block.movements) lines.push(...formatMovements(block.movements));
+        }
+      }
+      break;
+
+    case 'Interval Training':
+      lines.push('INTERVAL TRAINING');
+      if (workout && Array.isArray(workout)) {
+        for (const block of workout) {
+          if (block.rounds) lines.push(`${block.rounds} ROUNDS:`);
+          if (block.movements) lines.push(...formatMovements(block.movements));
+        }
+      }
+      break;
+
+    default:
+      return JSON.stringify(description, null, 2);
+  }
+
+  return lines.join('\n');
+}
+
 const WorkoutIdeas: React.FC<WorkoutIdeasProps> = ({ setWorkoutBuilderText, category }) => {
-  const [workouts, setWorkouts] = useState<{ title: string; description: string | undefined }[]>([]);
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [search, setSearch] = useState('');
+  const [detailedView, setDetailedView] = useState<{ [key: number]: boolean }>({});
 
-  // Fetch workouts when the category changes
   useEffect(() => {
-    if (!category) return; // Guard clause for invalid categories
-
+    if (!category) return;
     const fetchWorkouts = async () => {
       try {
         const { data, error } = await supabase
@@ -38,65 +219,113 @@ const WorkoutIdeas: React.FC<WorkoutIdeasProps> = ({ setWorkoutBuilderText, cate
     fetchWorkouts();
   }, [category]);
 
-  // Parse workout description
-  const parseDescription = (text: string = '') => {
-    return text.replace(/\\n/g, '\n');
-  };
-
-  // Calculate the height of the textarea
   const calculateHeight = (text: string) => {
-    const lineHeight = 1.5; // Line height in 'em'
-    const lineCount = Math.max(3, text.split('\n').length); // Ensure a minimum height
-    const maxLines = 10; // Cap the maximum height
+    const lineHeight = 1.5;
+    const lineCount = Math.max(3, text.split('\n').length);
+    const maxLines = 10;
     return `${Math.min(lineCount, maxLines) * lineHeight}em`;
   };
 
-  // Filter workouts based on search input
   const filteredWorkouts = useMemo(() => {
-    return workouts.filter((workout) =>
-      workout.title.toLowerCase().includes(search.toLowerCase())
+    return workouts.filter((w) =>
+      w.title.toLowerCase().includes(search.toLowerCase())
     );
   }, [workouts, search]);
 
-  // Copy button handler
   const handleCopyWorkout = useCallback(
-    (description: string) => {
-      setWorkoutBuilderText(parseDescription(description));
+    async (description: Record<string, any> | null) => {
+      const text = formatDescription(description);
+      setWorkoutBuilderText(text);
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (err) {
+        console.warn('Failed to copy to clipboard', err);
+      }
     },
     [setWorkoutBuilderText]
   );
 
+  const toggleViewMode = (index: number) => {
+    setDetailedView((prev) => ({
+      ...prev,
+      [index]: !prev[index],
+    }));
+  };
+
   return (
-    <div className="p-4 bg-gray-200 rounded-sm shadow-md h-96 overflow-y-auto text-gray-900">
-      {/* Search input */}
+    <Card width="100%" style={{ maxHeight: '600px', overflowY: 'auto' }}>
+      <Card.Content>
       <input
-        type="text"
-        placeholder="Search movements..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="mb-2 p-2 border border-gray-400 rounded-sm w-full text-sm focus:outline-none focus:ring-1 focus:ring-gray-500 bg-gray-100 text-gray-900 placeholder-gray-600"
-      />
-      {/* Workout list */}
-      <div className="workout-list space-y-2">
-        {filteredWorkouts.map((workout, index) => (
-          <div key={index} className="workout-item border border-gray-400 rounded-sm p-2 bg-gray-100">
-            <textarea
-              readOnly
-              value={parseDescription(workout.description || '')}
-              className="workout-description w-full p-1.5 border border-gray-300 rounded-sm focus:outline-none resize-none overflow-hidden text-sm bg-gray-50 text-gray-800"
-              style={{ height: calculateHeight(workout.description || '') }}
-            />
-            <button
-              onClick={() => handleCopyWorkout(workout.description || '')}
-              className="copy-button flex items-center space-x-1 mt-1 text-gray-700 hover:text-gray-900 text-xs"
-            >
-              <MdOutlineContentCopy className="text-gray-500" />
-              <span>Copy</span>
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
+  placeholder="Search workouts..."
+  value={search}
+  onChange={(e) => setSearch(e.target.value)}
+  className="w-full p-2 border border-gray-300 rounded"
+  />
+      </Card.Content>
+      <Card.Content>
+        {filteredWorkouts.map((workout, index) => {
+          const isDetailed = detailedView[index] || false;
+          const parsed = isDetailed && workout.description
+            ? parseWorkoutDescription(workout.description)
+            : null;
+          const workoutText = formatDescription(workout.description);
+
+          return (
+            <Card key={index} width="100%" style={{ marginBottom: '16px' }}>
+              <Card.Content>
+                <Text b>{workout.title}</Text>
+                <Spacer height="0.5rem" />
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                <button
+                  onClick={() => toggleViewMode(index)}
+                  className="text-xs py-1 px-2 rounded text-white bg-pink-500 hover:bg-pink-600"
+                >
+                  {isDetailed ? "View: Text" : "View: Detailed"}
+                </button>
+
+                <button
+                  onClick={() => {
+                    handleCopyWorkout(workout.description).catch(err => console.warn(err));
+                  }}
+                  className="text-xs py-1 px-2 bg-pink-500 hover:bg-pink-600 text-white rounded flex items-center space-x-1"
+                >
+                  <MdOutlineContentCopy className="text-white" />
+                  <span>Copy</span>
+                </button>
+
+                </div>
+              </Card.Content>
+              <Card.Content>
+                {isDetailed ? (
+                  parsed ? (
+                    <WorkoutDisplay workoutData={parsed} />
+                  ) : (
+                    <Text small type="secondary">No detailed data available.</Text>
+                  )
+                ) : (
+                  <textarea
+                    readOnly
+                    value={workoutText}
+                    style={{
+                      width: '100%',
+                      padding: '8px',
+                      border: '1px solid #ccc',
+                      borderRadius: '4px',
+                      resize: 'none',
+                      overflow: 'hidden',
+                      fontSize: '0.875rem',
+                      backgroundColor: '#f9fafb',
+                      color: '#111827',
+                      minHeight: '6em'
+                    }}
+                  />
+                )}
+              </Card.Content>
+            </Card>
+          );
+        })}
+      </Card.Content>
+    </Card>
   );
 };
 
