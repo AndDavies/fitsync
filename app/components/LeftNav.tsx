@@ -7,28 +7,24 @@ import { CalendarCogIcon } from './icons/calendar-cog';
 import { ChartColumnIncreasingIcon } from './icons/chart-column-increasing';
 import { GaugeIcon } from './icons/gauge';
 import { SettingsGearIcon } from './icons/settings-gear';
-import { useAuth } from '../context/AuthContext'; // Import AuthContext to access role and user data
+import { useAuth } from '../context/AuthContext'; 
 import { supabase } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 
 const LeftNav: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState<boolean>(true); // Default state
   const [isClient, setIsClient] = useState(false);
-  const { userData } = useAuth(); // Access user data (role and gym info)
+  const { userData } = useAuth(); 
   const router = useRouter();
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    router.push('/login'); // Redirect to the login page after logging out
+    router.push('/login'); 
   };
 
-  /**
-   * Initialize `isClient` and `isExpanded` on the client side.
-   */
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setIsClient(true);
-
       const savedState = localStorage.getItem('isExpanded');
       if (savedState !== null) {
         setIsExpanded(JSON.parse(savedState));
@@ -36,16 +32,12 @@ const LeftNav: React.FC = () => {
     }
   }, []);
 
-  /**
-   * Persist `isExpanded` to localStorage, debounced to minimize writes.
-   */
   useEffect(() => {
     if (isClient) {
       const timeout = setTimeout(() => {
         localStorage.setItem('isExpanded', JSON.stringify(isExpanded));
-      }, 300); // Delay saving to localStorage by 300ms
-
-      return () => clearTimeout(timeout); // Cleanup timeout on dependency change
+      }, 300); 
+      return () => clearTimeout(timeout);
     }
   }, [isExpanded, isClient]);
 
@@ -53,7 +45,6 @@ const LeftNav: React.FC = () => {
     setIsExpanded((prev) => !prev);
   };
 
-  // Don't render until `isClient` is true
   if (!isClient) return null;
 
   // Placeholder data for the TallyScore component
@@ -66,7 +57,6 @@ const LeftNav: React.FC = () => {
     restWarning: true,
   };
 
-  // Determine visibility of User Management link
   const canManageUsers = userData?.role === 'admin' || userData?.role === 'coach';
 
   return (
@@ -124,6 +114,14 @@ const LeftNav: React.FC = () => {
         </button>
       </Link>
 
+      {/* User Profile Link */}
+      <Link href="/profile" prefetch>
+        <button className={`flex items-center w-full hover:text-gray-200 transition ${isExpanded ? 'pl-4' : 'justify-center'}`}>
+          <SettingsGearIcon />
+          {isExpanded && <span className="text-sm ml-2 text-left">Profile</span>}
+        </button>
+      </Link>
+
       {/* Conditional User Management Link */}
       {canManageUsers && (
         <Link href="/users" prefetch>
@@ -133,11 +131,12 @@ const LeftNav: React.FC = () => {
           </button>
         </Link>
       )}
+
       <button
-      onClick={handleSignOut}
-      className="px-3 py-1 bg-red-500 text-xs text-white rounded hover:bg-red-600 transition"
+        onClick={handleSignOut}
+        className="px-3 py-1 bg-red-500 text-xs text-white rounded hover:bg-red-600 transition"
       >
-       Log Out
+        Log Out
       </button>
 
       {/* TallyScore component with placeholder data */}

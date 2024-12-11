@@ -292,6 +292,7 @@ const PlanWorkoutPage: React.FC = () => {
         </Grid>
 
         {step === 1 && (
+          
           <Grid xs={24} sm={8}>
             <Grid.Container direction="column" gap={2}>
               <Grid>

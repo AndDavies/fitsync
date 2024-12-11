@@ -160,7 +160,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ defaultDate }) => {
                 workouts[format(date, "EEEE").toLowerCase() as keyof WeeklyWorkouts].map((workout) => (
                   <div key={workout.id} className="workout-item p-2 border-l-4 rounded-md mb-2">
                     <div className="font-bold text-blue-500">{workout.trackName}</div>
-                    <pre className="text-sm">{workout.workoutDetails}</pre>
+                    <pre className="text-sm text-black">{workout.workoutDetails}</pre>
                     {workout.warmUp && (
                       <pre className="text-xs text-gray-500 mt-1">Warm-Up: {workout.warmUp}</pre>
                     )}

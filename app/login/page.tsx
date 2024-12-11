@@ -1,77 +1,55 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/utils/supabase/client";
+
+import { useSessionContext } from '@supabase/auth-helpers-react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [errorMessage, setErrorMessage] = useState(""); // State to store error message
+  const { session, supabaseClient } = useSessionContext();
   const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  useEffect(() => {
+    if (session) {
+      // Already logged in, redirect to dashboard
+      router.push('/dashboard');
+    }
+  }, [session, router]);
 
   const handleLogin = async () => {
-    setErrorMessage(""); // Clear any previous error messages
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
+    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
     if (error) {
-      setErrorMessage(error.message); // Set error message if login fails
+      console.error('Login error:', error.message);
     } else {
-      router.push("/dashboard"); // Redirect to the dashboard on successful login
+      router.push('/dashboard');
     }
   };
 
   return (
-    <div className="flex h-screen items-center justify-center">
-      <div className="max-w-md w-full p-6 bg-white shadow-md rounded-md">
-        <h2 className="text-3xl font-bold mb-6">Sign In</h2>
-        {errorMessage && (
-          <p className="text-red-600 mb-4">{errorMessage}</p> // Display error message if it exists
-        )}
-        <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium">
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-indigo-200"
-              placeholder="Email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium">
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-indigo-200"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-          <button
-            type="button"
-            onClick={handleLogin}
-            className="w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700"
-          >
-            Sign In
-          </button>
-        </form>
-        <p className="mt-4 text-sm">
-          Don&apos;t have an account?{" "}
-          <a href="/signup" className="text-indigo-600 hover:underline">
-            Sign up
-          </a>
-        </p>
+    <div className="flex items-center justify-center h-screen bg-gray-100">
+      <div className="p-6 bg-white rounded shadow space-y-4 w-80">
+        <h2 className="text-xl font-bold">Log In</h2>
+        <input
+          className="w-full border rounded p-2"
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}  
+        />
+        <input
+          className="w-full border rounded p-2"
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}  
+        />
+        <button
+          className="w-full bg-pink-500 text-white p-2 rounded"
+          onClick={handleLogin}
+        >
+          Sign In
+        </button>
       </div>
     </div>
   );

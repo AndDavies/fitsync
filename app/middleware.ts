@@ -1,28 +1,12 @@
-// app/middleware.ts
-import { NextResponse } from 'next/server';
-import { supabase } from '@/utils/supabase/client';
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-export async function middleware(req: Request) {
-  const { url } = req;
-
-  // Allow access to login and signup pages without authentication
-  if (url.includes('/login') || url.includes('/signup')) {
-    return NextResponse.next();
-  }
-
-  // Get the session asynchronously
-  const { data: session } = await supabase.auth.getSession();
-
-  // If no session and trying to access a protected route, redirect to login
-  if (!session && (url.includes('/dashboard') || url.includes('/workouts'))) {
-    return NextResponse.redirect(new URL('/login', url));
-  }
-
-  // Allow the request to continue if session exists
-  return NextResponse.next();
+export async function middleware(req: NextRequest) {
+  const res = NextResponse.next()
+  // Create a middleware Supabase client from the request and response
+  const supabase = createMiddlewareClient({ req, res })
+  // This syncs the session from the request's cookies onto the response's cookies, ensuring server-side routes see the session.
+  await supabase.auth.getSession()
+  return res
 }
-
-export const config = {
-  // Specify protected routes
-  matcher: ['/dashboard/:path*', '/workouts/:path*'], // Add any other routes you want to protect
-};

@@ -1,43 +1,109 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "../context/AuthContext";
 import Header from "../components/Header";
 import LeftNav from "../components/LeftNav";
-import { useAuth } from "../context/AuthContext";
-import ClassesTodayWidget from "../components/widgets/ClassesTodayWidget";
-import CompletedWorkoutsWidget from "../components/widgets/CompletedWorkoutsWidget";
-import RSSFeedWidget from "../components/widgets/RSSFeedWidget";
-import WorkoutsToday from "../components/widgets/WorkoutsToday";
 
 export default function Dashboard() {
-  const router = useRouter();
   const { session, isLoading, userData } = useAuth();
+  const router = useRouter();
+  const [workoutsCompleted, setWorkoutsCompleted] = useState<number | null>(null);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
 
+  // Redirect logic:
   useEffect(() => {
-    if (!isLoading && !session) {
-      router.push("/login"); // Redirect if not logged in
+    if (!isLoading) {
+      if (!session) {
+        router.push("/login");
+      } else if (userData && !userData.onboarding_completed) {
+        router.push("/onboarding");
+      }
     }
-  }, [isLoading, session, router]);
+  }, [isLoading, session, userData, router]);
 
-  if (isLoading || !userData) {
-    return <div>Loading your dashboard...</div>; // Show loading state while data is fetched
+  // Fetch metrics once the user is fully authenticated and onboarded:
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        // Include credentials to send session cookies along with the request
+        const res = await fetch("/api/user/metrics", {
+          credentials: 'include'
+        });
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || "Failed to fetch metrics");
+        }
+        const data = await res.json();
+        if (typeof data.workouts_completed_past_7_days === "number") {
+          setWorkoutsCompleted(data.workouts_completed_past_7_days);
+        } else {
+          setMetricsError("Metrics data format is unexpected.");
+        }
+      } catch (err: any) {
+        console.error("Error fetching metrics:", err.message);
+        setMetricsError("Could not load metrics. Please try again later.");
+      }
+    };
+
+    if (!isLoading && userData?.onboarding_completed) {
+      fetchMetrics();
+    }
+  }, [isLoading, userData]);
+
+  if (isLoading || !session || !userData) {
+    return <div>Loading your dashboard...</div>;
   }
 
+  // Once we get here, user is authenticated and onboarded.
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
       <Header />
-      <div className="flex flex-grow ">
+      <div className="flex flex-grow">
         <LeftNav />
         <main className="flex-grow p-6">
-  
-          {/* Responsive Grid Layout */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Widgets */}
-            <WorkoutsToday />
-            <CompletedWorkoutsWidget />
-            <ClassesTodayWidget />
-            <RSSFeedWidget />
+          <div className="max-w-2xl mx-auto bg-white p-6 rounded shadow space-y-4">
+            <h2 className="text-2xl font-bold">
+              Welcome, {userData.display_name || "Athlete"}!
+            </h2>
+            <p className="text-gray-700">
+              Your primary goal:{" "}
+              <span className="font-semibold text-pink-600">
+                {userData.goals || "General Health"}
+              </span>.
+              We’ll help you track progress towards this goal by logging your workouts and monitoring trends over time.
+            </p>
+
+            <div className="p-4 bg-gray-50 rounded border">
+              <h3 className="text-lg font-semibold">Key Metric This Week</h3>
+              {metricsError ? (
+                <p className="text-red-500 text-sm mt-2">{metricsError}</p>
+              ) : workoutsCompleted === null ? (
+                <p className="text-gray-500 text-sm mt-2">Loading metrics...</p>
+              ) : (
+                <p className="text-gray-700 text-sm mt-2">
+                  Workouts Completed:{" "}
+                  <span className="font-bold">{workoutsCompleted}</span>
+                </p>
+              )}
+
+              {!metricsError && workoutsCompleted !== null && (
+                <p className="text-gray-500 text-xs mt-1">
+                  Aim for 3 this week to stay on track!
+                </p>
+              )}
+            </div>
+
+            <p className="text-gray-700">
+              As you progress, we’ll show you more insights—like your strength improvements,
+              conditioning levels, and suggestions from our AI coach. For now, let’s keep it simple.
+              When you’re ready, you can explore more data by visiting the <strong>Workouts</strong> or <strong>Plan</strong> pages.
+            </p>
+
+            <p className="text-sm text-gray-500 italic">
+              Hover over metrics on other pages to see tooltips and learn more about what they mean.
+            </p>
           </div>
         </main>
       </div>
