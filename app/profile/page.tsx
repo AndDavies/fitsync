@@ -4,9 +4,6 @@ import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Header from "../components/Header";
 import LeftNav from "../components/LeftNav";
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
 
 type Benchmark = {
   id: string;
@@ -15,13 +12,6 @@ type Benchmark = {
   date_recorded: string;
 };
 
-export async function middleware(req: NextRequest) {
-  const res = NextResponse.next()
-  const supabase = createMiddlewareClient({ req, res })
-  await supabase.auth.getSession() // ensures session is loaded and cookies are updated
-  return res
-}
-
 export default function ProfilePage() {
   const { session, isLoading, userData } = useAuth();
   const router = useRouter();
@@ -29,7 +19,6 @@ export default function ProfilePage() {
   const [displayName, setDisplayName] = useState<string>('');
   const [bio, setBio] = useState<string>('');
   const [goals, setGoals] = useState<string>('');
-  
   const [benchmarks, setBenchmarks] = useState<Benchmark[]>([]);
   const [benchmarkName, setBenchmarkName] = useState<string>('');
   const [benchmarkValue, setBenchmarkValue] = useState<string>('');
@@ -39,7 +28,6 @@ export default function ProfilePage() {
   const [addingBenchmark, setAddingBenchmark] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Handle auth redirects:
   useEffect(() => {
     if (!isLoading) {
       if (!session) {
@@ -50,7 +38,6 @@ export default function ProfilePage() {
     }
   }, [isLoading, session, userData, router]);
 
-  // Fetch profile and benchmarks
   useEffect(() => {
     const fetchProfile = async () => {
       if (!isLoading && userData?.onboarding_completed) {
@@ -58,7 +45,7 @@ export default function ProfilePage() {
         setError(null);
         try {
           const res = await fetch('/api/user/profile', {
-            credentials: 'include' // Ensure cookies are sent
+            credentials: 'include'
           });
           if (!res.ok) {
             const errData = await res.json();
@@ -87,7 +74,7 @@ export default function ProfilePage() {
       const res = await fetch('/api/user/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', // Send cookies
+        credentials: 'include',
         body: JSON.stringify({ display_name: displayName, bio, goals })
       });
       if (!res.ok) {
@@ -108,18 +95,18 @@ export default function ProfilePage() {
       const res = await fetch('/api/user/benchmarks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', // Send cookies
+        credentials: 'include',
         body: JSON.stringify({ benchmark_name: benchmarkName, benchmark_value: benchmarkValue })
       });
       if (!res.ok) {
         const errData = await res.json();
         throw new Error(errData.error || 'Failed to add benchmark');
       }
-      // Refresh profile/benchmarks
+
       setBenchmarkName('');
       setBenchmarkValue('');
       const refreshRes = await fetch('/api/user/profile', {
-        credentials: 'include' // Send cookies
+        credentials: 'include'
       });
       const refreshData = await refreshRes.json();
       setBenchmarks(refreshData.benchmarks || []);
