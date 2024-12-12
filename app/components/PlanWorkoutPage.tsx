@@ -216,52 +216,53 @@ const PlanWorkoutPage: React.FC = () => {
 
               {step === 2 && (
                 <Grid.Container gap={2}>
-                  <Grid xs={24} sm={16}>
-                    <Card shadow style={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}>
+                  {/* Give the refinement card more width (20 columns) */}
+                  <Grid xs={24} sm={20}>
+                    <Card shadow className="bg-white border border-gray-300">
                       <Card.Content>
-                        <Text h2 style={{ marginBottom: '8px' }}>Refine Your Workout</Text>
-                        <Text small type="secondary" style={{ marginBottom: '16px' }}>
+                        <Text h2 className="mb-2" style={{ color: '#111827' }}>Refine Your Workout</Text>
+                        <Text small type="secondary" style={{ marginBottom: '16px', color: '#4B5563' }}>
                           Add warm-up, cool-down, and coach notes if desired. These are optional.
                         </Text>
 
                         <div className="space-y-4">
                           <div>
-                            <Text small b>Warm Up (optional)</Text>
+                            <Text small b style={{ color: '#111827' }}>Warm Up (optional)</Text>
                             <textarea
                               value={workoutDraft.warmUp}
                               onChange={(e) => dispatch({ type: "UPDATE", updates: { warmUp: e.target.value } })}
                               placeholder="Optional warm-up details"
-                              className="w-full p-2 border border-gray-600 rounded h-20 bg-gray-700 text-gray-100 focus:outline-none"
+                              className="w-full p-2 border border-gray-300 rounded h-20 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-500"
                             />
                           </div>
                           <div>
-                            <Text small b>Cool Down (optional)</Text>
+                            <Text small b style={{ color: '#111827' }}>Cool Down (optional)</Text>
                             <textarea
                               value={workoutDraft.coolDown}
                               onChange={(e) => dispatch({ type: "UPDATE", updates: { coolDown: e.target.value } })}
                               placeholder="Optional cool-down details"
-                              className="w-full p-2 border border-gray-600 rounded h-20 bg-gray-700 text-gray-100 focus:outline-none"
+                              className="w-full p-2 border border-gray-300 rounded h-20 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-500"
                             />
                           </div>
                           <div>
-                            <Text small b>Coach Notes (optional)</Text>
+                            <Text small b style={{ color: '#111827' }}>Coach Notes (optional)</Text>
                             <textarea
                               value={workoutDraft.coachNotes}
                               onChange={(e) => dispatch({ type: "UPDATE", updates: { coachNotes: e.target.value } })}
                               placeholder="Optional notes for coaches"
-                              className="w-full p-2 border border-gray-600 rounded h-20 bg-gray-700 text-gray-100 focus:outline-none"
+                              className="w-full p-2 border border-gray-300 rounded h-20 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-500"
                             />
                           </div>
                           <div className="flex space-x-2 mt-4">
                             <button
                               onClick={() => setStep(1)}
-                              className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
+                              className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500"
                             >
                               Back
                             </button>
                             <button
                               onClick={handleNextFromStep2}
-                              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-pink-500"
                             >
                               Next
                             </button>
@@ -270,8 +271,10 @@ const PlanWorkoutPage: React.FC = () => {
                       </Card.Content>
                     </Card>
                   </Grid>
-                  <Grid xs={24} sm={8}>
-                    <Card shadow style={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}>
+
+                  {/* Workout Display with less width (4 columns) to give more space to the refinement card */}
+                  <Grid xs={24} sm={4}>
+                    <Card shadow className="bg-white border border-gray-300">
                       <Card.Content>
                         <WorkoutDisplay workoutData={parsedWorkout} workoutName={workoutDraft.workoutName} />
                       </Card.Content>
@@ -279,6 +282,7 @@ const PlanWorkoutPage: React.FC = () => {
                   </Grid>
                 </Grid.Container>
               )}
+
 
               {step === 3 && (
                 <FinalReview

@@ -11,6 +11,8 @@ export default function Dashboard() {
   const router = useRouter();
   const [workoutsCompleted, setWorkoutsCompleted] = useState<number | null>(null);
   const [metricsError, setMetricsError] = useState<string | null>(null);
+  const [suggestion, setSuggestion] = useState<string | null>(null); // New state for suggestion
+  const [suggestionError, setSuggestionError] = useState<string | null>(null);
 
   // Redirect logic:
   useEffect(() => {
@@ -27,9 +29,8 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
-        // Include credentials to send session cookies along with the request
         const res = await fetch("/api/user/metrics", {
-          credentials: 'include'
+          credentials: 'include' // Ensure cookies are sent
         });
         if (!res.ok) {
           const errorData = await res.json();
@@ -52,11 +53,34 @@ export default function Dashboard() {
     }
   }, [isLoading, userData]);
 
+  // Fetch suggestion after metrics are loaded or once user is ready
+  useEffect(() => {
+    const fetchSuggestion = async () => {
+      try {
+        const res = await fetch('/api/user/suggestions', { credentials: 'include' });
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || "Failed to fetch suggestion");
+        }
+        const data = await res.json();
+        setSuggestion(data.suggestion || null);
+      } catch (err: any) {
+        console.error("Error fetching suggestion:", err.message);
+        setSuggestionError("Could not load suggestions. Please try again later.");
+      }
+    };
+
+    // Only fetch suggestions if userData is loaded and onboarding is completed
+    // and there's no metrics error blocking view
+    if (!isLoading && userData?.onboarding_completed && !metricsError) {
+      fetchSuggestion();
+    }
+  }, [isLoading, userData, metricsError]);
+
   if (isLoading || !session || !userData) {
     return <div>Loading your dashboard...</div>;
   }
 
-  // Once we get here, user is authenticated and onboarded.
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
       <Header />
@@ -94,6 +118,19 @@ export default function Dashboard() {
                 </p>
               )}
             </div>
+
+            {/* Coach's Tip / Suggestion Section */}
+            {suggestionError && (
+              <div className="p-4 bg-red-50 rounded border text-red-700 text-sm">
+                {suggestionError}
+              </div>
+            )}
+            {suggestion && !suggestionError && (
+              <div className="p-4 bg-blue-50 rounded border text-blue-800">
+                <h3 className="text-lg font-semibold mb-2">Coach’s Tip</h3>
+                <p className="text-sm">{suggestion}</p>
+              </div>
+            )}
 
             <p className="text-gray-700">
               As you progress, we’ll show you more insights—like your strength improvements,

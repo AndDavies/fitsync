@@ -6,7 +6,7 @@ const customTheme = Themes.createFromDark({
   type: 'myCustomDark',
   palette: {
     background: '#1F2937',
-    foreground: '#F9FAFB',
+    foreground: '#222222', // pure white text
     accents_1: '#FAFAFA',
     accents_2: '#E5E7EB',
     accents_3: '#D1D5DB',

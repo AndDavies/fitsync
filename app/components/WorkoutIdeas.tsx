@@ -1,16 +1,11 @@
-// WorkoutIdeas.tsx
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/utils/supabase/client';
 import { MdOutlineContentCopy } from 'react-icons/md';
-import { parseWorkoutDescription } from './parseWorkout'; // Use parseWorkoutDescription for detailed view
+import { parseWorkoutDescription } from './parseWorkout';
 import WorkoutDisplay from './WorkoutDisplay';
-
-// Import Geist UI components
-import { Card, Input, Text, Spacer } from '@geist-ui/core';
-// We'll try Button from Geist. If errors occur, revert to <button>
-import { Button } from '@geist-ui/core';
+import { Card, Text, Spacer } from '@geist-ui/core';
 
 type Workout = {
   title: string;
@@ -18,7 +13,7 @@ type Workout = {
 };
 
 type WorkoutIdeasProps = {
-  setWorkoutBuilderText: (text: string) => void; // updates parent's workoutDetails
+  setWorkoutBuilderText: (text: string) => void;
   category: string;
 };
 
@@ -219,13 +214,6 @@ const WorkoutIdeas: React.FC<WorkoutIdeasProps> = ({ setWorkoutBuilderText, cate
     fetchWorkouts();
   }, [category]);
 
-  const calculateHeight = (text: string) => {
-    const lineHeight = 1.5;
-    const lineCount = Math.max(3, text.split('\n').length);
-    const maxLines = 10;
-    return `${Math.min(lineCount, maxLines) * lineHeight}em`;
-  };
-
   const filteredWorkouts = useMemo(() => {
     return workouts.filter((w) =>
       w.title.toLowerCase().includes(search.toLowerCase())
@@ -253,14 +241,14 @@ const WorkoutIdeas: React.FC<WorkoutIdeasProps> = ({ setWorkoutBuilderText, cate
   };
 
   return (
-    <Card width="100%" style={{ maxHeight: '600px', overflowY: 'auto' }}>
+    <Card width="100%" style={{ maxHeight: '600px', overflowY: 'auto', backgroundColor: '#fff', border: '1px solid #d1d5db' }} className="text-gray-800">
       <Card.Content>
-      <input
-  placeholder="Search workouts..."
-  value={search}
-  onChange={(e) => setSearch(e.target.value)}
-  className="w-full p-2 border border-gray-300 rounded"
-  />
+        <input
+          placeholder="Search workouts..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-pink-500 bg-white text-gray-800"
+        />
       </Card.Content>
       <Card.Content>
         {filteredWorkouts.map((workout, index) => {
@@ -271,28 +259,25 @@ const WorkoutIdeas: React.FC<WorkoutIdeasProps> = ({ setWorkoutBuilderText, cate
           const workoutText = formatDescription(workout.description);
 
           return (
-            <Card key={index} width="100%" style={{ marginBottom: '16px' }}>
+            <Card key={index} width="100%" style={{ marginBottom: '16px', backgroundColor: '#fff', border: '1px solid #d1d5db' }}>
               <Card.Content>
-                <Text b>{workout.title}</Text>
+                <Text b style={{ color: '#111827' }}>{workout.title}</Text>
                 <Spacer height="0.5rem" />
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                <button
-                  onClick={() => toggleViewMode(index)}
-                  className="text-xs py-1 px-2 rounded text-white bg-pink-500 hover:bg-pink-600"
-                >
-                  {isDetailed ? "View: Text" : "View: Detailed"}
-                </button>
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => toggleViewMode(index)}
+                    className="text-xs py-1 px-2 rounded text-white bg-pink-500 hover:bg-pink-600 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                  >
+                    {isDetailed ? "View: Text" : "View: Detailed"}
+                  </button>
 
-                <button
-                  onClick={() => {
-                    handleCopyWorkout(workout.description).catch(err => console.warn(err));
-                  }}
-                  className="text-xs py-1 px-2 bg-pink-500 hover:bg-pink-600 text-white rounded flex items-center space-x-1"
-                >
-                  <MdOutlineContentCopy className="text-white" />
-                  <span>Copy</span>
-                </button>
-
+                  <button
+                    onClick={() => handleCopyWorkout(workout.description).catch(err => console.warn(err))}
+                    className="text-xs py-1 px-2 bg-pink-500 hover:bg-pink-600 text-white rounded flex items-center space-x-1 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                  >
+                    <MdOutlineContentCopy className="text-white" />
+                    <span>Copy</span>
+                  </button>
                 </div>
               </Card.Content>
               <Card.Content>
@@ -300,7 +285,7 @@ const WorkoutIdeas: React.FC<WorkoutIdeasProps> = ({ setWorkoutBuilderText, cate
                   parsed ? (
                     <WorkoutDisplay workoutData={parsed} />
                   ) : (
-                    <Text small type="secondary">No detailed data available.</Text>
+                    <Text small type="secondary" style={{ color: '#6b7280' }}>No detailed data available.</Text>
                   )
                 ) : (
                   <textarea
@@ -318,6 +303,7 @@ const WorkoutIdeas: React.FC<WorkoutIdeasProps> = ({ setWorkoutBuilderText, cate
                       color: '#111827',
                       minHeight: '6em'
                     }}
+                    className="focus:outline-none focus:ring-2 focus:ring-pink-500"
                   />
                 )}
               </Card.Content>

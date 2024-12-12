@@ -2,6 +2,11 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
+import Header from "../components/Header";
+import LeftNav from "../components/LeftNav";
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
 type Benchmark = {
   id: string;
@@ -9,6 +14,13 @@ type Benchmark = {
   benchmark_value: string;
   date_recorded: string;
 };
+
+export async function middleware(req: NextRequest) {
+  const res = NextResponse.next()
+  const supabase = createMiddlewareClient({ req, res })
+  await supabase.auth.getSession() // ensures session is loaded and cookies are updated
+  return res
+}
 
 export default function ProfilePage() {
   const { session, isLoading, userData } = useAuth();
@@ -45,7 +57,9 @@ export default function ProfilePage() {
         setLoadingProfile(true);
         setError(null);
         try {
-          const res = await fetch('/api/user/profile');
+          const res = await fetch('/api/user/profile', {
+            credentials: 'include' // Ensure cookies are sent
+          });
           if (!res.ok) {
             const errData = await res.json();
             throw new Error(errData.error || 'Failed to load profile');
@@ -73,6 +87,7 @@ export default function ProfilePage() {
       const res = await fetch('/api/user/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Send cookies
         body: JSON.stringify({ display_name: displayName, bio, goals })
       });
       if (!res.ok) {
@@ -93,6 +108,7 @@ export default function ProfilePage() {
       const res = await fetch('/api/user/benchmarks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Send cookies
         body: JSON.stringify({ benchmark_name: benchmarkName, benchmark_value: benchmarkValue })
       });
       if (!res.ok) {
@@ -102,7 +118,9 @@ export default function ProfilePage() {
       // Refresh profile/benchmarks
       setBenchmarkName('');
       setBenchmarkValue('');
-      const refreshRes = await fetch('/api/user/profile');
+      const refreshRes = await fetch('/api/user/profile', {
+        credentials: 'include' // Send cookies
+      });
       const refreshData = await refreshRes.json();
       setBenchmarks(refreshData.benchmarks || []);
     } catch (err: any) {
@@ -117,81 +135,90 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-lg mx-auto bg-white p-6 rounded shadow space-y-4">
-        <h1 className="text-2xl font-bold">Your Profile</h1>
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-        <div>
-          <label className="block text-sm font-semibold mb-1">Display Name</label>
-          <input
-            type="text"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold mb-1">Bio</label>
-          <textarea
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded h-24"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold mb-1">Goals</label>
-          <input
-            type="text"
-            value={goals}
-            onChange={(e) => setGoals(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded"
-          />
-        </div>
-        <button
-          onClick={saveProfile}
-          disabled={savingProfile}
-          className={`px-4 py-2 rounded ${savingProfile ? 'bg-gray-300' : 'bg-pink-500 text-white hover:bg-pink-600'}`}
-        >
-          {savingProfile ? 'Saving...' : 'Save Profile'}
-        </button>
-
-        <hr className="my-6" />
-
-        <h2 className="text-xl font-bold">Your Benchmarks</h2>
-        <div className="space-y-2">
-          {benchmarks.map((b) => (
-            <div key={b.id} className="p-2 border-b text-sm">
-              <strong>{b.benchmark_name}:</strong> {b.benchmark_value} <span className="text-gray-500 text-xs">({new Date(b.date_recorded).toLocaleDateString()})</span>
+    <div className="min-h-screen flex flex-col bg-gray-100">
+      <Header />
+      <div className="flex flex-grow">
+        <LeftNav />
+        <main className="flex-grow p-6">
+          <div className="max-w-lg mx-auto bg-white p-6 rounded shadow space-y-4">
+            <h1 className="text-2xl font-bold">Your Profile</h1>
+            {error && <p className="text-red-500 text-sm">{error}</p>}
+            <div>
+              <label className="block text-sm font-semibold mb-1">Display Name</label>
+              <input
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded"
+              />
             </div>
-          ))}
-          {benchmarks.length === 0 && <p className="text-gray-500 text-sm">No benchmarks recorded yet.</p>}
-        </div>
+            <div>
+              <label className="block text-sm font-semibold mb-1">Bio</label>
+              <textarea
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded h-24"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-1">Goals</label>
+              <input
+                type="text"
+                value={goals}
+                onChange={(e) => setGoals(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded"
+              />
+            </div>
+            <button
+              onClick={saveProfile}
+              disabled={savingProfile}
+              className={`px-4 py-2 rounded ${savingProfile ? 'bg-gray-300' : 'bg-pink-500 text-white hover:bg-pink-600'}`}
+            >
+              {savingProfile ? 'Saving...' : 'Save Profile'}
+            </button>
 
-        <div className="mt-4 space-y-2">
-          <h3 className="text-lg font-semibold">Add a New Benchmark</h3>
-          <input
-            type="text"
-            placeholder="Benchmark Name (e.g., '5K Run')"
-            value={benchmarkName}
-            onChange={(e) => setBenchmarkName(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded"
-          />
-          <input
-            type="text"
-            placeholder="Benchmark Value (e.g., '25:30')"
-            value={benchmarkValue}
-            onChange={(e) => setBenchmarkValue(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded"
-          />
-          <button
-            onClick={addNewBenchmark}
-            disabled={addingBenchmark}
-            className={`px-4 py-2 rounded ${addingBenchmark ? 'bg-gray-300' : 'bg-green-500 text-white hover:bg-green-600'}`}
-          >
-            {addingBenchmark ? 'Adding...' : 'Add Benchmark'}
-          </button>
-        </div>
+            <hr className="my-6" />
+
+            <h2 className="text-xl font-bold">Your Benchmarks</h2>
+            <div className="space-y-2">
+              {benchmarks.map((b) => (
+                <div key={b.id} className="p-2 border-b text-sm">
+                  <strong>{b.benchmark_name}:</strong> {b.benchmark_value} <span className="text-gray-500 text-xs">({new Date(b.date_recorded).toLocaleDateString()})</span>
+                </div>
+              ))}
+              {benchmarks.length === 0 && <p className="text-gray-500 text-sm">No benchmarks recorded yet.</p>}
+            </div>
+
+            <div className="mt-4 space-y-2">
+              <h3 className="text-lg font-semibold">Add a New Benchmark</h3>
+              <input
+                type="text"
+                placeholder="Benchmark Name (e.g., '5K Run')"
+                value={benchmarkName}
+                onChange={(e) => setBenchmarkName(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded"
+              />
+              <input
+                type="text"
+                placeholder="Benchmark Value (e.g., '25:30')"
+                value={benchmarkValue}
+                onChange={(e) => setBenchmarkValue(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded"
+              />
+              <button
+                onClick={addNewBenchmark}
+                disabled={addingBenchmark}
+                className={`px-4 py-2 rounded ${addingBenchmark ? 'bg-gray-300' : 'bg-green-500 text-white hover:bg-green-600'}`}
+              >
+                {addingBenchmark ? 'Adding...' : 'Add Benchmark'}
+              </button>
+            </div>
+          </div>
+        </main>
       </div>
+      <footer className="bg-white text-center py-4 shadow-inner">
+        <p className="text-sm text-gray-600">&copy; 2024 FitSync. All rights reserved.</p>
+      </footer>
     </div>
   );
 }

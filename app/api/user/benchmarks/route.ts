@@ -1,35 +1,48 @@
+// app/api/user/benchmarks/route.ts
 import { NextResponse } from 'next/server';
-import { supabase } from '@/utils/supabase/client';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 
-export async function POST(req: Request) {
-  const {
-    data: { user },
-    error: authError
-  } = await supabase.auth.getUser();
+export async function GET() {
+  const supabase = createRouteHandlerClient({ cookies })
+  const { data: { session }, error: authError } = await supabase.auth.getSession()
 
-  if (authError || !user) {
+  if (authError || !session) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
 
-  const userId = user.id;
-  const body = await req.json();
-  const { benchmark_name, benchmark_value } = body;
+  const userId = session.user.id;
 
-  if (!benchmark_name || !benchmark_value) {
-    return NextResponse.json({ error: 'Missing benchmark_name or benchmark_value' }, { status: 400 });
+  // Fetch all benchmarks
+  const { data: benchmarksData, error: benchmarksError } = await supabase
+    .from('benchmarks')
+    .select('id, name, category, units, description')
+    .order('category', { ascending: true })
+    .order('name', { ascending: true });
+
+  if (benchmarksError) {
+    return NextResponse.json({ error: benchmarksError.message }, { status: 500 });
   }
 
-  const { error: insertError } = await supabase
-    .from('user_benchmarks')
-    .insert({
-      user_id: userId,
-      benchmark_name,
-      benchmark_value
-    });
+  // Fetch user results for these benchmarks
+  // Assuming a `user_benchmark_results` table with: id, user_id, benchmark_id, result_value, date_recorded
+  const benchmarkIds = benchmarksData?.map(b => b.id) || [];
+  const { data: resultsData, error: resultsError } = await supabase
+    .from('user_benchmark_results')
+    .select('benchmark_id, result_value')
+    .eq('user_id', userId)
+    .in('benchmark_id', benchmarkIds);
 
-  if (insertError) {
-    return NextResponse.json({ error: insertError.message }, { status: 500 });
+  if (resultsError) {
+    return NextResponse.json({ error: resultsError.message }, { status: 500 });
   }
 
-  return NextResponse.json({ success: true });
+  const userResultsMap = new Map(resultsData?.map(r => [r.benchmark_id, r.result_value]));
+
+  const responseData = (benchmarksData || []).map(b => ({
+    ...b,
+    user_result: userResultsMap.get(b.id) || null
+  }));
+
+  return NextResponse.json({ benchmarks: responseData });
 }

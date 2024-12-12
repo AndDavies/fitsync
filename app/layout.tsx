@@ -1,7 +1,8 @@
+// layout.tsx (No major changes, but an idea)
 import "./globals.css";
-import Providers from "./providers";          // Client: Geist UI
-import SupabaseProvider from "./supabase-provider";  // Client: SessionContextProvider
-import { AuthProvider } from "./context/AuthContext"; // Client: Auth logic
+import Providers from "./providers";          
+import SupabaseProvider from "./supabase-provider";  
+import { AuthProvider } from "./context/AuthContext";
 
 export const metadata = {
   title: 'FitSync',
@@ -13,6 +14,10 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // If you want a global spinner while auth is initializing:
+  // You can do a small trick by hooking into AuthProvider's loading if exposed,
+  // or handle it in pages as we did.
+
   return (
     <html lang="en">
       <head>

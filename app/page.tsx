@@ -2,9 +2,24 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useAuth } from "./context/AuthContext";
+import LoadingSpinner from "./components/LoadingSpinner";
 
 export default function LandingPage() {
   const router = useRouter();
+  const { isLoading, session } = useAuth(); // assuming AuthContext provides this
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-100">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  // If user is logged in (session) redirect or show a different link
+  // Otherwise show the landing page
+  // ... no changes needed if the logic is correct.
 
   return (
     <>
@@ -71,12 +86,11 @@ export default function LandingPage() {
 
             {/* Right Section */}
             <div className="w-2/5 hidden lg:block">
-              {/* Optional Image or Additional Content */}
               <Image
                 src="/images/hero_right_ascent.png"
                 alt="Hero Image"
                 height={900}
-                width={500} // Adjust width as needed
+                width={500}
                 className="rounded-md"
               />
             </div>

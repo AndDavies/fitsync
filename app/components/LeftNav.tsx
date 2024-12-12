@@ -12,7 +12,7 @@ import { supabase } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 
 const LeftNav: React.FC = () => {
-  const [isExpanded, setIsExpanded] = useState<boolean>(true); // Default state
+  const [isExpanded, setIsExpanded] = useState<boolean>(true); 
   const [isClient, setIsClient] = useState(false);
   const { userData } = useAuth(); 
   const router = useRouter();
@@ -89,7 +89,7 @@ const LeftNav: React.FC = () => {
           {isExpanded && <span className="text-sm ml-2 text-left">Dashboard</span>}
         </button>
       </Link>
-      <Link href="/workouts//logged-results/" prefetch>
+      <Link href="/workouts/logged-results/" prefetch>
         <button className={`flex items-center w-full hover:text-gray-200 transition ${isExpanded ? 'pl-4' : 'justify-center'}`}>
           <GaugeIcon />
           {isExpanded && <span className="text-sm ml-2 text-left">Logged Results</span>}
@@ -99,6 +99,12 @@ const LeftNav: React.FC = () => {
         <button className={`flex items-center w-full hover:text-gray-200 transition ${isExpanded ? 'pl-4' : 'justify-center'}`}>
           <ChartColumnIncreasingIcon />
           {isExpanded && <span className="text-sm ml-2 text-left">Plan a Workout</span>}
+        </button>
+      </Link>
+      <Link href="/benchmarks" prefetch>
+        <button className={`flex items-center w-full hover:text-gray-200 transition ${isExpanded ? 'pl-4' : 'justify-center'}`}>
+          <ChartColumnIncreasingIcon />
+          {isExpanded && <span className="text-sm ml-2 text-left">Benchmarks</span>}
         </button>
       </Link>
       <Link href="/plan" prefetch>
