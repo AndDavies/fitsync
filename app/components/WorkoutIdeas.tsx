@@ -241,20 +241,17 @@ const WorkoutIdeas: React.FC<WorkoutIdeasProps> = ({ setWorkoutBuilderText, cate
   };
 
   return (
-    <Card 
-      width="100%" 
-      style={{ maxHeight: '600px', overflowY: 'auto', backgroundColor: '#1F2937', border: '1px solid #374151' }} 
-      className="text-gray-200"
-    >
-      <Card.Content>
+    <div className="space-y-4">
+      
+      
+      <div className="space-y-4">
         <input
           placeholder="Search workouts..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full p-2 border border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-pink-500 bg-gray-800 text-gray-200"
+          className="w-full p-2 border border-gray-700 rounded bg-gray-800 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500"
         />
-      </Card.Content>
-      <Card.Content>
+
         {filteredWorkouts.map((workout, index) => {
           const isDetailed = detailedView[index] || false;
           const parsed = isDetailed && workout.description
@@ -263,35 +260,38 @@ const WorkoutIdeas: React.FC<WorkoutIdeasProps> = ({ setWorkoutBuilderText, cate
           const workoutText = formatDescription(workout.description);
 
           return (
-            <Card 
-              key={index} 
-              width="100%" 
-              style={{ marginBottom: '16px', backgroundColor: '#1F2937', border: '1px solid #374151' }}
+            <div
+              key={index}
+              className="border border-gray-700 rounded p-4 bg-gray-800 transition-transform duration-200 hover:scale-[1.01] hover:border-pink-500"
             >
-              <Card.Content>
+              <div className="flex items-center justify-between mb-2">
                 <Text b style={{ color: '#F9FAFB' }}>{workout.title}</Text>
-                <Spacer height="0.5rem" />
-                <div className="flex justify-end gap-2">
+                <div className="flex space-x-2">
                   <button
                     onClick={() => toggleViewMode(index)}
-                    className="text-xs py-1 px-2 rounded text-white bg-pink-500 hover:bg-pink-600 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                    className="text-xs py-1 px-2 rounded text-white bg-pink-500 hover:bg-pink-600 focus:outline-none focus:ring-2 focus:ring-pink-500 transition-colors duration-200"
                   >
                     {isDetailed ? "View: Text" : "View: Detailed"}
                   </button>
 
                   <button
                     onClick={() => handleCopyWorkout(workout.description).catch(err => console.warn(err))}
-                    className="text-xs py-1 px-2 bg-pink-500 hover:bg-pink-600 text-white rounded flex items-center space-x-1 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                    className="text-xs py-1 px-2 bg-pink-500 hover:bg-pink-600 text-white rounded flex items-center space-x-1 focus:outline-none focus:ring-2 focus:ring-pink-500 transition-colors duration-200"
                   >
                     <MdOutlineContentCopy className="text-white" />
                     <span>Copy</span>
                   </button>
                 </div>
-              </Card.Content>
-              <Card.Content>
+              </div>
+              <div
+                className={`transition-opacity duration-300 ${isDetailed ? 'opacity-100' : 'opacity-100'}`}
+                style={{ minHeight: '6em' }}
+              >
                 {isDetailed ? (
                   parsed ? (
-                    <WorkoutDisplay workoutData={parsed} />
+                    <div className="mt-2">
+                      <WorkoutDisplay workoutData={parsed} />
+                    </div>
                   ) : (
                     <Text small type="secondary" style={{ color: '#9CA3AF' }}>No detailed data available.</Text>
                   )
@@ -311,15 +311,15 @@ const WorkoutIdeas: React.FC<WorkoutIdeasProps> = ({ setWorkoutBuilderText, cate
                       color: '#F9FAFB',
                       minHeight: '6em'
                     }}
-                    className="focus:outline-none focus:ring-2 focus:ring-pink-500"
+                    className="focus:outline-none focus:ring-2 focus:ring-pink-500 placeholder-gray-500 mt-2 transition-colors duration-300"
                   />
                 )}
-              </Card.Content>
-            </Card>
+              </div>
+            </div>
           );
         })}
-      </Card.Content>
-    </Card>
+      </div>
+    </div>
   );
 };
 

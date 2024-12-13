@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -9,7 +11,7 @@ import { GaugeIcon } from './icons/gauge';
 import { SettingsGearIcon } from './icons/settings-gear';
 import { useAuth } from '../context/AuthContext'; 
 import { supabase } from '@/utils/supabase/client';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from '@geist-ui/icons';
 
 const LeftNav: React.FC = () => {
@@ -17,6 +19,7 @@ const LeftNav: React.FC = () => {
   const [isClient, setIsClient] = useState(false);
   const { userData, refreshUserData } = useAuth(); 
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -48,15 +51,6 @@ const LeftNav: React.FC = () => {
   };
 
   if (!isClient) return null;
-
-  const totalScore = 6452.75;
-  const percentage = 5;
-  const metrics = {
-    weeklyIncrease: 120,
-    loadIncrease: 20,
-    streak: 4,
-    restWarning: true,
-  };
 
   const canManageUsers = userData?.role === 'admin' || userData?.role === 'coach';
 
@@ -100,19 +94,26 @@ const LeftNav: React.FC = () => {
         {isExpanded ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
       </button>
 
-      <div className={`flex-1 flex flex-col ${isExpanded ? 'pl-2' : 'items-center'} space-y-2`}>
-        {navItems.map((item, idx) => (
-          <Link href={item.href} key={idx} prefetch>
-            <button
-              className={`flex items-center w-full text-sm rounded p-2 
-              hover:bg-pink-600 hover:text-white transition 
-              ${isExpanded ? 'justify-start' : 'justify-center'}`}
-            >
-              {item.icon}
-              {isExpanded && <span className="ml-2 text-left">{item.label}</span>}
-            </button>
-          </Link>
-        ))}
+      <div className={`flex-1 flex flex-col ${isExpanded ? 'pl-2' : 'items-center'} space-y-1`}>
+        {navItems.map((item, idx) => {
+          const isActive = pathname === item.href; 
+          return (
+            <Link href={item.href} key={idx}>
+              <div
+                className={`
+                  flex items-center w-full text-sm rounded p-2 
+                  transition-colors duration-200 cursor-pointer
+                  ${isExpanded ? 'justify-start' : 'justify-center'}
+                  ${isActive ? 'bg-pink-700 text-white font-bold' : 'text-gray-300'}
+                  hover:bg-pink-600 hover:text-white
+                `}
+              >
+                {item.icon}
+                {isExpanded && <span className="ml-2">{item.label}</span>}
+              </div>
+            </Link>
+          );
+        })}
       </div>
 
       <div className={`${isExpanded ? 'pl-2' : 'flex justify-center'} mb-3`}>
@@ -123,12 +124,6 @@ const LeftNav: React.FC = () => {
           Log Out
         </button>
       </div>
-
-      {isExpanded && (
-        <div className="px-2 pb-3">
-          <TallyScore totalScore={totalScore} percentage={percentage} metrics={metrics} />
-        </div>
-      )}
     </nav>
   );
 };

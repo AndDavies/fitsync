@@ -11,36 +11,36 @@ export default function EditWorkoutPage() {
 
   if (!workoutId || typeof workoutId !== "string") {
     return (
-      <div className="min-h-screen flex flex-col bg-gray-100">
+      <div className="min-h-screen flex flex-col bg-gray-900 text-gray-100">
         <Header />
         <div className="flex flex-grow">
           <LeftNav />
-          <main className="flex flex-grow p-6 space-x-4">
+          <main className="flex flex-grow p-6">
             <div className="flex-grow">
-              <p className="text-gray-600">No workout ID provided. Please select a workout to edit.</p>
+              <p className="text-gray-300">No workout ID provided. Please select a workout to edit.</p>
             </div>
           </main>
         </div>
-        <footer className="bg-white text-center py-4 shadow-inner">
-          <p className="text-sm text-gray-600">&copy; 2024 FitSync. All rights reserved.</p>
+        <footer className="bg-gray-800 text-center py-4 border-t border-gray-700">
+          <p className="text-sm text-gray-400">&copy; 2024 FitSync. All rights reserved.</p>
         </footer>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-100">
+    <div className="min-h-screen flex flex-col bg-gray-900 text-gray-100">
       <Header />
       <div className="flex flex-grow">
         <LeftNav />
-        <main className="flex flex-grow space-x-4">
-          <div className="flex-none w-2/3 p-4">
+        <main className="flex flex-grow p-6">
+          <div className="w-full max-w-3xl mx-auto">
             <WorkoutEditor workoutId={workoutId} />
           </div>
         </main>
       </div>
-      <footer className="bg-white text-center py-4 shadow-inner">
-        <p className="text-sm text-gray-600">&copy; 2024 FitSync. All rights reserved.</p>
+      <footer className="bg-gray-800 text-center py-4 border-t border-gray-700">
+        <p className="text-sm text-gray-400">&copy; 2024 FitSync. All rights reserved.</p>
       </footer>
     </div>
   );

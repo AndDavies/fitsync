@@ -53,43 +53,57 @@ const PlanWorkoutPage: React.FC = () => {
     workoutBlocks: [],
   });
   const [tracks, setTracks] = useState<{ id: string; name: string }[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const fetchTracks = async () => {
-      if (!userData) return;
+      if (!userData) return; 
+      setLoading(true);
       let fetchedTracks: { id: string; name: string }[] = [];
-      if (userData.current_gym_id) {
-        const { data: gymTracks, error: gymError } = await supabase
-          .from("tracks")
-          .select("id, name")
-          .eq("gym_id", userData.current_gym_id);
-
-        if (gymError) console.error("Error fetching gym tracks:", gymError.message);
-        if (gymTracks) fetchedTracks.push(...gymTracks);
-      } else {
-        const { data: personalTracks, error: personalError } = await supabase
-          .from("tracks")
-          .select("id, name")
-          .eq("user_id", userData.user_id);
-
-        if (personalError) console.error("Error fetching personal tracks:", personalError.message);
-        if (personalTracks && personalTracks.length) {
-          fetchedTracks.push(...personalTracks);
-        } else {
-          const { data: newTrack, error: trackError } = await supabase
+      try {
+        if (userData.current_gym_id) {
+          const { data: gymTracks, error: gymError } = await supabase
             .from("tracks")
-            .insert({ user_id: userData.user_id, name: "Personal Track" })
             .select("id, name")
-            .single();
+            .eq("gym_id", userData.current_gym_id);
 
-          if (trackError) console.error("Error creating personal track:", trackError.message);
-          if (newTrack) fetchedTracks.push(newTrack);
+          if (gymError) throw gymError;
+          if (gymTracks) fetchedTracks.push(...gymTracks);
+        } else {
+          const { data: personalTracks, error: personalError } = await supabase
+            .from("tracks")
+            .select("id, name")
+            .eq("user_id", userData.user_id);
+
+          if (personalError) throw personalError;
+          if (personalTracks && personalTracks.length) {
+            fetchedTracks.push(...personalTracks);
+          } else {
+            const { data: newTrack, error: trackError } = await supabase
+              .from("tracks")
+              .insert({ user_id: userData.user_id, name: "Personal Track" })
+              .select("id, name")
+              .single();
+
+            if (trackError) throw trackError;
+            if (newTrack) fetchedTracks.push(newTrack);
+          }
         }
-      }
 
-      setTracks(fetchedTracks);
+        setTracks(fetchedTracks);
+      } catch (error: any) {
+        console.error("Error fetching tracks:", error.message);
+        toast.error("Failed to load tracks. Please refresh.");
+      } finally {
+        setLoading(false);
+      }
     };
-    fetchTracks();
+
+    if (userData) {
+      fetchTracks();
+    } else {
+      if (!userData) setLoading(true);
+    }
   }, [userData]);
 
   const handleSetWorkoutDetails = (text: string) => {
@@ -154,7 +168,6 @@ const PlanWorkoutPage: React.FC = () => {
     }
   };
 
-  // Step Indicator
   const StepIndicator = () => {
     const stepsInfo = [
       { number: 1, label: 'Basic Info' },
@@ -186,150 +199,137 @@ const PlanWorkoutPage: React.FC = () => {
       <div className="max-w-7xl mx-auto mb-6">
         <StepIndicator />
       </div>
-      <Grid.Container gap={2} className="max-w-7xl mx-auto">
-        <Grid xs={24} sm={step === 1 ? 16 : 24}>
-          <Card shadow style={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}>
-            <Card.Content>
-              {step === 1 && (
-                <>
-                  <Text h2 style={{ color: '#F9FAFB', marginBottom: '8px' }}>Basic Info</Text>
-                  <Text small type="secondary" style={{ marginBottom: '16px', color: '#9CA3AF' }}>
-                    Select your track, date, and name your workout. Enter or copy a template, then select scoring.
-                  </Text>
-                  <BasicInfoForm
-                    workout={{
-                      date: workoutDraft.date,
-                      workoutName: workoutDraft.workoutName,
-                      trackId: workoutDraft.trackId,
-                      workoutDetails: workoutDraft.workoutDetails,
-                      scoringSet: workoutDraft.scoringSet,
-                      scoringType: workoutDraft.scoringType
-                    }}
-                    tracks={tracks}
-                    onChange={(updates) => dispatch({ type: "UPDATE", updates })}
-                    onNext={handleNextFromStep1}
-                  />
-                </>
-              )}
 
-              {step === 2 && (
-                <Grid.Container gap={2}>
-                  <Grid xs={24} sm={16}>
-                    <Card shadow style={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}>
-                      <Card.Content>
-                        <Text h2 className="mb-2" style={{ color: '#F9FAFB' }}>Refine Your Workout</Text>
-                        <Text small type="secondary" style={{ marginBottom: '16px', color: '#9CA3AF' }}>
-                          Add warm-up, cool-down, and coach notes if desired. Optional.
-                        </Text>
+      {/* Two-column layout: main card on left, workout ideas on right */}
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:space-x-6">
+        
+        {/* Main Column */}
+        <div className="flex-grow mb-6 md:mb-0">
+          <div className="bg-gray-800 border border-gray-700 rounded-md p-4">
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="animate-spin h-8 w-8 border-4 border-pink-500 border-t-transparent rounded-full"></div>
+                <p className="ml-3 text-sm text-gray-300">Loading...</p>
+              </div>
+            ) : (
+              <>
+                {step === 1 && (
+                  <div className="space-y-4">
+                    <Text h2 style={{ color: '#F9FAFB' }}>Basic Info</Text>
+                    <Text small type="secondary" style={{ color: '#9CA3AF' }}>
+                      Select your track, date, and name your workout. Enter or copy a template, then select scoring.
+                    </Text>
+                    <BasicInfoForm
+                      workout={{
+                        date: workoutDraft.date,
+                        workoutName: workoutDraft.workoutName,
+                        trackId: workoutDraft.trackId,
+                        workoutDetails: workoutDraft.workoutDetails,
+                        scoringSet: workoutDraft.scoringSet,
+                        scoringType: workoutDraft.scoringType
+                      }}
+                      tracks={tracks}
+                      onChange={(updates) => dispatch({ type: "UPDATE", updates })}
+                      onNext={handleNextFromStep1}
+                    />
+                  </div>
+                )}
 
-                        <div className="space-y-4">
-                          <div>
-                            <Text small b style={{ color: '#F9FAFB' }}>Warm Up (optional)</Text>
-                            <textarea
-                              value={workoutDraft.warmUp}
-                              onChange={(e) => dispatch({ type: "UPDATE", updates: { warmUp: e.target.value } })}
-                              placeholder="Optional warm-up details"
-                              className="w-full p-2 border border-gray-600 rounded h-20 bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
-                            />
-                          </div>
-                          <div>
-                            <Text small b style={{ color: '#F9FAFB' }}>Cool Down (optional)</Text>
-                            <textarea
-                              value={workoutDraft.coolDown}
-                              onChange={(e) => dispatch({ type: "UPDATE", updates: { coolDown: e.target.value } })}
-                              placeholder="Optional cool-down details"
-                              className="w-full p-2 border border-gray-600 rounded h-20 bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
-                            />
-                          </div>
-                          <div>
-                            <Text small b style={{ color: '#F9FAFB' }}>Coach Notes (optional)</Text>
-                            <textarea
-                              value={workoutDraft.coachNotes}
-                              onChange={(e) => dispatch({ type: "UPDATE", updates: { coachNotes: e.target.value } })}
-                              placeholder="Optional notes for coaches"
-                              className="w-full p-2 border border-gray-600 rounded h-20 bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
-                            />
-                          </div>
-                          <div className="flex space-x-2 mt-4">
-                            <button
-                              onClick={() => setStep(1)}
-                              className="px-4 py-2 bg-gray-600 text-gray-300 rounded hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-400"
-                            >
-                              Back
-                            </button>
-                            <button
-                              onClick={handleNextFromStep2}
-                              className="px-4 py-2 bg-pink-500 text-white rounded hover:bg-pink-600 focus:outline-none focus:ring-2 focus:ring-pink-400"
-                            >
-                              Next
-                            </button>
-                          </div>
+                {step === 2 && (
+                  <div className="space-y-6">
+                    <div className="bg-gray-800 border border-gray-700 rounded-md p-4">
+                      <Text h2 style={{ color: '#F9FAFB', marginBottom: '8px' }}>Refine Your Workout</Text>
+                      <Text small type="secondary" style={{ marginBottom: '16px', color: '#9CA3AF' }}>
+                        Add warm-up, cool-down, and coach notes if desired. Optional.
+                      </Text>
+                      <div className="space-y-4">
+                        <div>
+                          <Text small b style={{ color: '#F9FAFB' }}>Warm Up (optional)</Text>
+                          <textarea
+                            value={workoutDraft.warmUp}
+                            onChange={(e) => dispatch({ type: "UPDATE", updates: { warmUp: e.target.value } })}
+                            placeholder="Optional warm-up details"
+                            className="w-full p-2 border border-gray-600 rounded h-20 bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-400"
+                          />
                         </div>
-                      </Card.Content>
-                    </Card>
-                  </Grid>
-                  <Grid xs={24} sm={8}>
-                    <Card shadow style={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}>
-                      <Card.Content>
-                        <WorkoutDisplay workoutData={parsedWorkout} workoutName={workoutDraft.workoutName} />
-                      </Card.Content>
-                    </Card>
-                  </Grid>
-                </Grid.Container>
+                        <div>
+                          <Text small b style={{ color: '#F9FAFB' }}>Cool Down (optional)</Text>
+                          <textarea
+                            value={workoutDraft.coolDown}
+                            onChange={(e) => dispatch({ type: "UPDATE", updates: { coolDown: e.target.value } })}
+                            placeholder="Optional cool-down details"
+                            className="w-full p-2 border border-gray-600 rounded h-20 bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-400"
+                          />
+                        </div>
+                        <div>
+                          <Text small b style={{ color: '#F9FAFB' }}>Coach Notes (optional)</Text>
+                          <textarea
+                            value={workoutDraft.coachNotes}
+                            onChange={(e) => dispatch({ type: "UPDATE", updates: { coachNotes: e.target.value } })}
+                            placeholder="Optional notes for coaches"
+                            className="w-full p-2 border border-gray-600 rounded h-20 bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-400"
+                          />
+                        </div>
+                        <div className="flex space-x-2 mt-4">
+                          <button
+                            onClick={() => setStep(1)}
+                            className="px-4 py-2 bg-gray-600 text-gray-300 rounded hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-400"
+                          >
+                            Back
+                          </button>
+                          <button
+                            onClick={handleNextFromStep2}
+                            className="px-4 py-2 bg-pink-500 text-white rounded hover:bg-pink-600 focus:outline-none focus:ring-2 focus:ring-pink-400"
+                          >
+                            Next
+                          </button>
+                        </div>
+                      </div>
+                    </div>
 
-              )}
+                    <div className="bg-gray-800 border border-gray-700 rounded-md p-4">
+                      <WorkoutDisplay workoutData={parsedWorkout} workoutName={workoutDraft.workoutName} />
+                    </div>
+                  </div>
+                )}
 
-              {step === 3 && (
-                <FinalReview
-                  parsedWorkout={parsedWorkout}
-                  onBack={() => setStep(2)}
-                  onConfirm={handleConfirm}
-                />
-              )}
-            </Card.Content>
-          </Card>
-        </Grid>
+                {step === 3 && (
+                  <FinalReview
+                    parsedWorkout={parsedWorkout}
+                    onBack={() => setStep(2)}
+                    onConfirm={handleConfirm}
+                  />
+                )}
+              </>
+            )}
+          </div>
+        </div>
 
-        {step === 1 && (
-          <Grid xs={24} sm={8}>
-            <Grid.Container direction="column" gap={2}>
-              <Grid>
-                <Card shadow style={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}>
-                  <Card.Content>
-                    <Text b style={{ marginBottom: '8px', color: '#F9FAFB' }}>Hero Workouts</Text>
-                    <WorkoutIdeas
-                      category="Hero"
-                      setWorkoutBuilderText={handleSetWorkoutDetails}
-                    />
-                  </Card.Content>
-                </Card>
-              </Grid>
-              <Grid>
-                <Card shadow style={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}>
-                  <Card.Content>
-                    <Text b style={{ marginBottom: '8px', color: '#F9FAFB' }}>Metcon Workouts</Text>
-                    <WorkoutIdeas
-                      category="Metcon"
-                      setWorkoutBuilderText={handleSetWorkoutDetails}
-                    />
-                  </Card.Content>
-                </Card>
-              </Grid>
-              <Grid>
-                <Card shadow style={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}>
-                  <Card.Content>
-                    <Text b style={{ marginBottom: '8px', color: '#F9FAFB' }}>Benchmark Workouts</Text>
-                    <WorkoutIdeas
-                      category="Benchmark"
-                      setWorkoutBuilderText={handleSetWorkoutDetails}
-                    />
-                  </Card.Content>
-                </Card>
-              </Grid>
-            </Grid.Container>
-          </Grid>
+        {/* Workout Ideas Panel */}
+        {!loading && step === 1 && (
+          <div className="w-full md:w-1/3 bg-gray-800 border border-gray-700 rounded-md p-4 max-h-[80vh] overflow-auto">
+            <h3 className="text-pink-400 font-bold text-lg mb-4">Workout Ideas</h3>
+
+            {/* Hero Workouts */}
+            <div className="mb-8">
+              <h4 className="text-gray-200 font-semibold mb-2">Hero Workouts</h4>
+              <WorkoutIdeas category="Hero" setWorkoutBuilderText={handleSetWorkoutDetails} />
+            </div>
+
+            {/* Metcon Workouts */}
+            <div className="mb-8">
+              <h4 className="text-gray-200 font-semibold mb-2">Metcon Workouts</h4>
+              <WorkoutIdeas category="Metcon" setWorkoutBuilderText={handleSetWorkoutDetails} />
+            </div>
+
+            {/* Benchmark Workouts */}
+            <div className="mb-8">
+              <h4 className="text-gray-200 font-semibold mb-2">Benchmark Workouts</h4>
+              <WorkoutIdeas category="Benchmark" setWorkoutBuilderText={handleSetWorkoutDetails} />
+            </div>
+          </div>
         )}
-      </Grid.Container>
+      </div>
     </div>
   );
 };
