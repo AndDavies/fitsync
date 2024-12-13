@@ -6,29 +6,30 @@ export default function LandingPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Navbar */}
       <nav className="w-full bg-white shadow-sm py-4">
-        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center space-x-2">
-            <Image src="/images/ascent_logo.png" alt="Ascent Logo" width={40} height={40}/>
-            <span className="font-bold text-lg text-gray-800">Ascent</span>
-          </div>
-          {/* Nav Links - placeholder */}
-          <div className="hidden md:flex items-center space-x-8 text-gray-700 font-medium">
-            <Link href="#products" className="hover:text-gray-900 transition">Products</Link>
-            <Link href="#pricing" className="hover:text-gray-900 transition">Pricing</Link>
-            <Link href="#customers" className="hover:text-gray-900 transition">Customers</Link>
-            <Link href="#about" className="hover:text-gray-900 transition">About</Link>
-            <Link href="#learn" className="hover:text-gray-900 transition">Learn</Link>
-          </div>
-          {/* CTA */}
-          <Link href="/login">
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-pink-500">
-              Sign In
-            </button>
-          </Link>
+  <div className="max-w-7xl mx-auto px-6 flex items-center justify-center space-x-8">
+    {/* Larger, Centered Logo */}
+    <Image 
+      src="/images/Ascent_Logo.png" 
+      alt="Ascent Logo" 
+      width={150} 
+      height={150} 
+    />
 
-        </div>
-      </nav>
+    {/* CTA Buttons */}
+    <Link href="#learn-more">
+      <button className="px-6 py-3 bg-transparent text-blue-600 font-medium border border-blue-600 rounded-full hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-pink-500">
+        Learn More
+      </button>
+    </Link>
+    <Link href="/login">
+      <button className="px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-pink-500">
+        Sign In
+      </button>
+    </Link>
+  </div>
+</nav>
+
+
 
       {/* Hero Section */}
       <header className="w-full bg-white">
