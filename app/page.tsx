@@ -35,10 +35,10 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6 py-20 flex flex-col md:flex-row items-center">
           <div className="flex-1 space-y-4">
             <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900">
-              Unlock the Power of Your Fitness Business
+            Become Your Strongest, Inside and Out
             </h1>
             <p className="text-lg text-gray-700">
-              Automate, streamline, and grow your fitness business with a hassle-free, integrated platform. Built by gym owners, for gym owners.
+            Our adaptive platform blends AI-powered insights, human coaching, and holistic health metrics—so you get more than workouts. You get a dedicated mentor, data analyst, and supportive community helping you improve performance, lifestyle, and well-being, all from a clean, user-friendly interface.
             </p>
             <div className="flex space-x-4 mt-6">
               <Link href="#demo">
@@ -63,17 +63,17 @@ export default function LandingPage() {
       {/* Features Section */}
       <section id="products" className="w-full bg-gray-50 py-16">
         <div className="max-w-7xl mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Everything You Need, All in One Place</h2>
-          <p className="text-gray-700 mb-10">Your gym’s success starts with the right tools. Our easy-to-use, connected suite offers the smartest solutions for any need.</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Adaptive, AI-Guided Coaching</h2>
+          <p className="text-gray-700 mb-10">Our intelligent system fine-tunes your workouts and lifestyle recommendations, ensuring every session helps you progress steadily toward your unique goals.</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Card 1 */}
             <div className="bg-white rounded-xl shadow p-6 hover:shadow-md transition">
               <div className="bg-blue-100 w-12 h-12 flex items-center justify-center rounded-full mb-4">
                 <span className="text-blue-600 text-xl">💪</span>
               </div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">A Better Member Journey</h3>
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">Data-Driven Insights & Predictive Metrics</h3>
               <p className="text-sm text-gray-600">
-                Automated communications, improved engagement, and goal tracking, leading to stronger retention and community.
+              Go beyond surface-level tracking. Tap into advanced analytics that forecast plateaus, celebrate milestones, and reveal the lifestyle factors fueling your best performances.
               </p>
             </div>
             {/* Card 2 */}
@@ -81,9 +81,9 @@ export default function LandingPage() {
               <div className="bg-blue-100 w-12 h-12 flex items-center justify-center rounded-full mb-4">
                 <span className="text-blue-600 text-xl">⚙️</span>
               </div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">Management Made Easy</h3>
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">Hyper-Personalized Programming</h3>
               <p className="text-sm text-gray-600">
-                Simplify daily operations, lead generation, and member engagement — all from one centralized dashboard.
+                Our AI continuously refines your workout plan—adapting exercises, intensity, and volume so each session moves you closer to your goals.
               </p>
             </div>
             {/* Card 3 */}
@@ -91,9 +91,9 @@ export default function LandingPage() {
               <div className="bg-blue-100 w-12 h-12 flex items-center justify-center rounded-full mb-4">
                 <span className="text-blue-600 text-xl">📊</span>
               </div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">Data-Driven Decisions</h3>
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">Integrated Human Expertise</h3>
               <p className="text-sm text-gray-600">
-                Leverage analytics for smarter business decisions, enhanced marketing, and boosted member performance.
+                Your coach’s insights combine with intelligent algorithms, delivering both nuanced, personal feedback and data-backed guidance for truly balanced progress.
               </p>
             </div>
           </div>
