@@ -5,7 +5,7 @@ import { useSessionContext } from '@supabase/auth-helpers-react';
 import { Session } from '@supabase/supabase-js';
 
 type UserData = {
-  user_id: string | null; 
+  user_id: string | null;
   display_name: string | null;
   current_gym_id: string | null;
   role: string | null;
@@ -28,36 +28,47 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const fetchUserData = async (currentSession: Session) => {
-    const { data, error } = await supabaseClient
-      .from('user_profiles')
-      .select('user_id, display_name, current_gym_id, role, onboarding_completed, goals')
-      .eq('user_id', currentSession.user.id)
-      .maybeSingle();
+    try {
+      const { data, error } = await supabaseClient
+        .from('user_profiles')
+        .select('user_id, display_name, current_gym_id, role, onboarding_completed, goals')
+        .eq('user_id', currentSession.user.id)
+        .maybeSingle();
 
-    if (error) {
-      console.error("Error fetching user data:", error.message);
-      setUserData(null);
-    } else if (data) {
-      setUserData({
-        user_id: currentSession.user.id,
-        display_name: data.display_name ?? null,
-        current_gym_id: data.current_gym_id ?? null,
-        role: data.role ?? null,
-        onboarding_completed: data.onboarding_completed ?? false,
-        goals: data.goals ?? null,
-      });
-    } else {
-      // No data found, ensure userData is null
+      if (error) {
+        console.error("Error fetching user data:", error.message);
+        setUserData(null);
+        return;
+      }
+
+      if (data) {
+        setUserData({
+          user_id: currentSession.user.id,
+          display_name: data.display_name ?? null,
+          current_gym_id: data.current_gym_id ?? null,
+          role: data.role ?? null,
+          onboarding_completed: data.onboarding_completed ?? false,
+          goals: data.goals ?? null,
+        });
+      } else {
+        // No user profile found, ensure userData is null
+        setUserData(null);
+      }
+    } catch (err: any) {
+      console.error("Unexpected error fetching user data:", err.message);
       setUserData(null);
     }
   };
 
   const refreshUserData = async () => {
+    setIsLoading(true);
     if (session) {
-      setIsLoading(true);
       await fetchUserData(session);
-      setIsLoading(false);
+    } else {
+      // If no session, ensure user data is cleared
+      setUserData(null);
     }
+    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -68,7 +79,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           await fetchUserData(session);
           setIsLoading(false);
         } else {
-          // Not logged in, clear userData
+          // Not logged in, ensure userData is cleared
           setUserData(null);
           setIsLoading(false);
         }
