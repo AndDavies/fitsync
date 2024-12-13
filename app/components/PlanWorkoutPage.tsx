@@ -1,4 +1,3 @@
-// PlanWorkoutPage.tsx
 "use client";
 import React, { useReducer, useState, useEffect } from 'react';
 import { supabase } from '@/utils/supabase/client';
@@ -10,7 +9,7 @@ import WorkoutIdeas from './WorkoutIdeas';
 import { basicParseWorkout } from './parseWorkout';
 import { ParsedWorkout } from './types';
 import toast from 'react-hot-toast';
-import { Card, Text, Grid, Dot } from '@geist-ui/core'; // Keeping Geist for other components
+import { Card, Text, Grid, Dot } from '@geist-ui/core';
 
 const initialWorkoutState = {
   date: new Date().toISOString().split("T")[0],
@@ -58,7 +57,6 @@ const PlanWorkoutPage: React.FC = () => {
   useEffect(() => {
     const fetchTracks = async () => {
       if (!userData) return;
-
       let fetchedTracks: { id: string; name: string }[] = [];
       if (userData.current_gym_id) {
         const { data: gymTracks, error: gymError } = await supabase
@@ -189,14 +187,14 @@ const PlanWorkoutPage: React.FC = () => {
         <StepIndicator />
       </div>
       <Grid.Container gap={2} className="max-w-7xl mx-auto">
-        <Grid xs={24} sm={step === 1 ? 16 : 24}> 
+        <Grid xs={24} sm={step === 1 ? 16 : 24}>
           <Card shadow style={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}>
             <Card.Content>
               {step === 1 && (
                 <>
                   <Text h2 style={{ color: '#F9FAFB', marginBottom: '8px' }}>Basic Info</Text>
-                  <Text small type="secondary" style={{ marginBottom: '16px' }}>
-                    Select your track, date, and name your workout. Enter or copy a template into the text area, then select scoring.
+                  <Text small type="secondary" style={{ marginBottom: '16px', color: '#9CA3AF' }}>
+                    Select your track, date, and name your workout. Enter or copy a template, then select scoring.
                   </Text>
                   <BasicInfoForm
                     workout={{
@@ -216,53 +214,52 @@ const PlanWorkoutPage: React.FC = () => {
 
               {step === 2 && (
                 <Grid.Container gap={2}>
-                  {/* Give the refinement card more width (20 columns) */}
-                  <Grid xs={24} sm={20}>
-                    <Card shadow className="bg-white border border-gray-300">
+                  <Grid xs={24} sm={16}>
+                    <Card shadow style={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}>
                       <Card.Content>
-                        <Text h2 className="mb-2" style={{ color: '#111827' }}>Refine Your Workout</Text>
-                        <Text small type="secondary" style={{ marginBottom: '16px', color: '#4B5563' }}>
-                          Add warm-up, cool-down, and coach notes if desired. These are optional.
+                        <Text h2 className="mb-2" style={{ color: '#F9FAFB' }}>Refine Your Workout</Text>
+                        <Text small type="secondary" style={{ marginBottom: '16px', color: '#9CA3AF' }}>
+                          Add warm-up, cool-down, and coach notes if desired. Optional.
                         </Text>
 
                         <div className="space-y-4">
                           <div>
-                            <Text small b style={{ color: '#111827' }}>Warm Up (optional)</Text>
+                            <Text small b style={{ color: '#F9FAFB' }}>Warm Up (optional)</Text>
                             <textarea
                               value={workoutDraft.warmUp}
                               onChange={(e) => dispatch({ type: "UPDATE", updates: { warmUp: e.target.value } })}
                               placeholder="Optional warm-up details"
-                              className="w-full p-2 border border-gray-300 rounded h-20 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                              className="w-full p-2 border border-gray-600 rounded h-20 bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
                             />
                           </div>
                           <div>
-                            <Text small b style={{ color: '#111827' }}>Cool Down (optional)</Text>
+                            <Text small b style={{ color: '#F9FAFB' }}>Cool Down (optional)</Text>
                             <textarea
                               value={workoutDraft.coolDown}
                               onChange={(e) => dispatch({ type: "UPDATE", updates: { coolDown: e.target.value } })}
                               placeholder="Optional cool-down details"
-                              className="w-full p-2 border border-gray-300 rounded h-20 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                              className="w-full p-2 border border-gray-600 rounded h-20 bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
                             />
                           </div>
                           <div>
-                            <Text small b style={{ color: '#111827' }}>Coach Notes (optional)</Text>
+                            <Text small b style={{ color: '#F9FAFB' }}>Coach Notes (optional)</Text>
                             <textarea
                               value={workoutDraft.coachNotes}
                               onChange={(e) => dispatch({ type: "UPDATE", updates: { coachNotes: e.target.value } })}
                               placeholder="Optional notes for coaches"
-                              className="w-full p-2 border border-gray-300 rounded h-20 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                              className="w-full p-2 border border-gray-600 rounded h-20 bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
                             />
                           </div>
                           <div className="flex space-x-2 mt-4">
                             <button
                               onClick={() => setStep(1)}
-                              className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                              className="px-4 py-2 bg-gray-600 text-gray-300 rounded hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-400"
                             >
                               Back
                             </button>
                             <button
                               onClick={handleNextFromStep2}
-                              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                              className="px-4 py-2 bg-pink-500 text-white rounded hover:bg-pink-600 focus:outline-none focus:ring-2 focus:ring-pink-400"
                             >
                               Next
                             </button>
@@ -271,18 +268,16 @@ const PlanWorkoutPage: React.FC = () => {
                       </Card.Content>
                     </Card>
                   </Grid>
-
-                  {/* Workout Display with less width (4 columns) to give more space to the refinement card */}
-                  <Grid xs={24} sm={4}>
-                    <Card shadow className="bg-white border border-gray-300">
+                  <Grid xs={24} sm={8}>
+                    <Card shadow style={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}>
                       <Card.Content>
                         <WorkoutDisplay workoutData={parsedWorkout} workoutName={workoutDraft.workoutName} />
                       </Card.Content>
                     </Card>
                   </Grid>
                 </Grid.Container>
-              )}
 
+              )}
 
               {step === 3 && (
                 <FinalReview
@@ -296,13 +291,12 @@ const PlanWorkoutPage: React.FC = () => {
         </Grid>
 
         {step === 1 && (
-          
           <Grid xs={24} sm={8}>
             <Grid.Container direction="column" gap={2}>
               <Grid>
                 <Card shadow style={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}>
                   <Card.Content>
-                    <Text b style={{ marginBottom: '8px' }}>Hero Workouts</Text>
+                    <Text b style={{ marginBottom: '8px', color: '#F9FAFB' }}>Hero Workouts</Text>
                     <WorkoutIdeas
                       category="Hero"
                       setWorkoutBuilderText={handleSetWorkoutDetails}
@@ -313,7 +307,7 @@ const PlanWorkoutPage: React.FC = () => {
               <Grid>
                 <Card shadow style={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}>
                   <Card.Content>
-                    <Text b style={{ marginBottom: '8px' }}>Metcon Workouts</Text>
+                    <Text b style={{ marginBottom: '8px', color: '#F9FAFB' }}>Metcon Workouts</Text>
                     <WorkoutIdeas
                       category="Metcon"
                       setWorkoutBuilderText={handleSetWorkoutDetails}
@@ -324,7 +318,7 @@ const PlanWorkoutPage: React.FC = () => {
               <Grid>
                 <Card shadow style={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}>
                   <Card.Content>
-                    <Text b style={{ marginBottom: '8px' }}>Benchmark Workouts</Text>
+                    <Text b style={{ marginBottom: '8px', color: '#F9FAFB' }}>Benchmark Workouts</Text>
                     <WorkoutIdeas
                       category="Benchmark"
                       setWorkoutBuilderText={handleSetWorkoutDetails}

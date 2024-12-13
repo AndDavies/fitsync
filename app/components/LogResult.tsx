@@ -1,95 +1,120 @@
+"use client";
+
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/utils/supabase/client";
 import { useAuth } from "../context/AuthContext";
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface LogResultProps {
   workoutId: string;
 }
 
+// Define types for formatted results (same as before)
+type TimeResult = { minutes: string; seconds: string };
+type RoundsRepsResult = { rounds: string; reps: string };
+type LoadResult = { weight: number; unit: string };
+type RepsResult = { reps: number };
+type CaloriesResult = { calories: number };
+type DistanceResult = { distance: number };
+type CheckBoxResult = { completed: boolean };
+type UnknownResult = string;
+
+type FormattedResult = 
+  | TimeResult
+  | RoundsRepsResult
+  | LoadResult
+  | RepsResult
+  | CaloriesResult
+  | DistanceResult
+  | CheckBoxResult
+  | UnknownResult;
+
 const LogResult: React.FC<LogResultProps> = ({ workoutId }) => {
   const { userData } = useAuth();
   const router = useRouter();
 
-  // State for workout data
+  const [workoutName, setWorkoutName] = useState<string>("");
+  const [workoutDate, setWorkoutDate] = useState<string>("");
+
   const [scoringSet, setScoringSet] = useState<number>(1);
   const [scoringType, setScoringType] = useState<string>("");
   const [advancedScoring, setAdvancedScoring] = useState<string>("");
   const [results, setResults] = useState<string[][]>([]);
+
   const [perceivedExertion, setPerceivedExertion] = useState<number>(5);
   const [notes, setNotes] = useState<string>("");
+
   const [logSuccess, setLogSuccess] = useState<string | null>(null);
 
-  // Fetch scheduled workout details
   useEffect(() => {
-    // Fetch workout info using `workoutId` to prepopulate scoring options
     const fetchWorkoutData = async () => {
-      if (workoutId) {
-        try {
-          const { data, error } = await supabase
-            .from('scheduled_workouts')
-            .select('scoring_set, scoring_type, advanced_scoring')
-            .eq('id', workoutId)
-            .single();
+      if (!workoutId) {
+        alert("No workout ID provided.");
+        router.push("/workouts");
+        return;
+      }
 
-          if (error) throw error;
+      try {
+        const { data, error } = await supabase
+          .from('scheduled_workouts')
+          .select('name, date, scoring_set, scoring_type, advanced_scoring')
+          .eq('id', workoutId)
+          .single();
 
-          if (data) {
-            const setCount = parseInt(data.scoring_set) || 1;
-            setScoringSet(setCount);
-            setScoringType(data.scoring_type || "");
-            setAdvancedScoring(data.advanced_scoring || ""); // Setting advancedScoring here
+        if (error) throw error;
 
-            // Initialize results array with empty values based on the setCount and scoringType
-            setResults(
-              Array.from({ length: setCount }, () =>
-                Array(getFieldCountForScoringType(data.scoring_type)).fill("")
-              )
-            );
-          }
-        } catch (err) {
-          alert("Unable to load workout details.");
-          router.push('/workouts');
+        if (data) {
+          setWorkoutName(data.name || "Workout");
+          setWorkoutDate(data.date || "");
+
+          const setCount = parseInt(data.scoring_set) || 1;
+          setScoringSet(setCount);
+          setScoringType(data.scoring_type || "");
+          setAdvancedScoring(data.advanced_scoring || "");
+
+          setResults(
+            Array.from({ length: setCount }, () =>
+              Array(getFieldCountForScoringType(data.scoring_type)).fill("")
+            )
+          );
         }
+      } catch (err) {
+        alert("Unable to load workout details.");
+        router.push('/workouts');
       }
     };
 
     fetchWorkoutData();
-  }, [workoutId]);
+  }, [workoutId, router]);
 
-  // Helper to determine the number of input fields required based on the scoring type
-  function getFieldCountForScoringType(scoringType: string) {
-    switch (scoringType) {
+  function getFieldCountForScoringType(type: string) {
+    switch (type) {
       case "Time":
-        return 2; // MM and SS
+        return 2; 
       case "Rounds + Reps":
-        return 2; // Rounds and Reps
+        return 2; 
       case "Load":
-        return 1; // Load
+        return 1; 
       default:
-        return 1; // For Reps, Calories, Distance, CheckBox
+        return 1;
     }
   }
 
-  // Update specific input field in the results array
   const handleInputChange = (setIndex: number, valueIndex: number, value: string) => {
-    setResults((prevResults) => {
-      const updatedResults = [...prevResults];
-
-      // Ensure the setIndex exists and is properly initialized
-      if (!updatedResults[setIndex]) {
-        updatedResults[setIndex] = Array(getFieldCountForScoringType(scoringType)).fill("");
+    setResults(prev => {
+      const updated = [...prev];
+      if (!updated[setIndex]) {
+        updated[setIndex] = Array(getFieldCountForScoringType(scoringType)).fill("");
       }
-
-      updatedResults[setIndex][valueIndex] = value;
-      return updatedResults;
+      updated[setIndex][valueIndex] = value;
+      return updated;
     });
   };
 
-  // Render input fields for each set based on scoring type
+  // Define renderInputFields here
   const renderInputFields = (setIndex: number) => {
     if (!results[setIndex]) {
-      // Initialize if not already done (additional safety check)
       setResults((prevResults) => {
         const newResults = [...prevResults];
         newResults[setIndex] = Array(getFieldCountForScoringType(scoringType)).fill("");
@@ -102,13 +127,13 @@ const LogResult: React.FC<LogResultProps> = ({ workoutId }) => {
       case "Time":
         return (
           <div className="flex items-center space-x-2">
-            <label className="text-gray-700">Time (MM:SS):</label>
+            <label className="text-gray-300">Time (MM:SS):</label>
             <input
               type="text"
               placeholder="MM"
               value={results[setIndex][0] || ""}
               onChange={(e) => handleInputChange(setIndex, 0, e.target.value)}
-              className="w-16 p-2 border border-gray-300 rounded-md text-center bg-gray-800 text-white"
+              className="w-16 p-2 border border-gray-300 rounded-md text-center bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-pink-400"
             />
             <span>:</span>
             <input
@@ -116,20 +141,20 @@ const LogResult: React.FC<LogResultProps> = ({ workoutId }) => {
               placeholder="SS"
               value={results[setIndex][1] || ""}
               onChange={(e) => handleInputChange(setIndex, 1, e.target.value)}
-              className="w-16 p-2 border border-gray-300 rounded-md text-center bg-gray-800 text-white"
+              className="w-16 p-2 border border-gray-300 rounded-md text-center bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-pink-400"
             />
           </div>
         );
       case "Rounds + Reps":
         return (
           <div className="flex items-center space-x-2">
-            <label className="text-gray-700">Rounds + Reps:</label>
+            <label className="text-gray-300">Rounds + Reps:</label>
             <input
               type="number"
               placeholder="Rounds"
               value={results[setIndex][0] || ""}
               onChange={(e) => handleInputChange(setIndex, 0, e.target.value)}
-              className="w-16 p-2 border border-gray-300 rounded-md text-center bg-gray-800 text-white"
+              className="w-16 p-2 border border-gray-300 rounded-md text-center bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-pink-400"
             />
             <span>+</span>
             <input
@@ -137,22 +162,22 @@ const LogResult: React.FC<LogResultProps> = ({ workoutId }) => {
               placeholder="Reps"
               value={results[setIndex][1] || ""}
               onChange={(e) => handleInputChange(setIndex, 1, e.target.value)}
-              className="w-16 p-2 border border-gray-300 rounded-md text-center bg-gray-800 text-white"
+              className="w-16 p-2 border border-gray-300 rounded-md text-center bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-pink-400"
             />
           </div>
         );
       case "Load":
         return (
           <div className="flex items-center space-x-2">
-            <label className="text-gray-700">Load:</label>
+            <label className="text-gray-300">Load:</label>
             <input
               type="number"
               placeholder="Load"
               value={results[setIndex][0] || ""}
               onChange={(e) => handleInputChange(setIndex, 0, e.target.value)}
-              className="w-3/4 p-2 border border-gray-300 rounded-md bg-gray-800 text-white"
+              className="w-24 p-2 border border-gray-300 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-pink-400"
             />
-            <select className="p-2 border border-gray-300 rounded-md bg-gray-800 text-white">
+            <select className="p-2 border border-gray-300 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-pink-400">
               <option value="lbs">Lbs</option>
               <option value="kg">Kg</option>
             </select>
@@ -161,74 +186,92 @@ const LogResult: React.FC<LogResultProps> = ({ workoutId }) => {
       default:
         return (
           <div className="flex items-center space-x-2">
-            <label className="text-gray-700">{scoringType}:</label>
+            <label className="text-gray-300">{scoringType}:</label>
             <input
               type="number"
               placeholder={scoringType}
               value={results[setIndex][0] || ""}
               onChange={(e) => handleInputChange(setIndex, 0, e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md bg-gray-800 text-white"
+              className="w-full p-2 border border-gray-300 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-pink-400"
             />
           </div>
         );
     }
   };
 
-  // Handle submission of the logged workout results
-  const handleSubmit = async () => {
-    const formattedResults = results.map((set) => {
+  const formatResults = (): FormattedResult[] => {
+    return results.map((set): FormattedResult => {
       switch (scoringType) {
         case "Time":
-          return {
-            minutes: set[0],
-            seconds: set[1]
-          };
+          return { minutes: set[0], seconds: set[1] };
         case "Rounds + Reps":
-          return {
-            rounds: set[0],
-            reps: set[1]
-          };
+          return { rounds: set[0], reps: set[1] };
         case "Load":
           return {
             weight: parseInt(set[0], 10),
-            unit: "lbs" // For now hardcoded; update based on actual input
+            unit: "lbs"
           };
         case "Reps":
-          return {
-            reps: parseInt(set[0], 10)
-          };
+          return { reps: parseInt(set[0], 10) };
         case "Calories":
-          return {
-            calories: parseInt(set[0], 10)
-          };
+          return { calories: parseInt(set[0], 10) };
         case "Distance":
-          return {
-            distance: parseInt(set[0], 10)
-          };
+          return { distance: parseInt(set[0], 10) };
         case "Check Box":
-          return {
-            completed: set[0] === "1"
-          };
+          return { completed: set[0] === "1" };
         default:
           return set.join(":");
       }
     });
-  
+  };
+
+  const handleSubmit = async () => {
+    const formattedResults = formatResults();
+
+    const missing = formattedResults.some((res) => {
+      if (scoringType === "Time" && typeof res !== "string") {
+        const timeRes = res as TimeResult;
+        return !timeRes.minutes || !timeRes.seconds;
+      }
+
+      if (scoringType === "Rounds + Reps" && typeof res !== "string") {
+        const rrRes = res as RoundsRepsResult;
+        return !rrRes.rounds || !rrRes.reps;
+      }
+
+      if (scoringType === "Load" && typeof res !== "string") {
+        const loadRes = res as LoadResult;
+        return isNaN(loadRes.weight);
+      }
+
+      if (["Reps", "Calories", "Distance"].includes(scoringType) && typeof res !== "string") {
+        const val = Object.values(res)[0];
+        return val === null || val === undefined || val === "" || isNaN(val as number);
+      }
+
+      return false;
+    });
+
+    if (missing) {
+      alert("Please fill in all required fields for the workout result before submitting.");
+      return;
+    }
+
     try {
       const userId = userData?.user_id;
       if (!userId) {
         alert("You need to be logged in to log workout results.");
         return;
       }
-  
+
       const performedAt = new Date().toISOString(); 
-  
+
       const { error } = await supabase
         .from("workout_results")
         .insert({
           scheduled_workout_id: workoutId,
           user_profile_id: userId,
-          result: formattedResults, // Using formatted results as JSON
+          result: formattedResults,
           perceived_exertion: perceivedExertion,
           notes,
           date_logged: new Date().toISOString(),
@@ -237,37 +280,46 @@ const LogResult: React.FC<LogResultProps> = ({ workoutId }) => {
           advanced_scoring: advancedScoring,
           order_type: advancedScoring === "Max" ? "Descending" : "Ascending"
         });
-  
+
       if (error) throw error;
-  
-      setLogSuccess("Successfully logged workout result!");
+
+      setLogSuccess("Successfully logged your workout result!");
     } catch (err) {
       const error = err as Error;
       console.error("Error logging workout result:", error.message);
       alert("There was an issue logging your workout result. Please try again.");
     }
   };
-  
-  
 
   return (
-    <div className="log-result-container p-6 max-w-lg mx-auto bg-gray-900 text-white rounded-lg">
-      <h2 className="text-2xl font-semibold mb-4">Log Workout Result</h2>
+    <div className="p-6 max-w-lg mx-auto bg-gray-900 text-white rounded-lg space-y-6">
+      <div className="flex items-center justify-between">
+        <Link href="/plan">
+          <span className="text-sm text-pink-400 hover:text-pink-300 transition cursor-pointer">← Back to Calendar</span>
+        </Link>
+        {logSuccess && <p className="text-green-400 text-sm">{logSuccess}</p>}
+      </div>
 
-      {/* Loop through each set and render input fields accordingly */}
-      {Array.from({ length: scoringSet }, (_, setIndex) => (
-        <div key={setIndex} className="set-container mb-6">
-          <h3 className="text-lg font-medium mb-2">Set {setIndex + 1}</h3>
-          <div className="input-group flex flex-col space-y-4">
+      <div className="space-y-2">
+        <h2 className="text-xl font-bold">{workoutName || "Workout"}</h2>
+        {workoutDate && <p className="text-sm text-gray-300">Scheduled on {new Date(workoutDate).toLocaleDateString()}</p>}
+        <p className="text-sm text-gray-400">
+          Enter your workout result below.
+        </p>
+      </div>
+
+      <div className="bg-gray-800 p-4 rounded-md space-y-4">
+        {Array.from({ length: scoringSet }, (_, setIndex) => (
+          <div key={setIndex} className="bg-gray-700 p-3 rounded space-y-2">
+            <h3 className="text-md font-semibold text-pink-400">Set {setIndex + 1}</h3>
             {renderInputFields(setIndex)}
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
 
-      {/* Perceived Exertion Input */}
-      <div className="form-group mb-4">
-        <label htmlFor="perceivedExertion" className="block text-sm font-medium text-white">
-          Perceived Exertion (1-10)
+      <div className="bg-gray-800 p-4 rounded-md space-y-3">
+        <label htmlFor="perceivedExertion" className="block text-sm font-medium text-gray-200">
+          Perceived Exertion (1-10) <span className="text-gray-400 text-xs">(Optional)</span>
         </label>
         <input
           type="range"
@@ -276,43 +328,28 @@ const LogResult: React.FC<LogResultProps> = ({ workoutId }) => {
           max="10"
           value={perceivedExertion}
           onChange={(e) => setPerceivedExertion(Number(e.target.value))}
-          className="w-full h-2 mt-1 rounded-lg appearance-none cursor-pointer"
-          style={{
-            background: `linear-gradient(to right, red, yellow ${perceivedExertion * 10}%, green)`,
-          }}
+          className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-gray-600 focus:outline-none focus:ring-2 focus:ring-pink-400"
         />
-        <div className="text-sm text-gray-400 mt-1">Rating: {perceivedExertion}</div>
-      </div>
-      {/* 
-      
-      
-      
-      */}
+        <div className="text-sm text-gray-400">Rating: {perceivedExertion}</div>
 
-      {/* Notes Input */}
-      <div className="form-group mb-4">
-        <label htmlFor="notes" className="block text-sm font-medium text-white">
-          Notes
+        <label htmlFor="notes" className="block text-sm font-medium text-gray-200 mt-4">
+          Notes <span className="text-gray-400 text-xs">(Optional)</span>
         </label>
         <textarea
           id="notes"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          className="mt-1 p-2 border border-gray-300 rounded-md w-full bg-gray-800 text-white"
-          placeholder="Add any additional notes about the workout..."
+          className="mt-1 p-2 border border-gray-500 rounded-md w-full bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-pink-400"
+          placeholder="Any additional notes about your performance..."
         />
       </div>
 
-      {/* Submit Button */}
       <button
         onClick={handleSubmit}
-        className="mt-4 px-4 py-2 bg-pink-600 text-white rounded hover:bg-pink-700"
+        className="w-full py-2 bg-pink-600 text-white rounded hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-400 text-center"
       >
         Submit Result
       </button>
-
-      {/* Success Message */}
-      {logSuccess && <p className="text-green-500 mt-4">{logSuccess}</p>}
     </div>
   );
 };

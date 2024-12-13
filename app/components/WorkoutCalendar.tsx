@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/utils/supabase/client";
-import "../styles/CalendarStyles.css";
 import WeekSelector from "./WeekSelector";
 import { format, startOfWeek, addDays, parseISO, isToday, subWeeks, addWeeks } from "date-fns";
 import Link from "next/link";
@@ -44,29 +43,23 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ defaultDate }) => {
   const fetchWorkoutsWithTracks = useCallback(async () => {
     if (authLoading || !userData) return;
 
-    const startDate = format(startOfWeek(weekStartDate, { weekStartsOn: 0 }), "yyyy-MM-dd");
-    const endDate = format(addDays(new Date(startDate), 6), "yyyy-MM-dd");
+    const currentWeekStart = startOfWeek(weekStartDate, { weekStartsOn: 0 });
+    const startDate = format(currentWeekStart, "yyyy-MM-dd");
+    const endDate = format(addDays(currentWeekStart, 6), "yyyy-MM-dd");
 
     try {
-      let tracksData;
-      let tracksError;
-      //console.log("Current Gym ID:", userData.current_gym_id);
-      //console.log("User ID:", userData.user_id);
+      let tracksData, tracksError;
 
       if (!userData.current_gym_id) {
         ({ data: tracksData, error: tracksError } = await supabase
           .from("tracks")
           .select("id, name")
-          .eq("user_id", userData.user_id)); 
-          console.log("Current Gym ID:", userData.current_gym_id);
-          console.log("User ID:", userData.user_id);
+          .eq("user_id", userData.user_id));
       } else {
         ({ data: tracksData, error: tracksError } = await supabase
           .from("tracks")
           .select("id, name")
-          .eq("gym_id", userData.current_gym_id));   
-          console.log("Current Gym ID:", userData.current_gym_id);
-          console.log("User ID:", userData.user_id);
+          .eq("gym_id", userData.current_gym_id));
       }
 
       if (tracksError) {
@@ -74,7 +67,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ defaultDate }) => {
         return;
       }
 
-      const trackIds = tracksData?.map((track) => track.id);
+      const trackIds = tracksData?.map((track: any) => track.id);
 
       const { data: workoutData, error: workoutError } = await supabase
         .from("scheduled_workouts")
@@ -89,7 +82,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ defaultDate }) => {
         return;
       }
 
-      const trackMap = new Map(tracksData?.map((track) => [track.id, track.name]));
+      const trackMap = new Map(tracksData?.map((track: any) => [track.id, track.name]));
       const groupedWorkouts: WeeklyWorkouts = {
         sunday: [],
         monday: [],
@@ -136,68 +129,100 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ defaultDate }) => {
   const goToToday = () => setWeekStartDate(new Date());
 
   return (
-    <div className="workout-calendar-container">
-      <div className="widget-container flex justify-between items-start py-6 space-x-6">
-        <WeekSelector
-          weekStartDate={weekStartDate}
-          onPreviousWeek={goToPreviousWeek}
-          onNextWeek={goToNextWeek}
-          onToday={goToToday}
-        />
-      </div>
-      <div className="calendar-grid mt-6 overflow-auto">
-        <div className="grid grid-cols-7 text-sm antialiased">
-          {weekDates.map((date, index) => (
-            <div key={index} className="header-slot bg-gray-800 text-white py-2 px-4 text-center">
-              <div className="font-semibold">{format(date, "EEE")}</div>
-              <div className="text-xs">{format(date, "MM/dd")}</div>
-            </div>
-          ))}
+    <div className="w-full h-full flex flex-col items-center bg-gray-900 text-gray-100 p-4 overflow-hidden">
+      <div className="w-full max-w-[1400px] flex flex-col space-y-6">
+        {/* Week Selector */}
+        <div className="bg-gray-800 rounded-md p-2">
+          <WeekSelector
+            weekStartDate={weekStartDate}
+            onPreviousWeek={goToPreviousWeek}
+            onNextWeek={goToNextWeek}
+            onToday={goToToday}
+          />
+        </div>
 
-          {weekDates.map((date, index) => (
-            <div key={index} className="day-slot border p-2 bg-white ">
-              {workouts[format(date, "EEEE").toLowerCase() as keyof WeeklyWorkouts]?.length > 0 ? (
-                workouts[format(date, "EEEE").toLowerCase() as keyof WeeklyWorkouts].map((workout) => (
-                  <div key={workout.id} className="workout-item p-2 border-l-4 rounded-md mb-2">
-                    <div className="font-bold text-blue-500">{workout.trackName}</div>
-                    <pre className="text-sm text-black">{workout.workoutDetails}</pre>
-                    {workout.warmUp && (
-                      <pre className="text-xs text-gray-500 mt-1">Warm-Up: {workout.warmUp}</pre>
-                    )}
-                    {workout.coolDown && (
-                      <pre className="text-xs text-gray-500 mt-1">Cool-Down: {workout.coolDown}</pre>
-                    )}
-                    {userData?.role === 'athlete' || userData?.role === 'member' ? (
-                      <Link
-                        href={`/workouts/log-result/${workout.id}`}
-                        className="inline-block mt-2 text-sm text-green-600 hover:underline"
+        {/* Calendar Grid Container */}
+        <div className="border border-gray-700 rounded-xl overflow-auto">
+          <div className="grid grid-cols-7">
+            {weekDates.map((date, index) => {
+              const today = isToday(date);
+              return (
+                <div
+                  key={index}
+                  className={`py-3 text-center font-semibold border-b border-gray-600 ${
+                    today ? 'bg-pink-700' : 'bg-gray-700'
+                  } text-gray-200`}
+                >
+                  <div>{format(date, "EEE")}</div>
+                  <div className="text-xs text-gray-300">{format(date, "MM/dd")}</div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="grid grid-cols-7">
+            {weekDates.map((date, index) => {
+              const dayKey = format(date, "EEEE").toLowerCase() as keyof WeeklyWorkouts;
+              const dayWorkouts = workouts[dayKey];
+              const today = isToday(date);
+
+              return (
+                <div
+                  key={index}
+                  className={`p-2 border-r border-gray-600 min-h-[200px] ${
+                    today ? 'bg-gray-800' : 'bg-gray-900'
+                  }`}
+                >
+                  {dayWorkouts && dayWorkouts.length > 0 ? (
+                    dayWorkouts.map((workout) => (
+                      <div
+                        key={workout.id}
+                        className="p-3 bg-gray-800 rounded-md mb-2 border border-gray-700 hover:border-pink-500 transition"
                       >
-                        Log Result
-                      </Link>
-                    ) : (
-                      // Show both "Log Result" and "Edit Workout" for admins
-                      <div>
-                        <Link
-                          href={`/workouts/log-result/${workout.id}`}
-                          className="inline-block mt-2 text-sm text-green-600 hover:underline"
-                        >
-                          Log Result
-                        </Link>
-                        <Link
-                          href={`/edit-workout/${workout.id}`}
-                          className="inline-block mt-2 text-sm text-blue-600 hover:underline ml-4"
-                        >
-                          Edit Workout
-                        </Link>
+                        <div className="font-bold text-pink-400">{workout.trackName}</div>
+                        <pre className="text-sm text-gray-200 whitespace-pre-wrap break-words mt-1">
+                          {workout.workoutDetails}
+                        </pre>
+                        {workout.warmUp && (
+                          <pre className="text-xs text-gray-400 mt-1">Warm-Up: {workout.warmUp}</pre>
+                        )}
+                        {workout.coolDown && (
+                          <pre className="text-xs text-gray-400 mt-1">Cool-Down: {workout.coolDown}</pre>
+                        )}
+                        <div className="flex space-x-2 mt-2">
+                          {(userData?.role === 'athlete' || userData?.role === 'member') ? (
+                            <Link
+                              href={`/workouts/log-result/${workout.id}`}
+                              className="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                            >
+                              Log Result
+                            </Link>
+                          ) : (
+                            <>
+                              <Link
+                                href={`/workouts/log-result/${workout.id}`}
+                                className="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                              >
+                                Log Result
+                              </Link>
+                              <Link
+                                href={`/edit-workout/${workout.id}`}
+                                className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                              >
+                                Edit Workout
+                              </Link>
+                            </>
+                          )}
+                        </div>
                       </div>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <div className="text-sm text-gray-400">No Workouts</div>
-              )}
-            </div>
-          ))}
+                    ))
+                  ) : (
+                    <div className="text-sm text-gray-500 italic">No Workouts</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

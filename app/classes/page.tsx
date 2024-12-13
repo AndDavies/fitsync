@@ -9,6 +9,7 @@ import ClassCalendar from "../components/ClassCalendar";
 import SideDrawer from "../components/SideDrawer";
 import AddClassesDrawer from "../components/AddClassesDrawer";
 import CreateClassTypeModal from "../components/CreateClassTypeModal";
+import ClassRegistrationDrawer from "../components/ClassRegistrationDrawer";
 import { supabase } from "@/utils/supabase/client";
 import { format, startOfWeek, addDays, subWeeks, addWeeks } from "date-fns";
 import WeekSelector from "../components/WeekSelector";
@@ -20,6 +21,7 @@ type ClassSchedule = {
   end_time: string | null;
   max_participants: number;
   color: string;
+  confirmed_count?: number;
 };
 
 type ClassType = {
@@ -46,10 +48,14 @@ export default function ClassSchedulePage() {
   });
   const [classTypes, setClassTypes] = useState<ClassType[]>([]);
   const [selectedClassType, setSelectedClassType] = useState<ClassType | null>(null);
+  const [selectedClassForRegistration, setSelectedClassForRegistration] = useState<ClassSchedule | null>(null); 
   const [weekStartDate, setWeekStartDate] = useState<Date>(new Date());
   const [weekDates, setWeekDates] = useState<Date[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isClassTypeModalOpen, setIsClassTypeModalOpen] = useState(false);
+  const [isRegistrationDrawerOpen, setIsRegistrationDrawerOpen] = useState(false);
+
+  const canManageUsers = userData?.role === 'admin' || userData?.role === 'coach';
 
   const fetchSchedules = useCallback(async () => {
     if (!userData?.current_gym_id) return;
@@ -57,38 +63,58 @@ export default function ClassSchedulePage() {
     const startDate = new Date(
       startOfWeek(weekStartDate, { weekStartsOn: 0 }).setHours(0, 0, 0, 0)
     ).toISOString();
-
+  
     const endDate = new Date(
       addDays(startOfWeek(weekStartDate, { weekStartsOn: 0 }), 6).setHours(23, 59, 59, 999)
     ).toISOString();
-
-    const { data, error } = await supabase
+  
+    const { data: schedulesData, error: schedulesError } = await supabase
       .from("class_schedules")
       .select("id, class_name, start_time, end_time, max_participants, class_type_id")
       .eq("current_gym_id", currentGymId)
       .gte("start_time", startDate)
       .lte("start_time", endDate);
-
-    if (error) {
-      console.error("Error fetching class schedules:", error.message);
+  
+    if (schedulesError) {
+      console.error("Error fetching class schedules:", schedulesError.message);
       return;
     }
-
+  
+    const classIds = (schedulesData || []).map(cls => cls.id);
+    
+    let countsMap = new Map<string, number>();
+    if (classIds.length > 0) {
+      const { data: regData, error: regError } = await supabase
+        .from('class_registrations')
+        .select('class_schedule_id, status')
+        .eq('status', 'confirmed')
+        .in('class_schedule_id', classIds);
+  
+      if (regError) {
+        console.error("Error fetching registrations:", regError.message);
+      } else {
+        regData?.forEach(row => {
+          const prevCount = countsMap.get(row.class_schedule_id) || 0;
+          countsMap.set(row.class_schedule_id, prevCount + 1);
+        });
+      }
+    }
+  
     const { data: classTypesData, error: classTypesError } = await supabase
       .from("class_types")
       .select("id, color")
       .eq("gym_id", currentGymId);
-
+  
     if (classTypesError) {
       console.error("Error fetching class types:", classTypesError.message);
       return;
     }
-
+  
     const classTypeColorMap: { [key: string]: string } = {};
     classTypesData?.forEach((ct) => {
       classTypeColorMap[ct.id] = ct.color;
     });
-
+  
     const groupedSchedules: WeeklySchedule = {
       sunday: [],
       monday: [],
@@ -98,17 +124,22 @@ export default function ClassSchedulePage() {
       friday: [],
       saturday: [],
     };
-
-    data?.forEach((schedule) => {
+  
+    schedulesData?.forEach((schedule) => {
       if (schedule.start_time) {
         const dayStr = format(new Date(schedule.start_time), "EEEE").toLowerCase() as keyof WeeklySchedule;
         const color = classTypeColorMap[schedule.class_type_id] || "#000000";
-        groupedSchedules[dayStr].push({ ...schedule, color });
+        groupedSchedules[dayStr].push({
+          ...schedule,
+          color,
+          confirmed_count: countsMap.get(schedule.id) || 0
+        });
       }
     });
-
+  
     setSchedules(groupedSchedules);
   }, [weekStartDate, userData]);
+  
 
   const fetchClassTypes = useCallback(async () => {
     if (!userData?.current_gym_id) return;
@@ -146,18 +177,23 @@ export default function ClassSchedulePage() {
     fetchSchedules();
   };
 
+  const handleClassClick = (cls: ClassSchedule) => {
+    setSelectedClassForRegistration(cls);
+    setIsRegistrationDrawerOpen(true);
+  };
+
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div className="bg-gray-900 text-gray-200 h-screen flex items-center justify-center">Loading...</div>;
   }
 
   if (!userData) {
     return (
-      <div className="min-h-screen flex flex-col bg-gray-100">
+      <div className="bg-gray-900 text-gray-200 min-h-screen flex flex-col">
         <Header />
         <div className="flex flex-grow">
           <LeftNav />
-          <main className="flex flex-grow items-center justify-center">
-            <p className="text-gray-700">You are not logged in.</p>
+          <main className="flex flex-grow items-center justify-center font-medium">
+            You are not logged in.
           </main>
         </div>
       </div>
@@ -165,13 +201,14 @@ export default function ClassSchedulePage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-100">
+    <div className="bg-gray-900 min-h-screen flex flex-col">
       <Header />
       <div className="flex flex-grow">
         <LeftNav />
-        <main className="flex flex-grow flex-col p-6">
+        <main className="flex flex-grow flex-col p-8 space-y-8">
           {/* Week Selector */}
-          <div className="widget-container flex justify-between items-start py-6 space-x-6">
+          <div className="widget-container flex justify-between items-start gap-6">
+          
             <WeekSelector
               weekStartDate={weekStartDate}
               onPreviousWeek={goToPreviousWeek}
@@ -180,47 +217,47 @@ export default function ClassSchedulePage() {
             />
 
             {/* Class Type Widget */}
-            <div className="class-type-widget bg-white text-gray-800 p-6 rounded-md shadow-md w-1/2 h-32 flex flex-col justify-between border border-gray-300">
-              <h3 className="text-lg font-semibold mb-2">Class Types</h3>
-              <ul className="flex flex-wrap items-center space-x-4">
+            <div className="class-type-widget bg-gray-800 text-gray-200 p-4 rounded-xl shadow w-1/2 h-32 flex flex-col justify-between border border-gray-700">
+              <h3 className="text-md font-semibold mb-2 border-b border-gray-700 pb-2">Class Types</h3>
+              <ul className="flex flex-wrap items-center space-x-3">
                 {classTypes.map((ct) => {
                   const isSelected = selectedClassType?.id === ct.id;
                   return (
                     <li
                       key={ct.id}
-                      onClick={() => setSelectedClassType(isSelected ? null : ct)}
-                      className={`cursor-pointer px-2 py-1 rounded-full border-2 transition duration-300 ease-in-out text-sm font-medium ${
-                        isSelected ? "text-white" : "text-gray-800"
+                      onClick={() => {
+                        if (canManageUsers) {
+                          setSelectedClassType(isSelected ? null : ct);
+                        }
+                      }}
+                      className={`cursor-pointer px-3 py-1 rounded-full border-2 transition duration-300 ease-in-out text-sm font-medium ${
+                        isSelected ? "text-white bg-pink-600 border-pink-600" : "text-gray-200 border-gray-600 hover:border-pink-500 hover:text-pink-300"
                       }`}
                       style={{
-                        borderColor: ct.color,
-                        backgroundColor: isSelected ? ct.color : "transparent",
+                        borderColor: isSelected ? ct.color : undefined,
+                        backgroundColor: isSelected ? ct.color : undefined,
                       }}
                     >
                       {ct.class_name}
                     </li>
                   );
                 })}
-                <li
-                  className="cursor-pointer text-blue-500 hover:text-blue-700 transition text-sm"
-                  onClick={() => setIsClassTypeModalOpen(true)}
-                >
-                  + create new class type
-                </li>
+                {canManageUsers && (
+                  <li
+                    className="cursor-pointer text-pink-400 hover:text-pink-300 transition text-sm font-medium"
+                    onClick={() => setIsClassTypeModalOpen(true)}
+                  >
+                    + new type
+                  </li>
+                )}
               </ul>
             </div>
 
-            {/* Previously a slot widget? 
-                We don't need separate 'New Slot' or 'Typical Week' buttons here now
-                because we integrated into a single drawer approach.
-
-                If you want a direct button, you can put a button here:
-            */}
             <div className="w-1/4 h-32 flex items-center justify-center">
-              {selectedClassType && (
+              {selectedClassType && canManageUsers && (
                 <button
                   onClick={() => setIsDrawerOpen(true)}
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                  className="px-4 py-2 bg-pink-600 text-white rounded-full hover:bg-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-500 font-medium"
                 >
                   Schedule Classes
                 </button>
@@ -229,36 +266,50 @@ export default function ClassSchedulePage() {
           </div>
 
           {/* Calendar Display */}
-          <div className="flex-grow">
+          <div className="flex-grow bg-gray-800 rounded-xl shadow p-4 border border-gray-700">
             <GymGuard>
-              <ClassCalendar schedules={schedules} weekDates={weekDates} />
+              <ClassCalendar schedules={schedules} weekDates={weekDates} onClassClick={handleClassClick} />
             </GymGuard>
           </div>
         </main>
       </div>
 
-      <footer className="bg-white text-center py-4 shadow-inner">
-        <p className="text-sm text-gray-600">&copy; 2024 FitSync. All rights reserved.</p>
+      <footer className="bg-gray-800 text-center py-4 shadow-inner text-sm text-gray-400 border-t border-gray-700">
+        &copy; 2024 FitSync. All rights reserved.
       </footer>
 
       {/* Side Drawer for Adding Classes */}
-      <SideDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}>
-        {selectedClassType && (
-          <AddClassesDrawer
-            classType={selectedClassType}
-            currentGymId={userData.current_gym_id!}
-            onClose={() => setIsDrawerOpen(false)}
-            refreshSchedules={refreshSchedules}
-          />
-        )}
-      </SideDrawer>
+      {canManageUsers && (
+        <SideDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}>
+          {selectedClassType && (
+            <AddClassesDrawer
+              classType={selectedClassType}
+              currentGymId={userData.current_gym_id!}
+              onClose={() => setIsDrawerOpen(false)}
+              refreshSchedules={refreshSchedules}
+            />
+          )}
+        </SideDrawer>
+      )}
 
-      {isClassTypeModalOpen && (
+      {/* Class Type Modal */}
+      {canManageUsers && isClassTypeModalOpen && (
         <CreateClassTypeModal
           onClose={() => setIsClassTypeModalOpen(false)}
           currentGymId={userData.current_gym_id!}
           isVisible={isClassTypeModalOpen}
           refreshClassTypes={() => fetchClassTypes()}
+        />
+      )}
+
+      {/* Class Registration Drawer */}
+      {selectedClassForRegistration && (
+        <ClassRegistrationDrawer
+          classSchedule={selectedClassForRegistration}
+          userData={userData}
+          isOpen={isRegistrationDrawerOpen}
+          onClose={() => setIsRegistrationDrawerOpen(false)}
+          refreshSchedules={refreshSchedules}
         />
       )}
     </div>

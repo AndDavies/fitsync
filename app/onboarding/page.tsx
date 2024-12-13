@@ -1,4 +1,3 @@
-// app/onboarding/page.tsx
 "use client";
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -6,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '@/utils/supabase/client';
 
 export default function OnboardingPage() {
-  const { userData, isLoading, session } = useAuth();
+  const { userData, isLoading, session, refreshUserData } = useAuth();
   const router = useRouter();
 
   const [step, setStep] = useState(1);
@@ -35,7 +34,7 @@ export default function OnboardingPage() {
         .update({
           goals: primaryGoal, 
           activity_level: activityLevel,
-          // You can store lifestyleNote in bio or metrics JSON, or add a new column
+          // Storing lifestyleNote in bio as an example
           bio: lifestyleNote, 
           onboarding_completed: true
         })
@@ -43,6 +42,8 @@ export default function OnboardingPage() {
 
       setLoading(false);
       if (!error) {
+        // Refresh user data so onboarding_completed is true in userData before routing
+        await refreshUserData();
         router.push('/dashboard');
       } else {
         alert("Error completing onboarding. Please try again.");
@@ -81,7 +82,7 @@ export default function OnboardingPage() {
             <button 
               onClick={handleNext} 
               disabled={!primaryGoal}
-              className={`w-full py-2 ${primaryGoal ? 'bg-pink-600 text-white' : 'bg-gray-300 text-gray-600 cursor-not-allowed'} rounded`}
+              className={`w-full py-2 ${primaryGoal ? 'bg-pink-600 text-white hover:bg-pink-700' : 'bg-gray-300 text-gray-600 cursor-not-allowed'} rounded`}
             >
               Next
             </button>
@@ -113,7 +114,7 @@ export default function OnboardingPage() {
               <button 
                 onClick={handleNext} 
                 disabled={!activityLevel}
-                className={`py-2 px-4 ${activityLevel ? 'bg-pink-600 text-white' : 'bg-gray-300 text-gray-600 cursor-not-allowed'} rounded`}
+                className={`py-2 px-4 ${activityLevel ? 'bg-pink-600 text-white hover:bg-pink-700' : 'bg-gray-300 text-gray-600 cursor-not-allowed'} rounded`}
               >
                 Next
               </button>
@@ -141,7 +142,7 @@ export default function OnboardingPage() {
               <button 
                 onClick={handleNext}
                 disabled={loading}
-                className={`py-2 px-4 bg-pink-600 text-white rounded ${loading && 'opacity-50 cursor-wait'}`}
+                className={`py-2 px-4 bg-pink-600 text-white rounded hover:bg-pink-700 ${loading && 'opacity-50 cursor-wait'}`}
               >
                 {loading ? "Saving..." : "Finish"}
               </button>

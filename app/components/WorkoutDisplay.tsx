@@ -68,24 +68,24 @@ const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({ workoutData, workoutNam
   const heading = interpretWorkoutHeading(workoutData);
 
   return (
-    <div className="space-y-4 p-1 bg-white rounded shadow">
-      {workoutName && <h2 className="text-2xl font-bold">{workoutName}</h2>}
-      {heading && <h3 className="text-xl font-semibold">{heading}</h3>}
-      
+    <div className="space-y-4 p-4 bg-gray-700 rounded-md border border-gray-600 text-gray-100">
+      {workoutName && <h2 className="text-2xl font-bold text-gray-100">{workoutName}</h2>}
+      {heading && <h3 className="text-xl font-semibold text-gray-100">{heading}</h3>}
+
       {priority && (
-        <div className="text-sm text-gray-700">Priority: {priority}</div>
+        <div className="text-sm text-gray-300">Priority: {priority}</div>
       )}
 
       {workoutBlocks.map((block, idx) => (
         <div key={idx} className="space-y-1">
           {block.title && (
-            <h4 className="text-md font-semibold">{block.title}</h4>
+            <h4 className="text-md font-semibold text-gray-100">{block.title}</h4>
           )}
           <div className="space-y-1">
             {block.lines.map((line, lineIdx) => (
               <div key={lineIdx} className="flex items-start space-x-2">
-                <span className="text-gray-400">—</span>
-                <span className="text-sm text-gray-800">{formatMovementLine(line)}</span>
+                <span className="text-gray-500">—</span>
+                <span className="text-sm text-gray-200">{formatMovementLine(line)}</span>
               </div>
             ))}
           </div>
@@ -93,17 +93,17 @@ const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({ workoutData, workoutNam
       ))}
 
       {notes && notes.length > 0 && (
-        <div className="p-3 bg-gray-100 rounded space-y-1">
-          <h4 className="text-sm font-semibold mb-1">Additional Notes:</h4>
-          <ul className="list-disc list-inside text-sm text-gray-800 space-y-1">
+        <div className="p-3 bg-gray-600 rounded space-y-1 border border-gray-500">
+          <h4 className="text-sm font-semibold mb-1 text-gray-100">Additional Notes:</h4>
+          <ul className="list-disc list-inside text-sm text-gray-200 space-y-1">
             {notes.map((n, i) => <li key={i}>{n}</li>)}
           </ul>
         </div>
       )}
 
       {scalingGuidelines && (
-        <div className="p-3 bg-gray-50 border rounded text-sm text-gray-700 space-y-1">
-          <h4 className="font-semibold mb-1">Scaling Guidelines:</h4>
+        <div className="p-3 bg-gray-600 border border-gray-500 rounded text-sm text-gray-200 space-y-1">
+          <h4 className="font-semibold mb-1 text-gray-100">Scaling Guidelines:</h4>
           <ul className="list-disc list-inside space-y-1">
             {Object.entries(scalingGuidelines).map(([key, val], i) => (
               <li key={i}>{humanizeKey(key)}: {String(val)}</li>

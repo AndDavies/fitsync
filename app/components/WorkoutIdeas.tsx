@@ -241,13 +241,17 @@ const WorkoutIdeas: React.FC<WorkoutIdeasProps> = ({ setWorkoutBuilderText, cate
   };
 
   return (
-    <Card width="100%" style={{ maxHeight: '600px', overflowY: 'auto', backgroundColor: '#fff', border: '1px solid #d1d5db' }} className="text-gray-800">
+    <Card 
+      width="100%" 
+      style={{ maxHeight: '600px', overflowY: 'auto', backgroundColor: '#1F2937', border: '1px solid #374151' }} 
+      className="text-gray-200"
+    >
       <Card.Content>
         <input
           placeholder="Search workouts..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-pink-500 bg-white text-gray-800"
+          className="w-full p-2 border border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-pink-500 bg-gray-800 text-gray-200"
         />
       </Card.Content>
       <Card.Content>
@@ -259,9 +263,13 @@ const WorkoutIdeas: React.FC<WorkoutIdeasProps> = ({ setWorkoutBuilderText, cate
           const workoutText = formatDescription(workout.description);
 
           return (
-            <Card key={index} width="100%" style={{ marginBottom: '16px', backgroundColor: '#fff', border: '1px solid #d1d5db' }}>
+            <Card 
+              key={index} 
+              width="100%" 
+              style={{ marginBottom: '16px', backgroundColor: '#1F2937', border: '1px solid #374151' }}
+            >
               <Card.Content>
-                <Text b style={{ color: '#111827' }}>{workout.title}</Text>
+                <Text b style={{ color: '#F9FAFB' }}>{workout.title}</Text>
                 <Spacer height="0.5rem" />
                 <div className="flex justify-end gap-2">
                   <button
@@ -285,7 +293,7 @@ const WorkoutIdeas: React.FC<WorkoutIdeasProps> = ({ setWorkoutBuilderText, cate
                   parsed ? (
                     <WorkoutDisplay workoutData={parsed} />
                   ) : (
-                    <Text small type="secondary" style={{ color: '#6b7280' }}>No detailed data available.</Text>
+                    <Text small type="secondary" style={{ color: '#9CA3AF' }}>No detailed data available.</Text>
                   )
                 ) : (
                   <textarea
@@ -294,13 +302,13 @@ const WorkoutIdeas: React.FC<WorkoutIdeasProps> = ({ setWorkoutBuilderText, cate
                     style={{
                       width: '100%',
                       padding: '8px',
-                      border: '1px solid #ccc',
+                      border: '1px solid #4B5563',
                       borderRadius: '4px',
                       resize: 'none',
                       overflow: 'hidden',
                       fontSize: '0.875rem',
-                      backgroundColor: '#f9fafb',
-                      color: '#111827',
+                      backgroundColor: '#111827',
+                      color: '#F9FAFB',
                       minHeight: '6em'
                     }}
                     className="focus:outline-none focus:ring-2 focus:ring-pink-500"

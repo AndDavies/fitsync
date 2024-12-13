@@ -27,22 +27,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [userData, setUserData] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const fetchUserData = async (session: Session) => {
+  const fetchUserData = async (currentSession: Session) => {
     const { data, error } = await supabaseClient
       .from('user_profiles')
       .select('user_id, display_name, current_gym_id, role, onboarding_completed, goals')
-      .eq('user_id', session.user.id)
+      .eq('user_id', currentSession.user.id)
       .maybeSingle();
 
-    if (!error && data) {
+    if (error) {
+      console.error("Error fetching user data:", error.message);
+      setUserData(null);
+    } else if (data) {
       setUserData({
-        user_id: session.user.id,
+        user_id: currentSession.user.id,
         display_name: data.display_name ?? null,
         current_gym_id: data.current_gym_id ?? null,
         role: data.role ?? null,
         onboarding_completed: data.onboarding_completed ?? false,
         goals: data.goals ?? null,
       });
+    } else {
+      // No data found, ensure userData is null
+      setUserData(null);
     }
   };
 
@@ -55,18 +61,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   useEffect(() => {
-    if (!isAuthLoading) {
-      if (session) {
-        (async () => {
+    const initialize = async () => {
+      if (!isAuthLoading) {
+        if (session) {
           setIsLoading(true);
           await fetchUserData(session);
           setIsLoading(false);
-        })();
-      } else {
-        setUserData(null);
-        setIsLoading(false);
+        } else {
+          // Not logged in, clear userData
+          setUserData(null);
+          setIsLoading(false);
+        }
       }
-    }
+    };
+    initialize();
   }, [isAuthLoading, session]);
 
   return (

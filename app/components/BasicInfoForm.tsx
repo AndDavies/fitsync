@@ -22,15 +22,15 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ workout, tracks, onChange
   }, [trackId, date, workoutName, workoutDetails, scoringSet, scoringType]);
 
   return (
-    <div className="space-y-4 text-gray-800">
+    <div className="space-y-4 text-gray-200">
       <div>
-        <label className="block text-sm font-semibold mb-1">Track (required)</label>
+        <label className="block text-sm font-semibold mb-1 text-gray-100">Track (required)</label>
         <select
           value={trackId || ""}
           onChange={(e) => onChange({ trackId: e.target.value || null })}
-          className="w-1/2 p-2 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-pink-500"
+          className="w-1/2 p-2 border border-gray-600 rounded bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
         >
-          <option value="">Select a track</option>
+          <option value="" disabled>Select a track</option>
           {tracks.map((track) => (
             <option key={track.id} value={track.id}>
               {track.name}
@@ -40,45 +40,43 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ workout, tracks, onChange
       </div>
 
       <div>
-        <label className="block text-sm font-semibold mb-1">Date (required)</label>
+        <label className="block text-sm font-semibold mb-1 text-gray-100">Date (required)</label>
         <input
           type="date"
           value={date}
           onChange={(e) => onChange({ date: e.target.value })}
-          className="w-1/2 p-2 border border-gray-300 rounded bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-500"
+          className="w-1/2 p-2 border border-gray-600 rounded bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-semibold mb-1">Workout Name (required)</label>
+        <label className="block text-sm font-semibold mb-1 text-gray-100">Workout Name (required)</label>
         <input
           type="text"
           value={workoutName}
           onChange={(e) => onChange({ workoutName: e.target.value })}
           placeholder="Enter the workout name"
-          className="w-full p-2 border border-gray-300 rounded bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-500"
+          className="w-full p-2 border border-gray-600 rounded bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-semibold mb-1">Workout Details (Raw Text) (required)</label>
+        <label className="block text-sm font-semibold mb-1 text-gray-100">Workout Details (Raw Text) (required)</label>
         <textarea
           value={workoutDetails}
           onChange={(e) => onChange({ workoutDetails: e.target.value })}
           placeholder="Enter or copy your workout details"
-          className="w-full p-2 border border-gray-300 rounded h-48 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-500"
+          className="w-full p-2 border border-gray-600 rounded h-48 bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
         />
       </div>
 
-      {/* Scoring Fields */}
       <div>
-        <label className="block text-sm font-semibold mb-1">Scoring (required)</label>
+        <label className="block text-sm font-semibold mb-1 text-gray-100">Scoring (required)</label>
         <div className="flex space-x-2 items-center">
-          {/* Sets dropdown */}
           <select
             value={scoringSet}
             onChange={(e) => onChange({ scoringSet: parseInt(e.target.value) })}
-            className="w-1/4 p-2 border border-gray-300 rounded bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-500"
+            className="w-1/4 p-2 border border-gray-600 rounded bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
           >
             {Array.from({ length: 10 }, (_, i) => i + 1).map((set) => (
               <option key={set} value={set}>
@@ -86,11 +84,11 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ workout, tracks, onChange
               </option>
             ))}
           </select>
-          <span>of</span>
+          <span className="text-gray-300">of</span>
           <select
             value={scoringType}
             onChange={(e) => onChange({ scoringType: e.target.value })}
-            className="w-1/2 p-2 border border-gray-300 rounded bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-500"
+            className="w-1/2 p-2 border border-gray-600 rounded bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
           >
             <option value="" disabled>Select scoring type</option>
             {["Time", "Rounds + Reps", "Reps", "Load", "Calories", "Metres", "Not Scored"].map((type) => (
@@ -103,11 +101,11 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ workout, tracks, onChange
       <div className="mt-4">
         <button
           onClick={onNext}
-          className={`px-4 py-2 rounded transition ${
+          className={`px-4 py-2 rounded transition focus:outline-none focus:ring-2 focus:ring-pink-400 ${
             allRequiredFilled
-              ? 'bg-blue-500 text-white hover:bg-blue-600'
-              : 'bg-gray-300 text-gray-800 cursor-not-allowed'
-          } focus:outline-none focus:ring-2 focus:ring-pink-500`}
+              ? 'bg-pink-500 text-white hover:bg-pink-600'
+              : 'bg-gray-600 text-gray-300 cursor-not-allowed'
+          }`}
           disabled={!allRequiredFilled}
         >
           Next

@@ -9,7 +9,7 @@ export default function Dashboard() {
   const [workoutBuilderText, setWorkoutBuilderText] = useState('');
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-100">
+    <div className="min-h-screen flex flex-col bg-gray-800 text-gray-100">
       {/* Header */}
       <Header />
 
@@ -18,9 +18,9 @@ export default function Dashboard() {
         {/* Left Navigation */}
         <LeftNav />
 
-        <main className="flex flex-grow p-6 text-gray-800">
-          {/* Full-width container, just a background and some padding */}
-          <div className="w-full bg-white p-6 rounded shadow-md space-y-4">
+        <main className="flex flex-grow p-4">
+          {/* Just a single column: We show the PlanWorkoutPage in a card with a dark style */}
+          <div className="w-full max-w-7xl mx-auto">
             <Toaster position="top-right" />
             <PlanWorkoutPage />
           </div>
@@ -28,8 +28,8 @@ export default function Dashboard() {
       </div>
 
       {/* Footer */}
-      <footer className="bg-white text-center py-4 shadow-inner">
-        <p className="text-sm text-gray-600">&copy; 2024 FitSync. All rights reserved.</p>
+      <footer className="bg-gray-900 text-center py-4 shadow-inner border-t border-gray-700">
+        <p className="text-sm text-gray-400">&copy; 2024 FitSync. All rights reserved.</p>
       </footer>
     </div>
   );

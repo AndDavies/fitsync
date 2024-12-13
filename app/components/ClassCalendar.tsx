@@ -10,18 +10,20 @@ type ClassSchedule = {
   end_time: string | null;
   max_participants: number;
   color: string;
+  confirmed_count?: number;
 };
 
 type WeeklySchedule = {
   [key: string]: ClassSchedule[];
 };
 
-interface ClassCalendarProps {
+type ClassCalendarProps = {
   schedules: WeeklySchedule;
   weekDates: Date[];
-}
+  onClassClick?: (cls: ClassSchedule) => void;
+};
 
-const ClassCalendar: React.FC<ClassCalendarProps> = ({ schedules, weekDates }) => {
+const ClassCalendar: React.FC<ClassCalendarProps> = ({ schedules, weekDates, onClassClick }) => {
   const formatTime = (time: string | null) => {
     if (!time) return "Time not provided";
     const date = parseISO(time);
@@ -29,59 +31,62 @@ const ClassCalendar: React.FC<ClassCalendarProps> = ({ schedules, weekDates }) =
   };
 
   return (
-    <div className="calendar-grid mt-6 overflow-auto">
-      <div className="grid grid-cols-8 auto-rows-auto text-sm antialiased border border-gray-300 rounded-md">
-        {/* Header Row: Empty top-left cell + Days of the week */}
-        <div className="bg-white p-3 border-b border-gray-300"></div>
+    <div className="calendar-grid mt-4 overflow-auto">
+      <div className="grid grid-cols-8 auto-rows-auto text-sm antialiased border border-gray-700 rounded-xl">
+        {/* Header Row */}
+        <div className="bg-gray-700 p-3 border-b border-gray-600"></div>
         {weekDates.map((date, index) => (
           <div
             key={index}
-            className="bg-white p-3 border-b border-gray-300 text-center font-semibold"
+            className="bg-gray-700 p-3 border-b border-gray-600 text-center font-semibold text-gray-200"
           >
             {format(date, "EEE MM/dd")}
           </div>
         ))}
 
-        {/* Rows for Time Slots (6 AM to 8 PM = 15 slots if that's your choice) */}
+        {/* Time slots */}
         {Array.from({ length: 15 }, (_, i) => {
           const hour = 6 + i;
           const formattedHour = hour <= 12 ? `${hour}:00 AM` : `${hour - 12}:00 PM`;
           return (
             <React.Fragment key={i}>
               {/* Time Slot Column */}
-              <div className="time-slot p-3 border-r border-gray-300 bg-gray-50 text-gray-700 text-center">
+              <div className="time-slot p-3 border-r border-gray-600 bg-gray-800 text-gray-400 text-center font-medium">
                 {formattedHour}
               </div>
-              {/* Day Columns for Each Time Slot */}
               {weekDates.map((date, index) => {
                 const dayStr = format(date, "EEEE").toLowerCase();
-                const daySchedules = schedules[dayStr as keyof WeeklySchedule].filter(
-                  (schedule) => {
-                    const st = schedule.start_time ? parseISO(schedule.start_time) : null;
-                    return st && isValid(st) && st.getHours() === hour;
-                  }
-                );
+                const daySchedules = schedules[dayStr as keyof WeeklySchedule].filter((schedule) => {
+                  const st = schedule.start_time ? parseISO(schedule.start_time) : null;
+                  return st && isValid(st) && st.getHours() === hour;
+                });
 
                 return (
                   <div
                     key={`${i}-${index}`}
-                    className="day-slot p-2 border-b border-gray-300 bg-white h-20 relative"
+                    className="day-slot p-2 border-b border-gray-600 bg-gray-800 relative"
                   >
                     {daySchedules.map((schedule) => (
                       <div
                         key={schedule.id}
-                        className="schedule-item mb-2 rounded bg-gray-50 p-2 text-sm"
+                        className="schedule-item mb-2 rounded bg-gray-700 p-2 text-sm cursor-pointer transition-transform duration-150 hover:scale-105 hover:bg-pink-700/20"
                         style={{
-                          borderLeft: `4px solid ${schedule.color || "#000"}`,
+                          borderLeft: `4px solid ${schedule.color || "#fff"}`,
                         }}
+                        onClick={() => onClassClick && onClassClick(schedule)}
                       >
-                        <div style={{ color: schedule.color }} className="font-semibold">
+                        <div
+                          style={{ color: schedule.color }}
+                          className="font-semibold mb-1"
+                        >
                           {schedule.class_name}
                         </div>
-                        <div className="text-gray-700 text-xs">
+                        <div className="text-gray-300 text-xs mb-1">
                           {formatTime(schedule.start_time)} - {formatTime(schedule.end_time)}
                         </div>
-                        <div className="text-gray-700 text-xs">Max: {schedule.max_participants}</div>
+                        <div className="text-gray-400 text-xs">
+                          {(schedule.confirmed_count ?? 0)} / {schedule.max_participants} confirmed
+                        </div>
                       </div>
                     ))}
                   </div>
