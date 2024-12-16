@@ -66,6 +66,7 @@ const LeftNav: React.FC = () => {
 
   if (canManageUsers) {
     navItems.push({ href: '/users', icon: <SettingsGearIcon />, label: 'User Management' });
+    navItems.push({ href: '/gym-dashboard', icon: <ChartColumnIncreasingIcon />, label: 'Gym Dashboard' });
   }
 
   return (

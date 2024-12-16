@@ -2,7 +2,7 @@
 
 export interface WorkoutTemplate {
   id: string;
-  title?: string;            // Returned from DB
+  title?: string;
   workout_details?: string;
   warm_up?: string;
   cool_down?: string;
@@ -15,11 +15,9 @@ export interface WorkoutTemplate {
   is_template: boolean;
   track_id?: string;
 
-  // Added field for our front-end consistency
-  workoutName?: string; 
+  workoutName?: string;
 }
 
-// types.ts
 export interface ParsedMovement {
   name: string;
   reps?: number[] | number | 'Max';
@@ -29,7 +27,8 @@ export interface ParsedMovement {
   minute?: string;
   distance?: string;
   duration_seconds?: number;
-  scaling?: string[]; // Add scaling array if present
+  scaling?: string[];
+  movement_id?: number;
 }
 
 export interface ParsedWorkoutBlock {
@@ -45,7 +44,5 @@ export interface ParsedWorkout {
   workoutBlocks: ParsedWorkoutBlock[];
   scalingGuidelines?: Record<string, any>;
   duration?: string;
-  priority?: string; // Add priority field
+  priority?: string;
 }
-
-

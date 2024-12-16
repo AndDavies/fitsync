@@ -10,7 +10,6 @@ interface LogResultProps {
   workoutId: string;
 }
 
-// Define types for formatted results (same as before)
 type TimeResult = { minutes: string; seconds: string };
 type RoundsRepsResult = { rounds: string; reps: string };
 type LoadResult = { weight: number; unit: string };
@@ -112,7 +111,6 @@ const LogResult: React.FC<LogResultProps> = ({ workoutId }) => {
     });
   };
 
-  // Define renderInputFields here
   const renderInputFields = (setIndex: number) => {
     if (!results[setIndex]) {
       setResults((prevResults) => {
@@ -133,7 +131,7 @@ const LogResult: React.FC<LogResultProps> = ({ workoutId }) => {
               placeholder="MM"
               value={results[setIndex][0] || ""}
               onChange={(e) => handleInputChange(setIndex, 0, e.target.value)}
-              className="w-16 p-2 border border-gray-300 rounded-md text-center bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-pink-400"
+              className="w-16 p-2 border border-gray-500 rounded-md text-center bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-pink-400"
             />
             <span>:</span>
             <input
@@ -141,7 +139,7 @@ const LogResult: React.FC<LogResultProps> = ({ workoutId }) => {
               placeholder="SS"
               value={results[setIndex][1] || ""}
               onChange={(e) => handleInputChange(setIndex, 1, e.target.value)}
-              className="w-16 p-2 border border-gray-300 rounded-md text-center bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-pink-400"
+              className="w-16 p-2 border border-gray-500 rounded-md text-center bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-pink-400"
             />
           </div>
         );
@@ -154,7 +152,7 @@ const LogResult: React.FC<LogResultProps> = ({ workoutId }) => {
               placeholder="Rounds"
               value={results[setIndex][0] || ""}
               onChange={(e) => handleInputChange(setIndex, 0, e.target.value)}
-              className="w-16 p-2 border border-gray-300 rounded-md text-center bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-pink-400"
+              className="w-16 p-2 border border-gray-500 rounded-md text-center bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-pink-400"
             />
             <span>+</span>
             <input
@@ -162,7 +160,7 @@ const LogResult: React.FC<LogResultProps> = ({ workoutId }) => {
               placeholder="Reps"
               value={results[setIndex][1] || ""}
               onChange={(e) => handleInputChange(setIndex, 1, e.target.value)}
-              className="w-16 p-2 border border-gray-300 rounded-md text-center bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-pink-400"
+              className="w-16 p-2 border border-gray-500 rounded-md text-center bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-pink-400"
             />
           </div>
         );
@@ -175,9 +173,9 @@ const LogResult: React.FC<LogResultProps> = ({ workoutId }) => {
               placeholder="Load"
               value={results[setIndex][0] || ""}
               onChange={(e) => handleInputChange(setIndex, 0, e.target.value)}
-              className="w-24 p-2 border border-gray-300 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-pink-400"
+              className="w-24 p-2 border border-gray-500 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-pink-400"
             />
-            <select className="p-2 border border-gray-300 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-pink-400">
+            <select className="p-2 border border-gray-500 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-pink-400">
               <option value="lbs">Lbs</option>
               <option value="kg">Kg</option>
             </select>
@@ -192,7 +190,7 @@ const LogResult: React.FC<LogResultProps> = ({ workoutId }) => {
               placeholder={scoringType}
               value={results[setIndex][0] || ""}
               onChange={(e) => handleInputChange(setIndex, 0, e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-pink-400"
+              className="w-full p-2 border border-gray-500 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-pink-400"
             />
           </div>
         );
@@ -292,20 +290,22 @@ const LogResult: React.FC<LogResultProps> = ({ workoutId }) => {
   };
 
   return (
-    <div className="p-6 max-w-lg mx-auto bg-gray-900 text-white rounded-lg space-y-6">
+    <div className="p-6 bg-gray-900 text-white rounded-lg space-y-6 border border-gray-700">
       <div className="flex items-center justify-between">
-        <Link href="/plan">
-          <span className="text-sm text-pink-400 hover:text-pink-300 transition cursor-pointer">← Back to Calendar</span>
+        <Link href="/plan" className="text-sm text-pink-400 hover:text-pink-300 transition cursor-pointer">
+          ← Back to Calendar
         </Link>
         {logSuccess && <p className="text-green-400 text-sm">{logSuccess}</p>}
       </div>
 
       <div className="space-y-2">
-        <h2 className="text-xl font-bold">{workoutName || "Workout"}</h2>
-        {workoutDate && <p className="text-sm text-gray-300">Scheduled on {new Date(workoutDate).toLocaleDateString()}</p>}
-        <p className="text-sm text-gray-400">
-          Enter your workout result below.
-        </p>
+        <h2 className="text-xl font-bold text-gray-100">{workoutName || "Workout"}</h2>
+        {workoutDate && (
+          <p className="text-sm text-gray-300">
+            Scheduled on {new Date(workoutDate).toLocaleDateString()}
+          </p>
+        )}
+        <p className="text-sm text-gray-400">Enter your workout result below.</p>
       </div>
 
       <div className="bg-gray-800 p-4 rounded-md space-y-4">

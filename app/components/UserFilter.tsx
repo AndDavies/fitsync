@@ -71,10 +71,9 @@ const UserFilter: React.FC = () => {
     }
   }, [authLoading, currentGymId]);
 
-  // Initially load all users without query (just to populate the table)
+  // Initially load all users without query
   useEffect(() => {
     if (!authLoading && currentGymId) {
-      // Just call fetchUsers once without query to populate initial data
       fetchUsers();
     }
   }, [authLoading, currentGymId, fetchUsers]);
@@ -89,62 +88,87 @@ const UserFilter: React.FC = () => {
   };
 
   const refreshUsers = async () => {
-    // Refresh current list, fetch all without query
     await fetchUsers();
   };
 
-  if (authLoading || isLoadingUsers && users.length === 0) {
-    return <p>Loading...</p>;
+  if ((authLoading || isLoadingUsers) && users.length === 0) {
+    return <p className="text-gray-300">Loading...</p>;
   }
 
   if (error) {
     return <p className="text-red-500">{error}</p>;
   }
 
-  // Filtered users for the table can be the same 'users' array, or if you want to reflect the query typed by the user:
-  // but since AsyncSelect handles loading, let's just show all `users` fetched initially or after searches.
-  const filteredUsers = users; 
+  const filteredUsers = users;
 
   return (
-    <div className="p-6 bg-white rounded-md shadow-md w-full">
-      <h2 className="text-2xl font-semibold mb-6">User Management</h2>
-      <p className="text-sm text-gray-700 mb-4">
+    <div className="w-full">
+      <h2 className="text-xl font-semibold mb-4 text-gray-200">User Management</h2>
+      <p className="text-sm text-gray-400 mb-4">
         Search and manage users associated with your gym. Select a user to view/edit details.
       </p>
 
       <div className="mb-4 max-w-md">
-        <div className="w-full">
-          <AsyncSelect
-            cacheOptions
-            loadOptions={fetchUsers}
-            defaultOptions // Load initial options on mount if desired
-            placeholder="Search users by name or email"
-            onChange={handleSelectChange}
-            isClearable
-          />
-        </div>
+        <AsyncSelect
+          cacheOptions
+          loadOptions={fetchUsers}
+          defaultOptions
+          placeholder="Search users by name or email"
+          onChange={handleSelectChange}
+          isClearable
+          styles={{
+            control: (base) => ({
+              ...base,
+              backgroundColor: '#2D2D2D',
+              borderColor: '#555',
+              color: '#FFF'
+            }),
+            menu: (base) => ({
+              ...base,
+              backgroundColor: '#2D2D2D',
+              color: '#FFF'
+            }),
+            singleValue: (base) => ({
+              ...base,
+              color: '#FFF'
+            }),
+            input: (base) => ({
+              ...base,
+              color: '#FFF'
+            }),
+            placeholder: (base) => ({
+              ...base,
+              color: '#9CA3AF'
+            }),
+            option: (base, state) => ({
+              ...base,
+              backgroundColor: state.isFocused ? '#3B3B3B' : '#2D2D2D',
+              color: '#FFF',
+            }),
+          }}
+        />
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full table-auto border-collapse">
-          <thead className="bg-gray-100 text-gray-600">
+      <div className="overflow-x-auto border border-gray-700 rounded-xl">
+        <table className="w-full table-auto text-sm text-gray-200">
+          <thead className="bg-gray-700 text-gray-300">
             <tr>
-              <th className="px-4 py-3 text-left font-medium">#</th>
-              <th className="px-4 py-3 text-left font-medium">Name</th>
-              <th className="px-4 py-3 text-left font-medium">Email</th>
-              <th className="px-4 py-3 text-left font-medium">Joined</th>
-              <th className="px-4 py-3 text-left font-medium">Plan</th>
-              <th className="px-4 py-3 text-left font-medium">Role</th>
-              <th className="px-4 py-3 text-left font-medium">Last Login</th>
-              <th className="px-4 py-3 text-left font-medium">Activity Level</th>
-              <th className="px-4 py-3 font-medium">Actions</th>
+              <th className="px-4 py-3 text-left font-medium border-b border-gray-600">#</th>
+              <th className="px-4 py-3 text-left font-medium border-b border-gray-600">Name</th>
+              <th className="px-4 py-3 text-left font-medium border-b border-gray-600">Email</th>
+              <th className="px-4 py-3 text-left font-medium border-b border-gray-600">Joined</th>
+              <th className="px-4 py-3 text-left font-medium border-b border-gray-600">Plan</th>
+              <th className="px-4 py-3 text-left font-medium border-b border-gray-600">Role</th>
+              <th className="px-4 py-3 text-left font-medium border-b border-gray-600">Last Login</th>
+              <th className="px-4 py-3 text-left font-medium border-b border-gray-600">Activity Level</th>
+              <th className="px-4 py-3 font-medium border-b border-gray-600">Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredUsers.map((user, index) => (
               <tr
                 key={user.user_id}
-                className="border-t hover:bg-gray-100 transition duration-150"
+                className="border-b border-gray-700 hover:bg-gray-800 transition duration-150"
               >
                 <td className="px-4 py-3">{index + 1}</td>
                 <td className="px-4 py-3">{user.display_name}</td>
@@ -160,7 +184,7 @@ const UserFilter: React.FC = () => {
                       setSelectedUser(user);
                       setIsDrawerOpen(true);
                     }}
-                    className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+                    className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-500 transition"
                   >
                     Edit
                   </button>

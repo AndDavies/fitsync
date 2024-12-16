@@ -1,3 +1,5 @@
+// app/workouts/components/PlanWorkoutPage.tsx
+
 "use client";
 import React, { useReducer, useState, useEffect } from 'react';
 import { supabase } from '@/utils/supabase/client';
@@ -5,8 +7,8 @@ import { useAuth } from '../context/AuthContext';
 import BasicInfoForm from './BasicInfoForm';
 import FinalReview from './FinalReview';
 import WorkoutDisplay from './WorkoutDisplay';
+import WorkoutEditorDisplay from './WorkoutEditorDisplay';
 import WorkoutIdeas from './WorkoutIdeas';
-import { basicParseWorkout } from './parseWorkout';
 import { ParsedWorkout } from './types';
 import toast from 'react-hot-toast';
 import { Card, Text, Grid, Dot } from '@geist-ui/core';
@@ -66,7 +68,6 @@ const PlanWorkoutPage: React.FC = () => {
             .from("tracks")
             .select("id, name")
             .eq("gym_id", userData.current_gym_id);
-
           if (gymError) throw gymError;
           if (gymTracks) fetchedTracks.push(...gymTracks);
         } else {
@@ -74,7 +75,6 @@ const PlanWorkoutPage: React.FC = () => {
             .from("tracks")
             .select("id, name")
             .eq("user_id", userData.user_id);
-
           if (personalError) throw personalError;
           if (personalTracks && personalTracks.length) {
             fetchedTracks.push(...personalTracks);
@@ -84,7 +84,6 @@ const PlanWorkoutPage: React.FC = () => {
               .insert({ user_id: userData.user_id, name: "Personal Track" })
               .select("id, name")
               .single();
-
             if (trackError) throw trackError;
             if (newTrack) fetchedTracks.push(newTrack);
           }
@@ -110,15 +109,41 @@ const PlanWorkoutPage: React.FC = () => {
     dispatch({ type: "UPDATE", updates: { workoutDetails: text } });
   };
 
-  const handleNextFromStep1 = () => {
+  const handleNextFromStep1 = async () => {
+    console.log("handleNextFromStep1 START");
     const { date, workoutName, trackId, workoutDetails, scoringSet, scoringType } = workoutDraft;
     if (!trackId || !date || !workoutName.trim() || !workoutDetails.trim() || scoringSet < 1 || scoringType === '') {
       toast.error("Please complete all required fields");
+      console.log("Validation failed in handleNextFromStep1");
       return;
     }
-    const parsed = basicParseWorkout(workoutDetails);
-    setParsedWorkout(parsed);
-    setStep(2);
+
+    console.log("All fields validated. Sending request to /api/parse-workout");
+    try {
+      const res = await fetch('/api/parse-workout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workoutText: workoutDetails })
+      });
+      
+      console.log('Fetch call completed in handleNextFromStep1');
+
+      if (!res.ok) {
+        const { error } = await res.json();
+        toast.error(`Failed to parse workout: ${error}`);
+        console.log('handleNextFromStep1: response not ok');
+        return;
+      }
+
+      console.log("handleNextFromStep1: response OK, parsing JSON");
+      const { structuredWorkout } = await res.json();
+      console.log("handleNextFromStep1: structuredWorkout received:", structuredWorkout);
+      setParsedWorkout(structuredWorkout);
+      setStep(2);
+    } catch (err: any) {
+      console.error("Error calling parse-workout API:", err);
+      toast.error("Failed to parse workout. Please try again.");
+    }
   };
 
   const handleNextFromStep2 = () => {
@@ -138,11 +163,14 @@ const PlanWorkoutPage: React.FC = () => {
     }
 
     try {
+      // Insert the structured parsedWorkout as JSONB into workout_details
       const { error } = await supabase.from("scheduled_workouts").insert({
         user_id: userData.user_id,
         date: workoutDraft.date,
         track_id: workoutDraft.trackId,
-        workout_details: workoutDraft.workoutDetails,
+        // Instead of inserting workoutDraft.workoutDetails (text),
+        // insert parsedWorkout (object) for JSONB column:
+        workout_details: parsedWorkout,
         scoring_type: workoutDraft.scoringType,
         advanced_scoring: workoutDraft.advancedScoring,
         origin: workoutDraft.origin,
@@ -195,17 +223,15 @@ const PlanWorkoutPage: React.FC = () => {
   };
 
   return (
-    <div className="p-4 min-h-screen bg-gray-800 text-gray-100">
+    <>
       <div className="max-w-7xl mx-auto mb-6">
         <StepIndicator />
       </div>
 
-      {/* Two-column layout: main card on left, workout ideas on right */}
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:space-x-6">
-        
         {/* Main Column */}
         <div className="flex-grow mb-6 md:mb-0">
-          <div className="bg-gray-800 border border-gray-700 rounded-md p-4">
+          <div className="bg-gray-900 border border-gray-700 rounded-md p-6">
             {loading ? (
               <div className="flex items-center justify-center py-20">
                 <div className="animate-spin h-8 w-8 border-4 border-pink-500 border-t-transparent rounded-full"></div>
@@ -237,10 +263,10 @@ const PlanWorkoutPage: React.FC = () => {
 
                 {step === 2 && (
                   <div className="space-y-6">
-                    <div className="bg-gray-800 border border-gray-700 rounded-md p-4">
+                    <div className="bg-gray-900 border border-gray-700 rounded-md p-6">
                       <Text h2 style={{ color: '#F9FAFB', marginBottom: '8px' }}>Refine Your Workout</Text>
                       <Text small type="secondary" style={{ marginBottom: '16px', color: '#9CA3AF' }}>
-                        Add warm-up, cool-down, and coach notes if desired. Optional.
+                        Add warm-up, cool-down, and coach notes if desired. You can also edit sets, reps, and movements here.
                       </Text>
                       <div className="space-y-4">
                         <div>
@@ -287,8 +313,11 @@ const PlanWorkoutPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="bg-gray-800 border border-gray-700 rounded-md p-4">
-                      <WorkoutDisplay workoutData={parsedWorkout} workoutName={workoutDraft.workoutName} />
+                    <div className="bg-gray-900 border border-gray-700 rounded-md p-6">
+                      <WorkoutEditorDisplay 
+                        workoutData={parsedWorkout} 
+                        onUpdate={(updatedWorkout) => setParsedWorkout(updatedWorkout)}
+                      />
                     </div>
                   </div>
                 )}
@@ -307,9 +336,9 @@ const PlanWorkoutPage: React.FC = () => {
 
         {/* Workout Ideas Panel */}
         {!loading && step === 1 && (
-          <div className="w-full md:w-1/3 bg-gray-800 border border-gray-700 rounded-md p-4 max-h-[80vh] overflow-auto">
+          <div className="w-full md:w-1/3 bg-gray-900 border border-gray-700 rounded-md p-6 max-h-[80vh] overflow-auto">
             <h3 className="text-pink-400 font-bold text-lg mb-4">Workout Ideas</h3>
-
+            
             {/* Hero Workouts */}
             <div className="mb-8">
               <h4 className="text-gray-200 font-semibold mb-2">Hero Workouts</h4>
@@ -330,7 +359,7 @@ const PlanWorkoutPage: React.FC = () => {
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 };
 

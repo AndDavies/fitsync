@@ -25,40 +25,71 @@ function interpretWorkoutHeading(workoutData: ParsedWorkout): string {
   return heading;
 }
 
-// Helper to format each movement line with all meta
-function formatMovementLine(line: any): string {
-  let lineStr = '';
+/**
+ * Format a single movement line. If `line.reps` is an array, we treat each entry as a separate set.
+ * If `line.reps` is a single number or "Max", we just return one line.
+ */
+function formatMovementLines(line: any): string[] {
+  const lines: string[] = [];
 
-  // If minute is given (e.g., "Even", "Odd"), prepend it
-  if (line.minute) {
-    lineStr += line.minute.toUpperCase() + ': ';
-  }
+  // If reps is an array, we assume multiple sets
+  if (Array.isArray(line.reps)) {
+    line.reps.forEach((repCount: number | string, i: number) => {
+      let setStr = `Set ${i + 1}: `;
+      if (repCount === 'Max') {
+        setStr += 'Max ';
+      } else if (typeof repCount === 'number') {
+        setStr += `${repCount} `;
+      }
 
-  // If reps is defined, handle arrays or numbers or 'Max'
-  if (line.reps !== undefined) {
-    if (Array.isArray(line.reps)) {
-      lineStr += line.reps.join('-') + ' ';
-    } else if (line.reps === 'Max') {
-      lineStr += 'Max ';
-    } else if (typeof line.reps === 'number') {
-      lineStr += line.reps + ' ';
+      if (line.name) {
+        setStr += line.name;
+      }
+
+      if (line.distance) {
+        setStr += `, ${line.distance}`;
+      }
+
+      // If there's a weight or intensity, we could append it here
+      if (line.weight) {
+        setStr += ` @ ${line.weight}`;
+      }
+
+      lines.push(setStr.trim());
+    });
+  } else {
+    // Single set or no reps array
+    let lineStr = '';
+    if (line.minute) {
+      lineStr += line.minute.toUpperCase() + ': ';
     }
+
+    if (line.reps !== undefined) {
+      if (line.reps === 'Max') {
+        lineStr += 'Max ';
+      } else if (typeof line.reps === 'number') {
+        lineStr += line.reps + ' ';
+      }
+    }
+
+    if (line.name) {
+      lineStr += line.name;
+    }
+
+    if (line.distance) {
+      lineStr += `, ${line.distance}`;
+    }
+
+    if (line.weight) {
+      lineStr += ` @ ${line.weight}`;
+    }
+
+    lines.push(lineStr.trim());
   }
 
-  // Add the movement name
-  if (line.name) {
-    lineStr += line.name;
-  }
-
-  // If distance present, append it
-  if (line.distance) {
-    lineStr += `, ${line.distance}`;
-  }
-
-  return lineStr.trim();
+  return lines;
 }
 
-// Convert underscore keys to title-cased phrases: "partition_movements" -> "Partition Movements"
 function humanizeKey(key: string): string {
   return key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 }
@@ -82,12 +113,15 @@ const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({ workoutData, workoutNam
             <h4 className="text-md font-semibold text-gray-100">{block.title}</h4>
           )}
           <div className="space-y-1">
-            {block.lines.map((line, lineIdx) => (
-              <div key={lineIdx} className="flex items-start space-x-2">
-                <span className="text-gray-500">—</span>
-                <span className="text-sm text-gray-200">{formatMovementLine(line)}</span>
-              </div>
-            ))}
+            {block.lines.map((line, lineIdx) => {
+              const lineOutputs = formatMovementLines(line);
+              return lineOutputs.map((lo, innerIdx) => (
+                <div key={lineIdx + '-' + innerIdx} className="flex items-start space-x-2">
+                  <span className="text-gray-500">—</span>
+                  <span className="text-sm text-gray-200">{lo}</span>
+                </div>
+              ));
+            })}
           </div>
         </div>
       ))}

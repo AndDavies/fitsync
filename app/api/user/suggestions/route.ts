@@ -1,61 +1,100 @@
-// app/api/user/suggestions/route.ts
 import { NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import axios from 'axios';
+
+const XAI_API_KEY = process.env.XAI_API_KEY;
+
+if (!XAI_API_KEY) {
+    throw new Error('Missing XAI_API_KEY environment variable');
+}
 
 export async function GET() {
-  const supabase = createRouteHandlerClient({ cookies })
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    const supabase = createRouteHandlerClient({ cookies });
+    const {
+        data: { session },
+    } = await supabase.auth.getSession();
 
-  if (!session) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-  }
+    if (!session) {
+        return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
 
-  const userId = session.user.id;
+    const userId = session.user.id;
 
-  // Fetch the user's goal from `user_profiles`
-  const { data: profileData, error: profileError } = await supabase
-    .from('user_profiles')
-    .select('goals')
-    .eq('user_id', userId)
-    .maybeSingle();
+    // Fetch user goals from the database
+    const { data: profileData, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('goals')
+        .eq('user_id', userId)
+        .maybeSingle();
 
-  if (profileError) {
-    return NextResponse.json({ error: profileError.message }, { status: 500 });
-  }
+    if (profileError) {
+        console.error('Error fetching user goals:', profileError.message);
+        return NextResponse.json({ error: 'Error fetching user goals' }, { status: 500 });
+    }
 
-  const userGoal = profileData?.goals || 'general_health';
+    const userGoal = profileData?.goals || 'general_health';
 
-  // Fetch recent workouts to see what they've done recently
-  const now = new Date();
-  const sevenDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+    // Fetch recent workouts
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
 
-  const { data: recentWorkouts, error: workoutsError } = await supabase
-    .from('workout_results')
-    .select('id, date_logged, result')
-    .eq('user_profile_id', userId)
-    .gte('date_logged', sevenDaysAgo.toISOString());
+    const { data: recentWorkouts, error: workoutsError } = await supabase
+        .from('workout_results')
+        .select('id, date_logged, result')
+        .eq('user_profile_id', userId)
+        .gte('date_logged', sevenDaysAgo.toISOString());
 
-  if (workoutsError) {
-    return NextResponse.json({ error: workoutsError.message }, { status: 500 });
-  }
+    if (workoutsError) {
+        console.error('Error fetching recent workouts:', workoutsError.message);
+        return NextResponse.json({ error: 'Error fetching recent workouts' }, { status: 500 });
+    }
 
-  // Simple heuristic logic
-  let suggestion = "Keep up the good work! Consider adding more variety if you feel stuck.";
+    const completedWorkoutsCount = recentWorkouts ? recentWorkouts.length : 0;
 
-  // Example heuristic: If user's goal is endurance and no workouts logged in the last 7 days that look like a run
-  // (For simplicity, we’ll just say if no workouts at all, suggest a run.)
-  const completedWorkoutsCount = recentWorkouts ? recentWorkouts.length : 0;
+    // Construct prompt for xAI
+    const prompt = `
+        User goal: ${userGoal}.
+        Number of workouts completed in the last 7 days: ${completedWorkoutsCount}.
+        Recent workouts: ${recentWorkouts.map(w => `${w.result}`).join(', ') || 'None'}.
+        Provide a motivational and actionable suggestion for the user based on their goal and recent activity.
+    `;
 
-  if (userGoal.toLowerCase().includes('endurance') && completedWorkoutsCount === 0) {
-    suggestion = "Your goal is endurance. Try adding a short run or cycle session this week!";
-  } else if (userGoal.toLowerCase().includes('strength') && completedWorkoutsCount === 0) {
-    suggestion = "Your goal is strength. Consider a strength workout session to boost your performance!";
-  }
+    try {
+        // Call xAI API
+        const xaiResponse = await axios.post(
+            'https://api.x.ai/v1/chat/completions', // Correct API endpoint
+            {
+                messages: [
+                    { role: 'system', content: 'You are a motivational fitness assistant.' },
+                    { role: 'user', content: prompt },
+                ],
+                model: 'grok-2-1212', // Use the cost-effective model
+                stream: false,
+                temperature: 0.7,
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${XAI_API_KEY}`,
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
 
-  // You can add more logic or check the workout results structure to differentiate between run/cycle/strength workouts later.
+        const suggestion = xaiResponse.data?.choices?.[0]?.message?.content || 'Keep pushing forward!';
+        return NextResponse.json({ suggestion });
+    } catch (error) {
+        // Cast error safely and log details
+        const err = error as any;
 
-  return NextResponse.json({ suggestion });
+        console.error(
+            'Error calling xAI API:',
+            err?.response?.data || err?.message || 'Unknown error occurred'
+        );
+
+        return NextResponse.json(
+            { error: 'Failed to generate suggestion. Please try again later.' },
+            { status: 500 }
+        );
+    }
 }
