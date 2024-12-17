@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/utils/supabase/client";
 import Link from "next/link";
@@ -7,12 +6,10 @@ import { useAuth } from "../context/AuthContext";
 import { ParsedWorkout } from "./types";
 import WorkoutDisplay from "./WorkoutDisplay";
 
-// Utility to format date as YYYY-MM-DD for database queries
 function getFormattedDate(date: Date): string {
   return date.toISOString().split("T")[0];
 }
 
-// Utility to get CrossFit date code: YYMMDD
 function getCrossfitDateCode(date: Date): string {
   const year = date.getUTCFullYear().toString().slice(-2);
   const month = String(date.getUTCMonth() + 1).padStart(2, "0");
@@ -20,14 +17,16 @@ function getCrossfitDateCode(date: Date): string {
   return `${year}${month}${day}`;
 }
 
-interface ScheduledWorkout {
+interface LocalScheduledWorkout {
   id: string;
   name: string;
   workout_details: ParsedWorkout;
+  warm_up?: string;
+  cool_down?: string;
 }
 
 const DailyWOD: React.FC = () => {
-  const [scheduledWorkout, setScheduledWorkout] = useState<ScheduledWorkout | null>(null);
+  const [scheduledWorkout, setScheduledWorkout] = useState<LocalScheduledWorkout | null>(null);
   const [crossfitWOD, setCrossfitWOD] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { userData } = useAuth();
@@ -46,8 +45,8 @@ const DailyWOD: React.FC = () => {
       if (userData?.user_id) {
         try {
           const { data, error } = await supabase
-            .from("scheduled_workouts") // Ensure correct table name
-            .select("id, name, workout_details")
+            .from("scheduled_workouts")
+            .select("id, name, workout_details, warm_up, cool_down")
             .eq("user_id", userData.user_id)
             .eq("date", today)
             .maybeSingle();
@@ -59,9 +58,24 @@ const DailyWOD: React.FC = () => {
           }
 
           if (data) {
-            setScheduledWorkout(data);
+            let parsedWorkout: ParsedWorkout;
+            if (typeof data.workout_details === "string") {
+              parsedWorkout = JSON.parse(data.workout_details) as ParsedWorkout;
+            } else {
+              parsedWorkout = data.workout_details as ParsedWorkout;
+            }
+
+            const localScheduledWorkout: LocalScheduledWorkout = {
+              id: data.id,
+              name: data.name,
+              workout_details: parsedWorkout,
+              warm_up: data.warm_up || "",
+              cool_down: data.cool_down || "",
+            };
+
+            setScheduledWorkout(localScheduledWorkout);
           } else {
-            fetchCrossfitWOD();
+            fetchCrossfitWOD(); // No workout scheduled, use CrossFit WOD
           }
         } catch (error) {
           console.error("Error fetching scheduled workout:", error);
@@ -70,14 +84,14 @@ const DailyWOD: React.FC = () => {
           setLoading(false);
         }
       } else {
-        fetchCrossfitWOD();
+        fetchCrossfitWOD(); // If no userData
       }
     };
 
     if (userData) {
       fetchWorkout();
     } else {
-      setLoading(true); // User data not yet loaded
+      setLoading(true);
     }
   }, [userData]);
 
@@ -89,10 +103,11 @@ const DailyWOD: React.FC = () => {
 
       {!loading && scheduledWorkout ? (
         <div>
-          {/* Convert workout_details object to string before passing to WorkoutDisplay */}
           <WorkoutDisplay
-            workoutData={JSON.stringify(scheduledWorkout.workout_details)}
+            workoutData={scheduledWorkout.workout_details}
             workoutName={scheduledWorkout.name}
+            warmUp={scheduledWorkout.warm_up}
+            coolDown={scheduledWorkout.cool_down}
           />
         </div>
       ) : (
