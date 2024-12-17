@@ -1,24 +1,20 @@
-// app/workouts/components/PlanWorkoutPage.tsx
-
 "use client";
 import React, { useReducer, useState, useEffect } from 'react';
 import { supabase } from '@/utils/supabase/client';
 import { useAuth } from '../context/AuthContext';
+import WorkoutIdeas from './WorkoutIdeas';
 import BasicInfoForm from './BasicInfoForm';
 import FinalReview from './FinalReview';
-import WorkoutDisplay from './WorkoutDisplay';
-import WorkoutEditorDisplay from './WorkoutEditorDisplay';
-import WorkoutIdeas from './WorkoutIdeas';
-import { ParsedWorkout } from './types';
 import toast from 'react-hot-toast';
-import { Card, Text, Grid, Dot } from '@geist-ui/core';
+import { Text, Grid, Dot } from '@geist-ui/core';
+import { ParsedWorkout } from './types'; // For the parsed workout structure
 
 const initialWorkoutState = {
   date: new Date().toISOString().split("T")[0],
   workoutName: "",
   trackId: null as string | null,
   warmUp: "",
-  workoutDetails: "",
+  workoutDetails: "", // Raw text initially
   coolDown: "",
   scoringSet: 1,
   scoringType: "",
@@ -27,6 +23,7 @@ const initialWorkoutState = {
   coachNotes: "",
   origin: "user",
   is_template: false,
+  workout_id: null as string | null,
 };
 
 type WorkoutState = typeof initialWorkoutState;
@@ -49,20 +46,18 @@ const PlanWorkoutPage: React.FC = () => {
   const { userData } = useAuth();
   const [workoutDraft, dispatch] = useReducer(workoutReducer, initialWorkoutState);
   const [step, setStep] = useState(1);
-  const [parsedWorkout, setParsedWorkout] = useState<ParsedWorkout>({
-    type: 'Unknown',
-    notes: [],
-    workoutBlocks: [],
-  });
   const [tracks, setTracks] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+
+  // New state for storing the parsed workout
+  const [parsedWorkout, setParsedWorkout] = useState<ParsedWorkout | null>(null);
 
   useEffect(() => {
     const fetchTracks = async () => {
       if (!userData) return; 
       setLoading(true);
-      let fetchedTracks: { id: string; name: string }[] = [];
       try {
+        let fetchedTracks: { id: string; name: string }[] = [];
         if (userData.current_gym_id) {
           const { data: gymTracks, error: gymError } = await supabase
             .from("tracks")
@@ -79,6 +74,7 @@ const PlanWorkoutPage: React.FC = () => {
           if (personalTracks && personalTracks.length) {
             fetchedTracks.push(...personalTracks);
           } else {
+            // create a personal track if none exist
             const { data: newTrack, error: trackError } = await supabase
               .from("tracks")
               .insert({ user_id: userData.user_id, name: "Personal Track" })
@@ -88,7 +84,6 @@ const PlanWorkoutPage: React.FC = () => {
             if (newTrack) fetchedTracks.push(newTrack);
           }
         }
-
         setTracks(fetchedTracks);
       } catch (error: any) {
         console.error("Error fetching tracks:", error.message);
@@ -109,35 +104,33 @@ const PlanWorkoutPage: React.FC = () => {
     dispatch({ type: "UPDATE", updates: { workoutDetails: text } });
   };
 
+  const handleSetWorkoutId = (id: string | null) => {
+    dispatch({ type: "UPDATE", updates: { workout_id: id } });
+  };
+
   const handleNextFromStep1 = async () => {
-    console.log("handleNextFromStep1 START");
     const { date, workoutName, trackId, workoutDetails, scoringSet, scoringType } = workoutDraft;
     if (!trackId || !date || !workoutName.trim() || !workoutDetails.trim() || scoringSet < 1 || scoringType === '') {
       toast.error("Please complete all required fields");
-      console.log("Validation failed in handleNextFromStep1");
       return;
     }
 
-    console.log("All fields validated. Sending request to /api/parse-workout");
+    // Call the parse-workout endpoint
     try {
       const res = await fetch('/api/parse-workout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ workoutText: workoutDetails })
       });
-      
-      console.log('Fetch call completed in handleNextFromStep1');
 
       if (!res.ok) {
         const { error } = await res.json();
         toast.error(`Failed to parse workout: ${error}`);
-        console.log('handleNextFromStep1: response not ok');
         return;
       }
 
-      console.log("handleNextFromStep1: response OK, parsing JSON");
       const { structuredWorkout } = await res.json();
-      console.log("handleNextFromStep1: structuredWorkout received:", structuredWorkout);
+      // structuredWorkout is a ParsedWorkout
       setParsedWorkout(structuredWorkout);
       setStep(2);
     } catch (err: any) {
@@ -152,48 +145,45 @@ const PlanWorkoutPage: React.FC = () => {
 
   const handleConfirm = async () => {
     if (!userData || !userData.user_id) {
-      console.error("Cannot plan workout without a valid user. userData:", userData);
       toast.error("You must be logged in to plan a workout.");
       return;
     }
-
+  
     if (!workoutDraft.trackId || !workoutDraft.workoutName.trim()) {
       toast.error("Cannot plan workout without required fields.");
       return;
     }
 
-    try {
-      // Insert the structured parsedWorkout as JSONB into workout_details
-      const { error } = await supabase.from("scheduled_workouts").insert({
-        user_id: userData.user_id,
-        date: workoutDraft.date,
-        track_id: workoutDraft.trackId,
-        // Instead of inserting workoutDraft.workoutDetails (text),
-        // insert parsedWorkout (object) for JSONB column:
-        workout_details: parsedWorkout,
-        scoring_type: workoutDraft.scoringType,
-        advanced_scoring: workoutDraft.advancedScoring,
-        origin: workoutDraft.origin,
-        is_template: workoutDraft.is_template,
-        warm_up: workoutDraft.warmUp,
-        cool_down: workoutDraft.coolDown,
-        notes: workoutDraft.coachNotes,
-        name: workoutDraft.workoutName,
-        order_type: workoutDraft.orderType,
-        scoring_set: workoutDraft.scoringSet.toString(),
-      });
-
-      if (error) {
-        console.error("Error scheduling workout:", error.message);
-        toast.error(`Failed to schedule workout: ${error.message}`);
-        return;
-      }
-
-      toast.success("Workout successfully scheduled!");
-    } catch (err: any) {
-      console.error("Unexpected error inserting workout:", err);
-      toast.error("An error occurred. Please try again.");
+    if (!parsedWorkout) {
+      toast.error("No parsed workout data found. Please go back and re-parse the workout.");
+      return;
     }
+    console.log(" ParseWorkout: ", parsedWorkout);
+    // Insert the parsedWorkout (JSON object) directly into workout_details as JSONB
+    const { error } = await supabase.from("scheduled_workouts").insert({
+      user_id: userData.user_id,
+      date: workoutDraft.date,
+      track_id: workoutDraft.trackId,
+      workout_details: parsedWorkout, // JSONB insertion
+      workout_id: workoutDraft.workout_id,
+      scoring_type: workoutDraft.scoringType,
+      advanced_scoring: workoutDraft.advancedScoring,
+      origin: workoutDraft.origin,
+      is_template: workoutDraft.is_template,
+      warm_up: workoutDraft.warmUp,
+      cool_down: workoutDraft.coolDown,
+      notes: workoutDraft.coachNotes,
+      name: workoutDraft.workoutName,
+      order_type: workoutDraft.orderType,
+      scoring_set: workoutDraft.scoringSet.toString(),
+    });
+  
+    if (error) {
+      toast.error(`Failed to schedule workout: ${error.message}`);
+      return;
+    }
+  
+    toast.success("Workout successfully scheduled!");
   };
 
   const StepIndicator = () => {
@@ -231,7 +221,7 @@ const PlanWorkoutPage: React.FC = () => {
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:space-x-6">
         {/* Main Column */}
         <div className="flex-grow mb-6 md:mb-0">
-          <div className="bg-gray-900 border border-gray-700 rounded-md p-6">
+          <div>
             {loading ? (
               <div className="flex items-center justify-center py-20">
                 <div className="animate-spin h-8 w-8 border-4 border-pink-500 border-t-transparent rounded-full"></div>
@@ -266,9 +256,11 @@ const PlanWorkoutPage: React.FC = () => {
                     <div className="bg-gray-900 border border-gray-700 rounded-md p-6">
                       <Text h2 style={{ color: '#F9FAFB', marginBottom: '8px' }}>Refine Your Workout</Text>
                       <Text small type="secondary" style={{ marginBottom: '16px', color: '#9CA3AF' }}>
-                        Add warm-up, cool-down, and coach notes if desired. You can also edit sets, reps, and movements here.
+                        Add warm-up, cool-down, and coach notes if desired. The workout structure is already parsed.
                       </Text>
                       <div className="space-y-4">
+                        {/* Since we've parsed the workout already, no need to show raw text here,
+                           we trust parsedWorkout. But we can show the original text if desired. */}
                         <div>
                           <Text small b style={{ color: '#F9FAFB' }}>Warm Up (optional)</Text>
                           <textarea
@@ -312,23 +304,19 @@ const PlanWorkoutPage: React.FC = () => {
                         </div>
                       </div>
                     </div>
-
-                    <div className="bg-gray-900 border border-gray-700 rounded-md p-6">
-                      <WorkoutEditorDisplay 
-                        workoutData={parsedWorkout} 
-                        onUpdate={(updatedWorkout) => setParsedWorkout(updatedWorkout)}
-                      />
-                    </div>
                   </div>
                 )}
 
-                {step === 3 && (
+                {step === 3 && parsedWorkout && (
                   <FinalReview
                     parsedWorkout={parsedWorkout}
                     onBack={() => setStep(2)}
                     onConfirm={handleConfirm}
+                    workoutDraft={workoutDraft} // If FinalReview needs warmUp/coolDown/notes
+                    tracks={tracks}
                   />
                 )}
+
               </>
             )}
           </div>
@@ -342,19 +330,31 @@ const PlanWorkoutPage: React.FC = () => {
             {/* Hero Workouts */}
             <div className="mb-8">
               <h4 className="text-gray-200 font-semibold mb-2">Hero Workouts</h4>
-              <WorkoutIdeas category="Hero" setWorkoutBuilderText={handleSetWorkoutDetails} />
+              <WorkoutIdeas
+                category="Hero"
+                setWorkoutBuilderText={handleSetWorkoutDetails}
+                setWorkoutBuilderId={handleSetWorkoutId}
+              />
             </div>
 
             {/* Metcon Workouts */}
             <div className="mb-8">
               <h4 className="text-gray-200 font-semibold mb-2">Metcon Workouts</h4>
-              <WorkoutIdeas category="Metcon" setWorkoutBuilderText={handleSetWorkoutDetails} />
+              <WorkoutIdeas
+                category="Metcon"
+                setWorkoutBuilderText={handleSetWorkoutDetails}
+                setWorkoutBuilderId={handleSetWorkoutId}
+              />
             </div>
 
             {/* Benchmark Workouts */}
             <div className="mb-8">
               <h4 className="text-gray-200 font-semibold mb-2">Benchmark Workouts</h4>
-              <WorkoutIdeas category="Benchmark" setWorkoutBuilderText={handleSetWorkoutDetails} />
+              <WorkoutIdeas
+                category="Benchmark"
+                setWorkoutBuilderText={handleSetWorkoutDetails}
+                setWorkoutBuilderId={handleSetWorkoutId}
+              />
             </div>
           </div>
         )}

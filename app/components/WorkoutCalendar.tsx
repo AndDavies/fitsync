@@ -6,13 +6,13 @@ import { format, startOfWeek, addDays, parseISO, isToday } from "date-fns";
 import Link from "next/link";
 import { useAuth } from "../context/AuthContext";
 import WorkoutDisplay from "./WorkoutDisplay";
-import { ParsedWorkout } from "./types"; // Ensure this matches the JSON structure from workout_details
+import { ParsedWorkout } from "./types";
 
 type Workout = {
   id: string;
   trackName: string;
-  // Now workoutDetails is a ParsedWorkout (JSON object), not a string
-  workoutDetails: ParsedWorkout;
+  name: string;
+  workoutDetails: ParsedWorkout; // Ensured to be ParsedWorkout
   warmUp?: string;
   coolDown?: string;
   date: string;
@@ -52,6 +52,13 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ defaultDate }) => {
     defaultDate ? parseISO(defaultDate) : new Date()
   );
 
+  // Update weekStartDate whenever defaultDate changes
+  useEffect(() => {
+    if (defaultDate) {
+      setWeekStartDate(parseISO(defaultDate));
+    }
+  }, [defaultDate]);
+
   const fetchWorkoutsWithTracks = useCallback(async () => {
     if (authLoading || !userData) return;
 
@@ -83,7 +90,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ defaultDate }) => {
 
       const { data: workoutData, error: workoutError } = await supabase
         .from("scheduled_workouts")
-        .select("id, date, workout_details, warm_up, cool_down, track_id")
+        .select("id, date, name, workout_details, warm_up, cool_down, track_id")
         .in("track_id", trackIds || [])
         .gte("date", startDate)
         .lte("date", endDate)
@@ -109,12 +116,21 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ defaultDate }) => {
       workoutData?.forEach((workout) => {
         const workoutDate = new Date(workout.date);
         const dayOfWeek = format(workoutDate, "EEEE").toLowerCase() as keyof WeeklyWorkouts;
-        
-        // workout.workout_details is now JSON (ParsedWorkout)
+
+        let parsedDetails: ParsedWorkout;
+        if (typeof workout.workout_details === "string") {
+          // If it's a string, parse it
+          parsedDetails = JSON.parse(workout.workout_details);
+        } else {
+          // Assume it's already an object
+          parsedDetails = workout.workout_details as ParsedWorkout;
+        }
+
         groupedWorkouts[dayOfWeek].push({
           id: workout.id,
           trackName: trackMap.get(workout.track_id) || "Personal Track",
-          workoutDetails: workout.workout_details, // already JSON, not a string
+          name: workout.name,
+          workoutDetails: parsedDetails,
           warmUp: workout.warm_up || "",
           coolDown: workout.cool_down || "",
           date: workout.date,
@@ -171,46 +187,15 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ defaultDate }) => {
                     className="schedule-item mb-2 rounded bg-gray-700 p-2 text-sm border-l-4 border-pink-500 hover:scale-[1.01] transition-transform hover:bg-pink-700/20 cursor-pointer"
                   >
                     <div className="font-semibold mb-1 text-pink-400">
-                      {workout.trackName}
+                      {workout.trackName} 
                     </div>
-                    {/* Display the structured workout details with WorkoutDisplay */}
-                    <WorkoutDisplay workoutData={workout.workoutDetails} workoutName={workout.trackName} />
-
-                    {workout.warmUp && workout.warmUp.trim() !== "" && (
-                      <pre className="text-xs text-gray-400 mt-1">
-                        Warm-Up: {workout.warmUp}
-                      </pre>
-                    )}
-                    {workout.coolDown && workout.coolDown.trim() !== "" && (
-                      <pre className="text-xs text-gray-400 mt-1">
-                        Cool-Down: {workout.coolDown}
-                      </pre>
-                    )}
-                    <div className="flex space-x-2 mt-2">
-                      {userData?.role === "athlete" || userData?.role === "member" ? (
-                        <Link
-                          href={`/workouts/log-result/${workout.id}`}
-                          className="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 focus:outline-none"
-                        >
-                          Log Result
-                        </Link>
-                      ) : (
-                        <>
-                          <Link
-                            href={`/workouts/log-result/${workout.id}`}
-                            className="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 focus:outline-none"
-                          >
-                            Log Result
-                          </Link>
-                          <Link
-                            href={`/edit-workout/${workout.id}`}
-                            className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none"
-                          >
-                            Edit Workout
-                          </Link>
-                        </>
-                      )}
-                    </div>
+                    
+                    <WorkoutDisplay
+                      workoutData={workout.workoutDetails}
+                      workoutName={workout.name}
+                      warmUp={workout.warmUp}
+                      coolDown={workout.coolDown}
+                    />
                   </div>
                 ))
               ) : (

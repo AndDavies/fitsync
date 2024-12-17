@@ -3,11 +3,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '@/utils/supabase/client';
+import { motion, AnimatePresence } from 'framer-motion';
+import LoadingSpinner from "@/app/components/LoadingSpinner";
 
 export default function OnboardingPage() {
   const { userData, isLoading, session, refreshUserData } = useAuth();
   const router = useRouter();
 
+  // Steps State
   const [step, setStep] = useState(1);
   
   // Onboarding fields
@@ -16,8 +19,8 @@ export default function OnboardingPage() {
   const [lifestyleNote, setLifestyleNote] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // If user is already onboarded or not logged in, redirect to dashboard
   useEffect(() => {
-    // If userData is loaded and user is already onboarded or not logged in, redirect
     if (!isLoading && session && userData?.onboarding_completed) {
       router.push('/dashboard');
     }
@@ -25,24 +28,26 @@ export default function OnboardingPage() {
 
   const handleNext = async () => {
     if (step === 3) {
-      // Final step: save data to user_profiles
-      if (!userData?.user_id) return; // ensure user is known
+      // Compile all onboarding data into a single JSON object
+      const onboardingResponses = {
+        primaryGoal,
+        activityLevel,
+        lifestyleNote
+      };
+
+      if (!userData?.user_id) return;
 
       setLoading(true);
       const { error } = await supabase
         .from('user_profiles')
         .update({
-          goals: primaryGoal, 
-          activity_level: activityLevel,
-          // Storing lifestyleNote in bio as an example
-          bio: lifestyleNote, 
+          onboarding_data: onboardingResponses, 
           onboarding_completed: true
         })
         .eq('user_id', userData.user_id);
 
       setLoading(false);
       if (!error) {
-        // Refresh user data so onboarding_completed is true in userData before routing
         await refreshUserData();
         router.push('/dashboard');
       } else {
@@ -54,101 +59,135 @@ export default function OnboardingPage() {
   };
 
   const handleBack = () => {
-    if (step > 1) setStep(step - 1);
+    if (step > 1) setStep((prev) => prev - 1);
   };
 
   if (isLoading || !session) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-100">
+        <LoadingSpinner />
+      </div>
+    );
   }
+
+  // Animations
+  const variants = {
+    initial: { opacity: 0, x: 30 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: -30 }
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-6">
-      <div className="max-w-md w-full bg-white p-6 rounded shadow-md">
-        {step === 1 && (
-          <div>
-            <h2 className="text-2xl font-bold mb-4">Welcome! Let's Get Started</h2>
-            <p className="mb-4 text-gray-700">We’d like to know your primary fitness goal.</p>
-            <select 
-              value={primaryGoal} 
-              onChange={(e) => setPrimaryGoal(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded mb-4"
+      <div className="max-w-md w-full bg-white p-6 rounded shadow-md relative">
+        <AnimatePresence mode="wait">
+          {step === 1 && (
+            <motion.div
+              key="step1"
+              variants={variants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.3 }}
             >
-              <option value="">Select a goal</option>
-              <option value="improve_strength">Improve Strength</option>
-              <option value="lose_weight">Lose Weight</option>
-              <option value="increase_endurance">Increase Endurance</option>
-              <option value="general_health">General Health</option>
-            </select>
-            <button 
-              onClick={handleNext} 
-              disabled={!primaryGoal}
-              className={`w-full py-2 ${primaryGoal ? 'bg-pink-600 text-white hover:bg-pink-700' : 'bg-gray-300 text-gray-600 cursor-not-allowed'} rounded`}
-            >
-              Next
-            </button>
-          </div>
-        )}
-
-        {step === 2 && (
-          <div>
-            <h2 className="text-2xl font-bold mb-4">Your Activity Level</h2>
-            <p className="mb-4 text-gray-700">How active are you currently?</p>
-            <select 
-              value={activityLevel}
-              onChange={(e) => setActivityLevel(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded mb-4"
-            >
-              <option value="">Select activity level</option>
-              <option value="sedentary">Sedentary</option>
-              <option value="lightly_active">Lightly Active</option>
-              <option value="moderately_active">Moderately Active</option>
-              <option value="very_active">Very Active</option>
-            </select>
-            <div className="flex justify-between">
-              <button 
-                onClick={handleBack} 
-                className="py-2 px-4 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+              <h2 className="text-2xl font-bold mb-4">Welcome! Let's Get Started</h2>
+              <p className="mb-4 text-gray-700">We’d like to know your primary fitness goal.</p>
+              <select 
+                value={primaryGoal} 
+                onChange={(e) => setPrimaryGoal(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-pink-300"
               >
-                Back
-              </button>
+                <option value="">Select a goal</option>
+                <option value="improve_strength">Improve Strength</option>
+                <option value="lose_weight">Lose Weight</option>
+                <option value="increase_endurance">Increase Endurance</option>
+                <option value="general_health">General Health</option>
+              </select>
               <button 
                 onClick={handleNext} 
-                disabled={!activityLevel}
-                className={`py-2 px-4 ${activityLevel ? 'bg-pink-600 text-white hover:bg-pink-700' : 'bg-gray-300 text-gray-600 cursor-not-allowed'} rounded`}
+                disabled={!primaryGoal}
+                className={`w-full py-2 ${primaryGoal ? 'bg-pink-600 text-white hover:bg-pink-700' : 'bg-gray-300 text-gray-600 cursor-not-allowed'} rounded`}
               >
                 Next
               </button>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
 
-        {step === 3 && (
-          <div>
-            <h2 className="text-2xl font-bold mb-4">Lifestyle & Preferences</h2>
-            <p className="mb-4 text-gray-700">Any special considerations or preferences? (Optional)</p>
-            <textarea 
-              value={lifestyleNote}
-              onChange={(e) => setLifestyleNote(e.target.value)}
-              placeholder="E.g. 'I have a knee injury', 'I prefer workouts under 30 min', etc."
-              className="w-full p-2 border border-gray-300 rounded mb-4"
-            />
-            <div className="flex justify-between">
-              <button 
-                onClick={handleBack} 
-                className="py-2 px-4 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+          {step === 2 && (
+            <motion.div
+              key="step2"
+              variants={variants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.3 }}
+            >
+              <h2 className="text-2xl font-bold mb-4">Your Activity Level</h2>
+              <p className="mb-4 text-gray-700">How active are you currently?</p>
+              <select 
+                value={activityLevel}
+                onChange={(e) => setActivityLevel(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-pink-300"
               >
-                Back
-              </button>
-              <button 
-                onClick={handleNext}
-                disabled={loading}
-                className={`py-2 px-4 bg-pink-600 text-white rounded hover:bg-pink-700 ${loading && 'opacity-50 cursor-wait'}`}
-              >
-                {loading ? "Saving..." : "Finish"}
-              </button>
-            </div>
-          </div>
-        )}
+                <option value="">Select activity level</option>
+                <option value="sedentary">Sedentary</option>
+                <option value="lightly_active">Lightly Active</option>
+                <option value="moderately_active">Moderately Active</option>
+                <option value="very_active">Very Active</option>
+              </select>
+              <div className="flex justify-between">
+                <button 
+                  onClick={handleBack} 
+                  className="py-2 px-4 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+                >
+                  Back
+                </button>
+                <button 
+                  onClick={handleNext} 
+                  disabled={!activityLevel}
+                  className={`py-2 px-4 ${activityLevel ? 'bg-pink-600 text-white hover:bg-pink-700' : 'bg-gray-300 text-gray-600 cursor-not-allowed'} rounded`}
+                >
+                  Next
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+          {step === 3 && (
+            <motion.div
+              key="step3"
+              variants={variants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.3 }}
+            >
+              <h2 className="text-2xl font-bold mb-4">Lifestyle & Preferences</h2>
+              <p className="mb-4 text-gray-700">Any special considerations or preferences? (Optional)</p>
+              <textarea 
+                value={lifestyleNote}
+                onChange={(e) => setLifestyleNote(e.target.value)}
+                placeholder="E.g. 'I have a knee injury', 'I prefer workouts under 30 min', etc."
+                className="w-full p-2 border border-gray-300 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-pink-300"
+              />
+              <div className="flex justify-between">
+                <button 
+                  onClick={handleBack} 
+                  className="py-2 px-4 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+                >
+                  Back
+                </button>
+                <button 
+                  onClick={handleNext}
+                  disabled={loading}
+                  className={`py-2 px-4 bg-pink-600 text-white rounded hover:bg-pink-700 ${loading && 'opacity-50 cursor-wait'}`}
+                >
+                  {loading ? <LoadingSpinner /> : "Finish"}
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

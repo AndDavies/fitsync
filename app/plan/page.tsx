@@ -7,7 +7,6 @@ import { useSearchParams } from "next/navigation";
 import { format, subWeeks, addWeeks } from "date-fns";
 import WeekSelector from "../components/WeekSelector";
 
-// By handling week navigation in the page, we mimic how classes/page.tsx works.
 export default function PlanPage() {
   const searchParams = useSearchParams();
   const dateParam = searchParams.get("date") || undefined;
@@ -26,8 +25,6 @@ export default function PlanPage() {
       <div className="bg-gray-900 min-h-screen flex flex-col">
         <Header />
         <main className="flex-grow flex flex-col space-y-8 p-4 sm:p-6 lg:p-8">
-          {/* Top controls: 
-              Just like in classes page, we have a WeekSelector on the left. */}
           <div className="flex flex-wrap lg:flex-nowrap justify-between items-start gap-6">
             <WeekSelector
               weekStartDate={weekStartDate}
@@ -36,9 +33,8 @@ export default function PlanPage() {
               onToday={goToToday}
             />
           </div>
-
-          {/* Calendar Display */}
           <div className="flex-grow bg-gray-800 rounded-xl shadow p-4 border border-gray-700">
+            {/* Pass weekStartDate as defaultDate */}
             <WorkoutCalendar defaultDate={format(weekStartDate, "yyyy-MM-dd")} />
           </div>
         </main>

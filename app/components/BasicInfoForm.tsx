@@ -1,4 +1,3 @@
-// app/workouts/components/BasicInfoForm.tsx
 import React, { useMemo } from 'react';
 
 type BasicInfoFormProps = {
@@ -101,10 +100,7 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ workout, tracks, onChange
 
       <div className="mt-4">
         <button
-          onClick={() => {
-            console.log("Next button in BasicInfoForm clicked");
-            onNext();
-          }}
+          onClick={onNext}
           className={`px-4 py-2 rounded transition focus:outline-none focus:ring-2 focus:ring-pink-400 ${
             allRequiredFilled
               ? 'bg-pink-500 text-white hover:bg-pink-600'

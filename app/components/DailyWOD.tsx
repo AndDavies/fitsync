@@ -5,7 +5,7 @@ import { supabase } from "@/utils/supabase/client";
 import Link from "next/link";
 import { useAuth } from "../context/AuthContext";
 import { ParsedWorkout } from "./types";
-import WorkoutDisplay from "./WorkoutDisplay"; // Ensure this path is correct
+import WorkoutDisplay from "./WorkoutDisplay";
 
 // Utility to format date as YYYY-MM-DD for database queries
 function getFormattedDate(date: Date): string {
@@ -46,22 +46,22 @@ const DailyWOD: React.FC = () => {
       if (userData?.user_id) {
         try {
           const { data, error } = await supabase
-            .from("scheduled_workouts") // Ensure the correct table name
+            .from("scheduled_workouts") // Ensure correct table name
             .select("id, name, workout_details")
             .eq("user_id", userData.user_id)
             .eq("date", today)
-            .maybeSingle(); // Safely returns null if no rows are found
+            .maybeSingle();
 
           if (error) {
             console.error("Supabase error:", error);
-            fetchCrossfitWOD(); // Fallback if an error occurs
+            fetchCrossfitWOD();
             return;
           }
 
           if (data) {
             setScheduledWorkout(data);
           } else {
-            fetchCrossfitWOD(); // No workout scheduled, fetch WOD
+            fetchCrossfitWOD();
           }
         } catch (error) {
           console.error("Error fetching scheduled workout:", error);
@@ -70,7 +70,7 @@ const DailyWOD: React.FC = () => {
           setLoading(false);
         }
       } else {
-        fetchCrossfitWOD(); // If userData is not available
+        fetchCrossfitWOD();
       }
     };
 
@@ -88,15 +88,14 @@ const DailyWOD: React.FC = () => {
       {loading && <p className="text-sm text-gray-400">Loading...</p>}
 
       {!loading && scheduledWorkout ? (
-        // Render user-scheduled workout
         <div>
+          {/* Convert workout_details object to string before passing to WorkoutDisplay */}
           <WorkoutDisplay
-            workoutData={scheduledWorkout.workout_details}
+            workoutData={JSON.stringify(scheduledWorkout.workout_details)}
             workoutName={scheduledWorkout.name}
           />
         </div>
       ) : (
-        // Fallback to CrossFit WOD
         <div>
           <p className="text-sm text-gray-400 mb-4">
             {crossfitWOD || "Unable to load today’s CrossFit WOD."}

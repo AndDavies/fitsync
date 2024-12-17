@@ -1,39 +1,19 @@
-import React from 'react';
-import { ParsedWorkout } from './types';
+"use client";
+import React, { useState } from 'react';
+import { ParsedWorkout } from './types'; 
 
 interface WorkoutDisplayProps {
-  workoutData: ParsedWorkout;
-  workoutName?: string; // if you want to show workout name too
+  workoutData: ParsedWorkout; // Guaranteed to be parsed properly
+  workoutName?: string;
+  warmUp?: string;
+  coolDown?: string;
 }
 
-function interpretWorkoutHeading(workoutData: ParsedWorkout): string {
-  const { type, workoutBlocks, duration } = workoutData;
-  let heading = '';
-
-  const blockWithRounds = workoutBlocks.find(b => b.rounds);
-
-  if (type === "MetCon" && blockWithRounds) {
-    heading = `${blockWithRounds.rounds} Rounds for time of:`;
-  } else if (type === "AMRAP" && duration) {
-    heading = `AMRAP ${duration}:`;
-  } else if (type === "EMOM" && duration) {
-    heading = `EMOM ${duration}`;
-  } else if (type.toLowerCase().includes('hero wod')) {
-    heading = 'HERO WOD';
-  }
-
-  return heading;
-}
-
-/**
- * Format a single movement line. If `line.reps` is an array, we treat each entry as a separate set.
- * If `line.reps` is a single number or "Max", we just return one line.
- */
 function formatMovementLines(line: any): string[] {
   const lines: string[] = [];
 
-  // If reps is an array, we assume multiple sets
   if (Array.isArray(line.reps)) {
+    // Multiple sets
     line.reps.forEach((repCount: number | string, i: number) => {
       let setStr = `Set ${i + 1}: `;
       if (repCount === 'Max') {
@@ -50,7 +30,6 @@ function formatMovementLines(line: any): string[] {
         setStr += `, ${line.distance}`;
       }
 
-      // If there's a weight or intensity, we could append it here
       if (line.weight) {
         setStr += ` @ ${line.weight}`;
       }
@@ -90,41 +69,64 @@ function formatMovementLines(line: any): string[] {
   return lines;
 }
 
-function humanizeKey(key: string): string {
-  return key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-}
+const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({ workoutData, workoutName, warmUp = "", coolDown = "" }) => {
+  const { type, notes, workoutBlocks, priority, scalingGuidelines } = workoutData;
+  const safeBlocks = Array.isArray(workoutBlocks) ? workoutBlocks : [];
 
-const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({ workoutData, workoutName }) => {
-  const { notes, workoutBlocks, priority, scalingGuidelines } = workoutData;
-  const heading = interpretWorkoutHeading(workoutData);
+  const [showWarmUp, setShowWarmUp] = useState(false);
+  const [showCoolDown, setShowCoolDown] = useState(false);
 
   return (
     <div className="space-y-4 p-4 bg-gray-700 rounded-md border border-gray-600 text-gray-100">
-      {workoutName && <h2 className="text-2xl font-bold text-gray-100">{workoutName}</h2>}
-      {heading && <h3 className="text-xl font-semibold text-gray-100">{heading}</h3>}
-
-      {priority && (
-        <div className="text-sm text-gray-300">Priority: {priority}</div>
+      {workoutName && (
+        <h2 className="text-2xl font-bold text-gray-100">{workoutName}</h2>
       )}
 
-      {workoutBlocks.map((block, idx) => (
-        <div key={idx} className="space-y-1">
-          {block.title && (
-            <h4 className="text-md font-semibold text-gray-100">{block.title}</h4>
+      {type && type !== 'Unknown' && (
+        <h3 className="text-xl font-semibold text-gray-100">{type}</h3>
+      )}
+
+      {priority && (
+        <div className="text-sm text-gray-300">Priority: {String(priority)}</div>
+      )}
+
+      {warmUp && warmUp.trim() && (
+        <div>
+          <button
+            onClick={() => setShowWarmUp(!showWarmUp)}
+            className="text-sm font-semibold text-pink-400 focus:outline-none"
+          >
+            {showWarmUp ? "Hide Warm-Up" : "Show Warm-Up"}
+          </button>
+          {showWarmUp && (
+            <pre className="text-sm text-gray-300 mt-1 bg-gray-600 p-2 rounded border border-gray-500 whitespace-pre-wrap">
+              {warmUp}
+            </pre>
           )}
-          <div className="space-y-1">
-            {block.lines.map((line, lineIdx) => {
-              const lineOutputs = formatMovementLines(line);
-              return lineOutputs.map((lo, innerIdx) => (
-                <div key={lineIdx + '-' + innerIdx} className="flex items-start space-x-2">
-                  <span className="text-gray-500">—</span>
-                  <span className="text-sm text-gray-200">{lo}</span>
-                </div>
-              ));
-            })}
-          </div>
         </div>
-      ))}
+      )}
+
+      {safeBlocks.map((block, idx) => {
+        const safeLines = Array.isArray(block.lines) ? block.lines : [];
+        return (
+          <div key={idx} className="space-y-1">
+            {block.title && (
+              <h4 className="text-md font-semibold text-gray-100">{block.title}</h4>
+            )}
+            <div className="space-y-1">
+              {safeLines.map((line, lineIdx) => {
+                const lineOutputs = formatMovementLines(line);
+                return lineOutputs.map((lo, innerIdx) => (
+                  <div key={`${lineIdx}-${innerIdx}`} className="flex items-start space-x-2">
+                    <span className="text-gray-500">—</span>
+                    <span className="text-sm text-gray-200">{lo}</span>
+                  </div>
+                ));
+              })}
+            </div>
+          </div>
+        );
+      })}
 
       {notes && notes.length > 0 && (
         <div className="p-3 bg-gray-600 rounded space-y-1 border border-gray-500">
@@ -135,14 +137,30 @@ const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({ workoutData, workoutNam
         </div>
       )}
 
-      {scalingGuidelines && (
+      {scalingGuidelines && typeof scalingGuidelines === 'object' && (
         <div className="p-3 bg-gray-600 border border-gray-500 rounded text-sm text-gray-200 space-y-1">
           <h4 className="font-semibold mb-1 text-gray-100">Scaling Guidelines:</h4>
           <ul className="list-disc list-inside space-y-1">
             {Object.entries(scalingGuidelines).map(([key, val], i) => (
-              <li key={i}>{humanizeKey(key)}: {String(val)}</li>
+              <li key={i}>{key.charAt(0).toUpperCase() + key.slice(1)}: {String(val)}</li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {coolDown && coolDown.trim() && (
+        <div>
+          <button
+            onClick={() => setShowCoolDown(!showCoolDown)}
+            className="text-sm font-semibold text-pink-400 focus:outline-none"
+          >
+            {showCoolDown ? "Hide Cool-Down" : "Show Cool-Down"}
+          </button>
+          {showCoolDown && (
+            <pre className="text-sm text-gray-300 mt-1 bg-gray-600 p-2 rounded border border-gray-500 whitespace-pre-wrap">
+              {coolDown}
+            </pre>
+          )}
         </div>
       )}
     </div>

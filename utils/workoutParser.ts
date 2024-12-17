@@ -16,14 +16,41 @@ interface MovementEntry {
 
 export async function parseWorkoutText(rawText: string, movementsFromDB: MovementEntry[]): Promise<ParsedWorkout> {
   console.log("parseWorkoutText called with text:", rawText);
-  const lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-  const workoutBlocks: ParsedWorkoutBlock[] = [];
+  let lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
   
+  // Create a basic ParsedWorkout first
+  const parsedWorkout: ParsedWorkout = {
+    type: 'Unknown',
+    notes: [],
+    workoutBlocks: []
+  };
+
+  // Check the first line for known keywords or patterns:
+  if (lines.length > 0) {
+    const firstLine = lines[0].toLowerCase();
+    if (firstLine.includes("hero wod")) {
+      parsedWorkout.type = "Hero WOD";
+      lines.shift(); // Remove the line so it won't be treated as a section header
+    } else if (firstLine.includes("amrap")) {
+      parsedWorkout.type = "AMRAP";
+      lines.shift();
+    } else if (firstLine.includes("emom")) {
+      parsedWorkout.type = "EMOM";
+      lines.shift();
+    } else if (firstLine.includes("metcon")) {
+      parsedWorkout.type = "MetCon";
+      lines.shift();
+    }
+    // Add other checks if needed for other types (Conditioning, Strength, etc.)
+  }
+
+  const workoutBlocks: ParsedWorkoutBlock[] = [];
   let currentBlock: ParsedWorkoutBlock = { lines: [] };
 
   for (const line of lines) {
     console.log("Processing line:", line);
     if (isSectionHeader(line)) {
+      // If we hit a section header, finish the current block (if it has any lines or title)
       if (currentBlock.lines.length > 0 || currentBlock.title) {
         workoutBlocks.push(currentBlock);
       }
@@ -35,6 +62,7 @@ export async function parseWorkoutText(rawText: string, movementsFromDB: Movemen
     if (parsedLine) {
       currentBlock.lines.push(parsedLine);
     } else {
+      // If we can't parse it as a known movement line, just store it as a name-only movement
       currentBlock.lines.push({ name: line });
     }
   }
@@ -43,18 +71,15 @@ export async function parseWorkoutText(rawText: string, movementsFromDB: Movemen
     workoutBlocks.push(currentBlock);
   }
 
-  const parsedWorkout: ParsedWorkout = {
-    type: 'Unknown',
-    notes: [],
-    workoutBlocks: workoutBlocks
-  };
-
+  parsedWorkout.workoutBlocks = workoutBlocks;
   return parsedWorkout;
 }
 
 function isSectionHeader(line: string): boolean {
-  return line === line.toUpperCase() && line.length > 3;
+  // Consider adjusting logic if "HERO WOD" is meant to set type, not be a header
+  return line === line.toUpperCase() && line.length > 3 && !line.toLowerCase().includes("hero wod");
 }
+
 
 function parseMovementLine(line: string, movementsFromDB: MovementEntry[]): ParsedMovement | null {
   let [movementPart, setsPart] = line.split(':').map(s => s.trim());
