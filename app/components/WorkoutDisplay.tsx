@@ -139,7 +139,7 @@ const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({ workoutData, workoutNam
 
       {scalingGuidelines && typeof scalingGuidelines === 'object' && (
         <div className="p-3 bg-gray-600 border border-gray-500 rounded text-sm text-gray-200 space-y-1">
-          <h4 className="font-semibold mb-1 text-gray-100">Scaling Guidelines:</h4>
+          <h4 className="font-semibold mb-1 text-gray-100">Scaling Guidelines SSSS:</h4>
           <ul className="list-disc list-inside space-y-1">
             {Object.entries(scalingGuidelines).map(([key, val], i) => (
               <li key={i}>{key.charAt(0).toUpperCase() + key.slice(1)}: {String(val)}</li>
