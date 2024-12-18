@@ -42,12 +42,8 @@ const GoalsDisplay: React.FC = () => {
       }
 
       let goalsData: Goals = {};
-      if (userData.goals) {
-        try {
-            goalsData = userData.goals; // directly assign since it’s already an object
-        } catch (err) {
-          console.error("Invalid goals JSON:", err);
-        }
+      if (userData?.goals) {
+        goalsData = userData.goals; // userData.goals is now correctly typed as OnboardingData
       }
 
       // Set defaults if not present

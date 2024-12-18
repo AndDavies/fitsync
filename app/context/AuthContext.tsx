@@ -4,13 +4,21 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { useSessionContext } from '@supabase/auth-helpers-react';
 import { Session } from '@supabase/supabase-js';
 
+type OnboardingData = {
+  primaryGoal?: string;
+  activityLevel?: string;
+  lifestyleNote?: string;
+  weekly_class_goal?: number;
+  weekly_workout_goal?: number;
+};
+
 type UserData = {
   user_id: string | null;
   display_name: string | null;
   current_gym_id: string | null;
   role: string | null;
   onboarding_completed: boolean;
-  goals: string | null;
+  goals: OnboardingData | null; // Changed from string | null to OnboardingData | null
 };
 
 type AuthContextType = {
@@ -48,10 +56,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           current_gym_id: data.current_gym_id ?? null,
           role: data.role ?? null,
           onboarding_completed: data.onboarding_completed ?? false,
-          goals: data.goals ?? null,
+          goals: data.goals ?? null, // data.goals is already JSON object if JSONB
         });
       } else {
-        // No user profile found, ensure userData is null
         setUserData(null);
       }
     } catch (err: any) {
@@ -65,7 +72,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (session) {
       await fetchUserData(session);
     } else {
-      // If no session, ensure user data is cleared
       setUserData(null);
     }
     setIsLoading(false);
@@ -79,7 +85,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           await fetchUserData(session);
           setIsLoading(false);
         } else {
-          // Not logged in, ensure userData is cleared
           setUserData(null);
           setIsLoading(false);
         }
