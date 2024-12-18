@@ -33,10 +33,20 @@ const DailyWOD: React.FC = () => {
 
   useEffect(() => {
     const fetchCrossfitWOD = async () => {
-      const cfDate = getCrossfitDateCode(new Date());
-      const link = `https://www.crossfit.com/${cfDate}`;
-      setCrossfitWOD(`Visit CrossFit.com for today’s WOD: ${link}`);
-      setLoading(false);
+
+      //const cfDate = getCrossfitDateCode(new Date());
+      //const apiUrl = `/api/fetchWOD?dateCode=${cfDate}`;
+
+      try {
+       // const res = await fetch(apiUrl);
+       // const data = await res.json();
+       // console.log("Received HTML:", data.html);
+        // Now you can parse data.html as needed
+      // setCrossfitWOD(`Visit CrossFit.com for today’s WOD: https://www.crossfit.com/${cfDate}`);
+      } catch (error) {
+       // console.error("Error fetching from our API route:", error);
+       // setCrossfitWOD("Unable to load today’s CrossFit WOD.");
+      }
     };
 
     const fetchWorkout = async () => {
@@ -74,17 +84,18 @@ const DailyWOD: React.FC = () => {
             };
 
             setScheduledWorkout(localScheduledWorkout);
+            setLoading(false);
           } else {
-            fetchCrossfitWOD(); // No workout scheduled, use CrossFit WOD
+            // No scheduled workout found, fetch CrossFit WOD
+            fetchCrossfitWOD();
           }
         } catch (error) {
           console.error("Error fetching scheduled workout:", error);
           fetchCrossfitWOD();
-        } finally {
-          setLoading(false);
         }
       } else {
-        fetchCrossfitWOD(); // If no userData
+        // If no userData, just fetch CrossFit WOD
+        fetchCrossfitWOD();
       }
     };
 

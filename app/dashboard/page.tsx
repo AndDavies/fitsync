@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import DailyWOD from "../components/DailyWOD";
+import GoalsDisplay from "../components/GoalsDisplay";
 import RecentArticles from "../components/RecentArticles";
 import RecentWorkouts from "../components/RecentWorkouts";
 
@@ -77,7 +78,7 @@ export default function Dashboard() {
               <p className="text-gray-300">
                 Your primary goal:{" "}
                 <span className="font-semibold text-pink-500">
-                  {userData.goals || "General Health"}
+                  {typeof userData.goals === "string" ? userData.goals : "General Health"}
                 </span>
                 .
               </p>
@@ -94,6 +95,8 @@ export default function Dashboard() {
 
             {/* Key Metrics */}
             <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
+              <GoalsDisplay />
+              {/* 
               <h3 className="text-lg font-semibold text-gray-100">
                 Key Metrics This Week
               </h3>
@@ -111,7 +114,8 @@ export default function Dashboard() {
                     Aim for 3 this week to stay on track!
                   </p>
                 </>
-              )}
+              )} 
+              */}
             </div>
           </div>
 
