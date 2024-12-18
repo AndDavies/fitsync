@@ -3,11 +3,19 @@
 import React, { Suspense, useState } from "react";
 import Header from "../components/Header";
 import WorkoutCalendar from "../components/WorkoutCalendar";
-import { useSearchParams } from "next/navigation";
 import { format, subWeeks, addWeeks } from "date-fns";
 import WeekSelector from "../components/WeekSelector";
+import { useSearchParams } from "next/navigation";
 
 export default function PlanPage() {
+  return (
+    <Suspense fallback={<div className="text-gray-300 p-6">Loading Plan...</div>}>
+      <PlanContent />
+    </Suspense>
+  );
+}
+
+function PlanContent() {
   const searchParams = useSearchParams();
   const dateParam = searchParams.get("date") || undefined;
 
@@ -21,27 +29,25 @@ export default function PlanPage() {
   const goToToday = () => setWeekStartDate(new Date());
 
   return (
-    <Suspense fallback={<div className="text-gray-300 p-6">Loading Plan...</div>}>
-      <div className="bg-gray-900 min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-grow flex flex-col space-y-8 p-4 sm:p-6 lg:p-8">
-          <div className="flex flex-wrap lg:flex-nowrap justify-between items-start gap-6">
-            <WeekSelector
-              weekStartDate={weekStartDate}
-              onPreviousWeek={goToPreviousWeek}
-              onNextWeek={goToNextWeek}
-              onToday={goToToday}
-            />
-          </div>
-          <div className="flex-grow bg-gray-800 rounded-xl shadow p-4 border border-gray-700">
-            {/* Pass weekStartDate as defaultDate */}
-            <WorkoutCalendar defaultDate={format(weekStartDate, "yyyy-MM-dd")} />
-          </div>
-        </main>
-        <footer className="bg-gray-800 text-center py-4 shadow-inner text-sm text-gray-400 border-t border-gray-700">
-          &copy; 2024 FitSync. All rights reserved.
-        </footer>
-      </div>
-    </Suspense>
+    <div className="bg-gray-900 min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-grow flex flex-col space-y-8 p-4 sm:p-6 lg:p-8">
+        <div className="flex flex-wrap lg:flex-nowrap justify-between items-start gap-6">
+          <WeekSelector
+            weekStartDate={weekStartDate}
+            onPreviousWeek={goToPreviousWeek}
+            onNextWeek={goToNextWeek}
+            onToday={goToToday}
+          />
+        </div>
+        <div className="flex-grow bg-gray-800 rounded-xl shadow p-4 border border-gray-700">
+          {/* Pass weekStartDate as defaultDate */}
+          <WorkoutCalendar defaultDate={format(weekStartDate, "yyyy-MM-dd")} />
+        </div>
+      </main>
+      <footer className="bg-gray-800 text-center py-4 shadow-inner text-sm text-gray-400 border-t border-gray-700">
+        &copy; 2024 FitSync. All rights reserved.
+      </footer>
+    </div>
   );
 }
