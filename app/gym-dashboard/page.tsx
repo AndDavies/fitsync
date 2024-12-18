@@ -8,37 +8,19 @@ import Header from "../components/Header";
 export default function GymDashboardPage() {
   const { userData, isLoading } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
+  
+  // Removed useSearchParams() from here
+  // We'll call it inside renderContent()
 
-  const gym_id = searchParams.get("gym_id") || userData?.current_gym_id || "";
   const [metrics, setMetrics] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadingMetrics, setLoadingMetrics] = useState<boolean>(true);
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!userData || (userData.role !== "admin" && userData.role !== "coach")) {
-        router.push("/login");
-      } else if (gym_id) {
-        fetch(`/api/gym-dashboard?gym_id=${gym_id}`)
-          .then((res) => res.json())
-          .then((data) => {
-            if (data.error) {
-              setError(data.error);
-            } else {
-              setMetrics(data);
-            }
-          })
-          .catch(() => setError("Failed to load metrics"))
-          .finally(() => setLoadingMetrics(false));
-      } else {
-        setError("No gym_id provided.");
-        setLoadingMetrics(false);
-      }
-    }
-  }, [isLoading, userData, router, gym_id]);
+    // We can't fetch yet since we moved searchParams usage
+    // We'll handle fetch inside renderContent where searchParams is available
+  }, [isLoading, userData, router]);
 
-  // Now we wrap our rendering logic in <Suspense>:
   return (
     <Suspense fallback={<LoadingFallback />}>
       {renderContent()}
@@ -60,6 +42,32 @@ export default function GymDashboardPage() {
   }
 
   function renderContent() {
+    const searchParams = useSearchParams(); // Now inside Suspense boundary
+    const gym_id = searchParams.get("gym_id") || userData?.current_gym_id || "";
+
+    // If we haven't fetched metrics yet and have userData:
+    if (!isLoading && userData && loadingMetrics && gym_id) {
+      fetch(`/api/gym-dashboard?gym_id=${gym_id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.error) {
+            setError(data.error);
+          } else {
+            setMetrics(data);
+          }
+        })
+        .catch(() => setError("Failed to load metrics"))
+        .finally(() => setLoadingMetrics(false));
+    }
+
+    if (!isLoading) {
+      if (!userData || (userData.role !== "admin" && userData.role !== "coach")) {
+        // If user not authorized, redirect
+        // Since we're in a client component, we can just do:
+        router.push("/login");
+      }
+    }
+
     // Handle loading state
     if (isLoading || !userData || loadingMetrics) {
       return <LoadingFallback />;
