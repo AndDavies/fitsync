@@ -182,6 +182,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ defaultDate }) => {
             >
               {dayWorkouts && dayWorkouts.length > 0 ? (
                 dayWorkouts.map((workout) => (
+                  
                   <div
                     key={workout.id}
                     className="schedule-item mb-2 rounded bg-gray-700 p-2 text-sm border-l-4 border-pink-500 hover:scale-[1.01] transition-transform hover:bg-pink-700/20 cursor-pointer"
@@ -196,6 +197,13 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ defaultDate }) => {
                       warmUp={workout.warmUp}
                       coolDown={workout.coolDown}
                     />
+                          {/* Log Result Link */}
+                    <Link
+                      href={`/workouts/log-result/${workout.id}`}
+                      className="text-sm text-pink-400 mt-2 inline-block hover:underline"
+                    >
+                      Log Result
+                    </Link>
                   </div>
                 ))
               ) : (

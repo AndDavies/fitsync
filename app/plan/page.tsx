@@ -2,6 +2,7 @@
 
 import React, { Suspense, useState } from "react";
 import Header from "../components/Header";
+import Footer from "../components/Footer";
 import WorkoutCalendar from "../components/WorkoutCalendar";
 import { format, subWeeks, addWeeks } from "date-fns";
 import WeekSelector from "../components/WeekSelector";
@@ -32,7 +33,7 @@ function PlanContent() {
     <div className="bg-gray-900 min-h-screen flex flex-col">
       <Header />
       <main className="flex-grow flex flex-col space-y-8 p-4 sm:p-6 lg:p-8">
-        <div className="flex flex-wrap lg:flex-nowrap justify-between items-start gap-6">
+        <div className="flex flex-wrap lg:flex-nowrap justify-between items-start gap-6">sss
           <WeekSelector
             weekStartDate={weekStartDate}
             onPreviousWeek={goToPreviousWeek}
@@ -45,9 +46,7 @@ function PlanContent() {
           <WorkoutCalendar defaultDate={format(weekStartDate, "yyyy-MM-dd")} />
         </div>
       </main>
-      <footer className="bg-gray-800 text-center py-4 shadow-inner text-sm text-gray-400 border-t border-gray-700">
-        &copy; 2024 FitSync. All rights reserved.
-      </footer>
+      <Footer />
     </div>
   );
 }
