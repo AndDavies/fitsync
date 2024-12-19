@@ -13,9 +13,12 @@ import RecentWorkouts from "../components/RecentWorkouts";
 export default function Dashboard() {
   const { session, isLoading, userData } = useAuth();
   const router = useRouter();
+  
   const [workoutsCompleted, setWorkoutsCompleted] = useState<number | null>(null);
   const [metricsError, setMetricsError] = useState<string | null>(null);
+  
   const [suggestion, setSuggestion] = useState<string | null>(null);
+  const [hasFetchedSuggestion, setHasFetchedSuggestion] = useState(false);
 
   // Redirect logic
   useEffect(() => {
@@ -28,7 +31,7 @@ export default function Dashboard() {
     }
   }, [isLoading, session, userData, router]);
 
-  // Fetch metrics
+  // Fetch metrics (just like before)
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
@@ -54,6 +57,33 @@ export default function Dashboard() {
     }
   }, [isLoading, userData]);
 
+  // On initial load, check if we have a cached suggestion
+  useEffect(() => {
+    const storedSuggestion = localStorage.getItem("userSuggestion");
+    if (storedSuggestion) {
+      setSuggestion(storedSuggestion);
+      setHasFetchedSuggestion(true);
+    }
+  }, []);
+
+  // Function to fetch suggestion on-demand
+  const fetchSuggestion = async () => {
+    try {
+      const res = await fetch("/api/user/suggestions");
+      const data = await res.json();
+      if (data.suggestion) {
+        setSuggestion(data.suggestion);
+        localStorage.setItem("userSuggestion", data.suggestion);
+        setHasFetchedSuggestion(true);
+      } else {
+        console.error("No suggestion returned:", data.error);
+      }
+    } catch (err) {
+      console.error("Error fetching suggestion:", err);
+    }
+  };
+
+  // If still loading session or user data, show loading state
   if (isLoading || !session || !userData) {
     return (
       <div className="bg-gray-900 text-gray-200 h-screen flex items-center justify-center">
@@ -82,10 +112,35 @@ export default function Dashboard() {
                 </span>
                 .
               </p>
-              {suggestion && (
+              
+              {suggestion ? (
                 <div className="mt-4 p-4 bg-gray-900 rounded-xl border border-blue-500 text-blue-400">
                   <h3 className="text-lg font-semibold mb-2">Coach’s Tip</h3>
                   <p className="text-sm">{suggestion}</p>
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem("userSuggestion");
+                      setHasFetchedSuggestion(false);
+                      setSuggestion(null);
+                    }}
+                    className="mt-2 text-xs text-red-400 hover:text-red-300"
+                  >
+                    Clear Suggestion
+                  </button>
+                </div>
+              ) : (
+                <div className="mt-4">
+                  {!hasFetchedSuggestion && (
+                    <button
+                      onClick={fetchSuggestion}
+                      className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded text-sm"
+                    >
+                      Get Suggestion
+                    </button>
+                  )}
+                  {hasFetchedSuggestion && !suggestion && (
+                    <p className="text-gray-400 text-sm">No suggestion available.</p>
+                  )}
                 </div>
               )}
             </div>
@@ -96,10 +151,8 @@ export default function Dashboard() {
             {/* Key Metrics */}
             <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
               <GoalsDisplay />
-              {/* 
-              <h3 className="text-lg font-semibold text-gray-100">
-                Key Metrics This Week
-              </h3>
+              {/* If you'd like to show metrics, uncomment the block below:
+              <h3 className="text-lg font-semibold text-gray-100">Key Metrics This Week</h3>
               {metricsError ? (
                 <p className="text-red-400 text-sm mt-2">{metricsError}</p>
               ) : workoutsCompleted === null ? (
@@ -114,8 +167,7 @@ export default function Dashboard() {
                     Aim for 3 this week to stay on track!
                   </p>
                 </>
-              )} 
-              */}
+              )} */}
             </div>
           </div>
 
