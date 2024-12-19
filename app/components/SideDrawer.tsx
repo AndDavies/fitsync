@@ -1,15 +1,16 @@
 // components/SideDrawer.tsx
-"use client";
 
+"use client";
 import React, { useEffect } from "react";
 
 interface SideDrawerProps {
   isOpen: boolean;
   onClose: () => void;
+  title?: string; // Optional title prop
   children: React.ReactNode;
 }
 
-const SideDrawer: React.FC<SideDrawerProps> = ({ isOpen, onClose, children }) => {
+const SideDrawer: React.FC<SideDrawerProps> = ({ isOpen, onClose, title, children }) => {
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : '';
   }, [isOpen]);
@@ -28,7 +29,7 @@ const SideDrawer: React.FC<SideDrawerProps> = ({ isOpen, onClose, children }) =>
         } flex flex-col`}
       >
         <div className="p-4 border-b border-gray-300 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Add Classes</h2>
+          {title && <h2 className="text-lg font-semibold">{title}</h2>}
           <button
             className="text-gray-700 hover:text-gray-900 focus:outline-none"
             onClick={onClose}

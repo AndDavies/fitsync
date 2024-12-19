@@ -18,7 +18,8 @@ type UserData = {
   current_gym_id: string | null;
   role: string | null;
   onboarding_completed: boolean;
-  goals: OnboardingData | null; // Changed from string | null to OnboardingData | null
+  goals: OnboardingData | null;
+  email: string | null; // Add email field
 };
 
 type AuthContextType = {
@@ -42,13 +43,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         .select('user_id, display_name, current_gym_id, role, onboarding_completed, goals')
         .eq('user_id', currentSession.user.id)
         .maybeSingle();
-
+  
       if (error) {
         console.error("Error fetching user data:", error.message);
         setUserData(null);
         return;
       }
-
+  
       if (data) {
         setUserData({
           user_id: currentSession.user.id,
@@ -56,7 +57,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           current_gym_id: data.current_gym_id ?? null,
           role: data.role ?? null,
           onboarding_completed: data.onboarding_completed ?? false,
-          goals: data.goals ?? null, // data.goals is already JSON object if JSONB
+          goals: data.goals ?? null,
+          email: currentSession.user.email ?? null, // Pull email from session
         });
       } else {
         setUserData(null);
