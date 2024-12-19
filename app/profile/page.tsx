@@ -354,7 +354,7 @@ export default function ProfilePage() {
               value={gymQuery}
               onChange={(e) => setGymQuery(e.target.value)}
               placeholder="Type a gym name..."
-              className="w-full p-2 border border-gray-300 rounded mb-4"
+              className="w-full p-2 border border-gray-300 rounded mb-4 text-gray-900"
             />
             {gymResults.length === 0 && (
               <p className="text-sm text-gray-500">No gyms found.</p>
@@ -385,7 +385,7 @@ export default function ProfilePage() {
               value={memberCode}
               onChange={(e) => setMemberCode(e.target.value)}
               placeholder="6 digit code"
-              className="w-full p-2 border border-gray-300 rounded"
+              className="w-full p-2 border border-gray-300 rounded text-gray-900"
             />
             <button
               onClick={submitGymCode}
