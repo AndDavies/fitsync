@@ -10,17 +10,23 @@ import GoalsDisplay from "../components/GoalsDisplay";
 import RecentArticles from "../components/RecentArticles";
 import RecentWorkouts from "../components/RecentWorkouts";
 
+function formatGoal(goal: string): string {
+  return goal
+    .split("_")
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
 export default function Dashboard() {
   const { session, isLoading, userData } = useAuth();
   const router = useRouter();
-  
+
   const [workoutsCompleted, setWorkoutsCompleted] = useState<number | null>(null);
   const [metricsError, setMetricsError] = useState<string | null>(null);
   
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [hasFetchedSuggestion, setHasFetchedSuggestion] = useState(false);
 
-  // Redirect logic
   useEffect(() => {
     if (!isLoading) {
       if (!session) {
@@ -31,7 +37,6 @@ export default function Dashboard() {
     }
   }, [isLoading, session, userData, router]);
 
-  // Fetch metrics (just like before)
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
@@ -57,7 +62,6 @@ export default function Dashboard() {
     }
   }, [isLoading, userData]);
 
-  // On initial load, check if we have a cached suggestion
   useEffect(() => {
     const storedSuggestion = localStorage.getItem("userSuggestion");
     if (storedSuggestion) {
@@ -66,7 +70,6 @@ export default function Dashboard() {
     }
   }, []);
 
-  // Function to fetch suggestion on-demand
   const fetchSuggestion = async () => {
     try {
       const res = await fetch("/api/user/suggestions");
@@ -83,7 +86,6 @@ export default function Dashboard() {
     }
   };
 
-  // If still loading session or user data, show loading state
   if (isLoading || !session || !userData) {
     return (
       <div className="bg-gray-900 text-gray-200 h-screen flex items-center justify-center">
@@ -92,13 +94,28 @@ export default function Dashboard() {
     );
   }
 
+  const userGoal = typeof userData.goals === "string" ? formatGoal(userData.goals) : "General Health";
+
+  // Process the suggestion for nicer formatting
+  let normalLines: string[] = [];
+  let bullets: string[] = [];
+  if (suggestion) {
+    const lines = suggestion.split("\n").map(line => line.trim()).filter(Boolean);
+    lines.forEach(line => {
+      if (line.startsWith("- ")) {
+        bullets.push(line.slice(2).trim());
+      } else {
+        normalLines.push(line);
+      }
+    });
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-900 text-gray-100">
       <Header />
 
       <main className="flex-grow p-6 sm:p-8 lg:p-10 space-y-6 bg-gray-900 text-gray-100">
         <div className="space-y-6">
-          {/* Top row: Welcome, Daily WOD, Key Metrics */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Welcome & Goals */}
             <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
@@ -107,16 +124,23 @@ export default function Dashboard() {
               </h2>
               <p className="text-gray-300">
                 Your primary goal:{" "}
-                <span className="font-semibold text-pink-500">
-                  {typeof userData.goals === "string" ? userData.goals : "General Health"}
-                </span>
-                .
+                <span className="font-semibold text-pink-500">{userGoal}</span>.
               </p>
-              
+
               {suggestion ? (
                 <div className="mt-4 p-4 bg-gray-900 rounded-xl border border-blue-500 text-blue-400">
                   <h3 className="text-lg font-semibold mb-2">Coach’s Tip</h3>
-                  <p className="text-sm">{suggestion}</p>
+                  {normalLines.map((line, i) => (
+                    <p key={`line-${i}`} className="text-sm mb-2">{line}</p>
+                  ))}
+                  {bullets.length > 0 && (
+                    <ul className="list-disc list-inside text-sm space-y-1 text-gray-400">
+                      {bullets.map((bullet, i) => (
+                        <li key={`bullet-${i}`}>{bullet}</li>
+                      ))}
+                    </ul>
+                  )}
+
                   <button
                     onClick={() => {
                       localStorage.removeItem("userSuggestion");
@@ -151,7 +175,7 @@ export default function Dashboard() {
             {/* Key Metrics */}
             <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
               <GoalsDisplay />
-              {/* If you'd like to show metrics, uncomment the block below:
+              {/* Uncomment if you want to show metrics
               <h3 className="text-lg font-semibold text-gray-100">Key Metrics This Week</h3>
               {metricsError ? (
                 <p className="text-red-400 text-sm mt-2">{metricsError}</p>
@@ -171,7 +195,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Articles & Recent Workouts */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <RecentArticles />
             <RecentWorkouts />
