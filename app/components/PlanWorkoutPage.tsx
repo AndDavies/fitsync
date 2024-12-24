@@ -54,11 +54,13 @@ const PlanWorkoutPage: React.FC = () => {
 
   useEffect(() => {
     const fetchTracks = async () => {
-      if (!userData) return; 
+      if (!userData) return;
       setLoading(true);
       try {
         let fetchedTracks: { id: string; name: string }[] = [];
+
         if (userData.current_gym_id) {
+          // If user has a gym, fetch the gym's tracks
           const { data: gymTracks, error: gymError } = await supabase
             .from("tracks")
             .select("id, name")
@@ -66,6 +68,7 @@ const PlanWorkoutPage: React.FC = () => {
           if (gymError) throw gymError;
           if (gymTracks) fetchedTracks.push(...gymTracks);
         } else {
+          // Otherwise, fetch personal tracks
           const { data: personalTracks, error: personalError } = await supabase
             .from("tracks")
             .select("id, name")
@@ -148,7 +151,7 @@ const PlanWorkoutPage: React.FC = () => {
       toast.error("You must be logged in to plan a workout.");
       return;
     }
-  
+
     if (!workoutDraft.trackId || !workoutDraft.workoutName.trim()) {
       toast.error("Cannot plan workout without required fields.");
       return;
@@ -158,9 +161,12 @@ const PlanWorkoutPage: React.FC = () => {
       toast.error("No parsed workout data found. Please go back and re-parse the workout.");
       return;
     }
-    console.log(" ParseWorkout: ", parsedWorkout);
+
     // Insert the parsedWorkout (JSON object) directly into workout_details as JSONB
     const { error } = await supabase.from("scheduled_workouts").insert({
+      // NEW: insert the gym_id from the user profile
+      gym_id: userData.current_gym_id || null,
+
       user_id: userData.user_id,
       date: workoutDraft.date,
       track_id: workoutDraft.trackId,
@@ -177,12 +183,12 @@ const PlanWorkoutPage: React.FC = () => {
       order_type: workoutDraft.orderType,
       scoring_set: workoutDraft.scoringSet.toString(),
     });
-  
+
     if (error) {
       toast.error(`Failed to schedule workout: ${error.message}`);
       return;
     }
-  
+
     toast.success("Workout successfully scheduled!");
   };
 
@@ -224,7 +230,7 @@ const PlanWorkoutPage: React.FC = () => {
           <div>
             {loading ? (
               <div className="flex items-center justify-center py-20">
-                <div className="animate-spin h-8 w-8 border-4 border-pink-500 border-t-transparent rounded-full"></div>
+                <div className="animate-spin h-8 w-8 border-4 border-pink-500 border-t-transparent rounded-full" />
                 <p className="ml-3 text-sm text-gray-300">Loading...</p>
               </div>
             ) : (
@@ -259,8 +265,6 @@ const PlanWorkoutPage: React.FC = () => {
                         Add warm-up, cool-down, and coach notes if desired. The workout structure is already parsed.
                       </Text>
                       <div className="space-y-4">
-                        {/* Since we've parsed the workout already, no need to show raw text here,
-                           we trust parsedWorkout. But we can show the original text if desired. */}
                         <div>
                           <Text small b style={{ color: '#F9FAFB' }}>Warm Up (optional)</Text>
                           <textarea
@@ -316,7 +320,6 @@ const PlanWorkoutPage: React.FC = () => {
                     tracks={tracks}
                   />
                 )}
-
               </>
             )}
           </div>

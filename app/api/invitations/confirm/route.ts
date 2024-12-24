@@ -1,14 +1,16 @@
-// app/api/invitations/confirm/route.ts
 import { NextResponse } from "next/server";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 
 export async function POST(req: Request) {
+  // 1) Create the Supabase client
   const supabase = createRouteHandlerClient({ cookies });
-  // Optional: check admin role
+
+  // 2) Parse JSON body
   const body = await req.json();
   const { invitation_id, user_id, gym_id } = body;
 
+  // 3) Validate
   if (!invitation_id || !user_id || !gym_id) {
     return NextResponse.json(
       { error: "Missing invitation_id, user_id, or gym_id" },
@@ -16,7 +18,10 @@ export async function POST(req: Request) {
     );
   }
 
-  // 1) Update the invitation's status to "confirmed"
+  // 4) (Optional) Check if the current user is an admin of `gym_id`
+  //    or if userData has some role. For brevity, omitted here.
+
+  // 5) Update the invitation’s status → "confirmed"
   const { error: inviteError } = await supabase
     .from("invitations")
     .update({ status: "confirmed" })
@@ -29,11 +34,14 @@ export async function POST(req: Request) {
     );
   }
 
-  // 2) Update user_profiles to set current_gym_id
+  // 6) Update the user_profile to set `current_gym_id`
+  //    Make sure your DB column references match:
+  //    - If your user_profiles PK is `id`, use eq("id", user_id).
+  //    - If the PK is `user_id`, use eq("user_id", user_id).
   const { error: userProfileError } = await supabase
     .from("user_profiles")
     .update({ current_gym_id: gym_id })
-    .eq("id", user_id) // or eq("user_id", user_id) depending on your schema
+    .eq("user_id", user_id); // or eq("user_id", user_id)
 
   if (userProfileError) {
     return NextResponse.json(
@@ -42,5 +50,6 @@ export async function POST(req: Request) {
     );
   }
 
+  // 7) All good
   return NextResponse.json({ success: true });
 }

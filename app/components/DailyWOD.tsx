@@ -10,13 +10,6 @@ function getFormattedDate(date: Date): string {
   return date.toISOString().split("T")[0];
 }
 
-function getCrossfitDateCode(date: Date): string {
-  const year = date.getUTCFullYear().toString().slice(-2);
-  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(date.getUTCDate()).padStart(2, "0");
-  return `${year}${month}${day}`;
-}
-
 interface LocalScheduledWorkout {
   id: string;
   name: string;
@@ -26,81 +19,79 @@ interface LocalScheduledWorkout {
 }
 
 const DailyWOD: React.FC = () => {
-  const [scheduledWorkout, setScheduledWorkout] = useState<LocalScheduledWorkout | null>(null);
+  const [scheduledWorkouts, setScheduledWorkouts] = useState<LocalScheduledWorkout[]>([]);
   const [crossfitWOD, setCrossfitWOD] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { userData } = useAuth();
 
   useEffect(() => {
     const fetchCrossfitWOD = async () => {
-
-      //const cfDate = getCrossfitDateCode(new Date());
-      //const apiUrl = `/api/fetchWOD?dateCode=${cfDate}`;
-
-      try {
-       // const res = await fetch(apiUrl);
-       // const data = await res.json();
-       // console.log("Received HTML:", data.html);
-        // Now you can parse data.html as needed
-      // setCrossfitWOD(`Visit CrossFit.com for today’s WOD: https://www.crossfit.com/${cfDate}`);
-      } catch (error) {
-       // console.error("Error fetching from our API route:", error);
-       // setCrossfitWOD("Unable to load today’s CrossFit WOD.");
-      }
+      // Fallback logic: real usage might fetch from CF route
+      setCrossfitWOD("Unable to load today’s CrossFit WOD.");
+      setLoading(false);
     };
 
-    const fetchWorkout = async () => {
+    const fetchWorkouts = async () => {
       const today = getFormattedDate(new Date());
+      const userId = userData?.user_id;
+      const gymId = userData?.current_gym_id;
 
-      if (userData?.user_id) {
-        try {
-          const { data, error } = await supabase
-            .from("scheduled_workouts")
-            .select("id, name, workout_details, warm_up, cool_down")
-            .eq("user_id", userData.user_id)
-            .eq("date", today)
-            .maybeSingle();
+      // If no valid user, fallback
+      if (!userId) {
+        return fetchCrossfitWOD();
+      }
 
-          if (error) {
-            console.error("Supabase error:", error);
-            fetchCrossfitWOD();
-            return;
-          }
+      try {
+        // Build OR condition
+        let orCondition = `user_id.eq.${userId}`;
+        if (gymId) {
+          orCondition += `,gym_id.eq.${gymId}`;
+        }
 
-          if (data) {
-            let parsedWorkout: ParsedWorkout;
-            if (typeof data.workout_details === "string") {
-              parsedWorkout = JSON.parse(data.workout_details) as ParsedWorkout;
+        // Remove .maybeSingle() and handle multiple results
+        const { data, error } = await supabase
+          .from("scheduled_workouts")
+          .select("id, name, workout_details, warm_up, cool_down")
+          .eq("date", today)
+          .or(orCondition);
+
+        if (error) {
+          console.error("Supabase error (raw):", error);
+          return fetchCrossfitWOD();
+        }
+
+        if (data && data.length > 0) {
+          // Convert each to LocalScheduledWorkout
+          const localWorkouts = data.map((row: any) => {
+            let parsed: ParsedWorkout;
+            if (typeof row.workout_details === "string") {
+              parsed = JSON.parse(row.workout_details);
             } else {
-              parsedWorkout = data.workout_details as ParsedWorkout;
+              parsed = row.workout_details;
             }
+            return {
+              id: row.id,
+              name: row.name,
+              workout_details: parsed,
+              warm_up: row.warm_up || "",
+              cool_down: row.cool_down || "",
+            } as LocalScheduledWorkout;
+          });
 
-            const localScheduledWorkout: LocalScheduledWorkout = {
-              id: data.id,
-              name: data.name,
-              workout_details: parsedWorkout,
-              warm_up: data.warm_up || "",
-              cool_down: data.cool_down || "",
-            };
-
-            setScheduledWorkout(localScheduledWorkout);
-            setLoading(false);
-          } else {
-            // No scheduled workout found, fetch CrossFit WOD
-            fetchCrossfitWOD();
-          }
-        } catch (error) {
-          console.error("Error fetching scheduled workout:", error);
+          setScheduledWorkouts(localWorkouts);
+          setLoading(false);
+        } else {
+          // No scheduled workouts
           fetchCrossfitWOD();
         }
-      } else {
-        // If no userData, just fetch CrossFit WOD
+      } catch (err) {
+        console.error("Error fetching scheduled workouts:", err);
         fetchCrossfitWOD();
       }
     };
 
     if (userData) {
-      fetchWorkout();
+      fetchWorkouts();
     } else {
       setLoading(true);
     }
@@ -112,24 +103,30 @@ const DailyWOD: React.FC = () => {
 
       {loading && <p className="text-sm text-gray-400">Loading...</p>}
 
-      {!loading && scheduledWorkout ? (
-        <div>
-          <WorkoutDisplay
-            workoutData={scheduledWorkout.workout_details}
-            workoutName={scheduledWorkout.name}
-            warmUp={scheduledWorkout.warm_up}
-            coolDown={scheduledWorkout.cool_down}
-          />
+      {!loading && scheduledWorkouts.length > 0 ? (
+        <div className="space-y-4">
+          {scheduledWorkouts.map((workout) => (
+            <div key={workout.id} className="border border-gray-600 p-4 rounded">
+              <WorkoutDisplay
+                workoutData={workout.workout_details}
+                workoutName={workout.name}
+                warmUp={workout.warm_up}
+                coolDown={workout.cool_down}
+              />
+            </div>
+          ))}
         </div>
       ) : (
-        <div>
-          <p className="text-sm text-gray-400 mb-4">
-            {crossfitWOD || "Unable to load today’s CrossFit WOD."}
-          </p>
-          <Link href="/workouts" className="text-sm text-blue-400 hover:underline">
-            Plan Your Workout for Today
-          </Link>
-        </div>
+        !loading && (
+          <div>
+            <p className="text-sm text-gray-400 mb-4">
+              {crossfitWOD || "No scheduled workouts found for today."}
+            </p>
+            <Link href="/workouts" className="text-sm text-blue-400 hover:underline">
+              Plan Your Workout for Today
+            </Link>
+          </div>
+        )
       )}
     </div>
   );
