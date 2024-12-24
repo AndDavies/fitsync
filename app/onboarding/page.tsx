@@ -1,14 +1,19 @@
 "use client";
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '../context/AuthContext';
-import { supabase } from '@/utils/supabase/client';
-import { motion, AnimatePresence } from 'framer-motion';
+
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useAuth } from "../context/AuthContext";
+import { supabase } from "@/utils/supabase/client";
+import { motion, AnimatePresence } from "framer-motion";
 import LoadingSpinner from "@/app/components/LoadingSpinner";
 
 export default function OnboardingPage() {
   const { userData, isLoading, session, refreshUserData } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Pull any gym_id from the query string (e.g. ?gym_id=1234)
+  const gymIdFromQuery = searchParams.get("gym_id") || null;
 
   // Steps State
   const [step, setStep] = useState(1);
@@ -26,37 +31,43 @@ export default function OnboardingPage() {
   // If user is already onboarded or not logged in, redirect to dashboard
   useEffect(() => {
     if (!isLoading && session && userData?.onboarding_completed) {
-      router.push('/dashboard');
+      router.push("/dashboard");
     }
   }, [isLoading, session, userData, router]);
 
   const handleNext = async () => {
-    // Final step is now 4, not 3
+    // Final step is 4
     if (step === 4) {
-      // Compile all onboarding data into a single JSON object
+      // Compile all onboarding data
       const onboardingResponses = {
         primaryGoal,
         activityLevel,
-        lifestyleNote
+        lifestyleNote,
       };
 
       if (!userData?.user_id) return;
 
       setLoading(true);
+
+      // Perform supabase update
       const { error } = await supabase
-        .from('user_profiles')
+        .from("user_profiles")
         .update({
           display_name: displayName,
           phone_number: phoneNumber,
           onboarding_data: onboardingResponses,
-          onboarding_completed: true
+          onboarding_completed: true,
+          // If there's a gym in the query, set it
+          current_gym_id: gymIdFromQuery,
         })
-        .eq('user_id', userData.user_id);
+        .eq("user_id", userData.user_id);
 
       setLoading(false);
+
       if (!error) {
+        // Refresh so that userData includes current_gym_id
         await refreshUserData();
-        router.push('/dashboard');
+        router.push("/dashboard");
       } else {
         alert("Error completing onboarding. Please try again.");
       }
@@ -82,7 +93,7 @@ export default function OnboardingPage() {
   const variants = {
     initial: { opacity: 0, x: 30 },
     animate: { opacity: 1, x: 0 },
-    exit: { opacity: 0, x: -30 }
+    exit: { opacity: 0, x: -30 },
   };
 
   return (
@@ -99,9 +110,13 @@ export default function OnboardingPage() {
               transition={{ duration: 0.3 }}
             >
               <h2 className="text-2xl font-bold mb-4">Basic Info</h2>
-              <p className="mb-4 text-gray-700">First, let’s get your basic details.</p>
+              <p className="mb-4 text-gray-700">
+                First, let’s get your basic details.
+              </p>
               <div className="mb-4">
-                <label className="block text-sm font-semibold mb-1">Display Name *</label>
+                <label className="block text-sm font-semibold mb-1">
+                  Display Name *
+                </label>
                 <input
                   type="text"
                   value={displayName}
@@ -111,7 +126,9 @@ export default function OnboardingPage() {
                 />
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-semibold mb-1">Phone Number *</label>
+                <label className="block text-sm font-semibold mb-1">
+                  Phone Number *
+                </label>
                 <input
                   type="text"
                   value={phoneNumber}
@@ -123,7 +140,11 @@ export default function OnboardingPage() {
               <button
                 onClick={handleNext}
                 disabled={!displayName.trim() || !phoneNumber.trim()}
-                className={`w-full py-2 ${displayName.trim() && phoneNumber.trim() ? 'bg-pink-600 text-white hover:bg-pink-700' : 'bg-gray-300 text-gray-600 cursor-not-allowed'} rounded`}
+                className={`w-full py-2 ${
+                  displayName.trim() && phoneNumber.trim()
+                    ? "bg-pink-600 text-white hover:bg-pink-700"
+                    : "bg-gray-300 text-gray-600 cursor-not-allowed"
+                } rounded`}
               >
                 Next
               </button>
@@ -140,9 +161,11 @@ export default function OnboardingPage() {
               transition={{ duration: 0.3 }}
             >
               <h2 className="text-2xl font-bold mb-4">Primary Fitness Goal</h2>
-              <p className="mb-4 text-gray-700">We’d like to know your primary fitness goal.</p>
-              <select 
-                value={primaryGoal} 
+              <p className="mb-4 text-gray-700">
+                We’d like to know your primary fitness goal.
+              </p>
+              <select
+                value={primaryGoal}
                 onChange={(e) => setPrimaryGoal(e.target.value)}
                 className="w-full p-2 border border-gray-300 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-pink-300"
               >
@@ -153,16 +176,20 @@ export default function OnboardingPage() {
                 <option value="general_health">General Health</option>
               </select>
               <div className="flex justify-between">
-                <button 
-                  onClick={handleBack} 
+                <button
+                  onClick={handleBack}
                   className="py-2 px-4 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
                 >
                   Back
                 </button>
-                <button 
-                  onClick={handleNext} 
+                <button
+                  onClick={handleNext}
                   disabled={!primaryGoal}
-                  className={`py-2 px-4 ${primaryGoal ? 'bg-pink-600 text-white hover:bg-pink-700' : 'bg-gray-300 text-gray-600 cursor-not-allowed'} rounded`}
+                  className={`py-2 px-4 ${
+                    primaryGoal
+                      ? "bg-pink-600 text-white hover:bg-pink-700"
+                      : "bg-gray-300 text-gray-600 cursor-not-allowed"
+                  } rounded`}
                 >
                   Next
                 </button>
@@ -181,7 +208,7 @@ export default function OnboardingPage() {
             >
               <h2 className="text-2xl font-bold mb-4">Your Activity Level</h2>
               <p className="mb-4 text-gray-700">How active are you currently?</p>
-              <select 
+              <select
                 value={activityLevel}
                 onChange={(e) => setActivityLevel(e.target.value)}
                 className="w-full p-2 border border-gray-300 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-pink-300"
@@ -193,16 +220,20 @@ export default function OnboardingPage() {
                 <option value="very_active">Very Active</option>
               </select>
               <div className="flex justify-between">
-                <button 
-                  onClick={handleBack} 
+                <button
+                  onClick={handleBack}
                   className="py-2 px-4 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
                 >
                   Back
                 </button>
-                <button 
-                  onClick={handleNext} 
+                <button
+                  onClick={handleNext}
                   disabled={!activityLevel}
-                  className={`py-2 px-4 ${activityLevel ? 'bg-pink-600 text-white hover:bg-pink-700' : 'bg-gray-300 text-gray-600 cursor-not-allowed'} rounded`}
+                  className={`py-2 px-4 ${
+                    activityLevel
+                      ? "bg-pink-600 text-white hover:bg-pink-700"
+                      : "bg-gray-300 text-gray-600 cursor-not-allowed"
+                  } rounded`}
                 >
                   Next
                 </button>
@@ -220,24 +251,28 @@ export default function OnboardingPage() {
               transition={{ duration: 0.3 }}
             >
               <h2 className="text-2xl font-bold mb-4">Lifestyle & Preferences</h2>
-              <p className="mb-4 text-gray-700">Any special considerations or preferences? (Optional)</p>
-              <textarea 
+              <p className="mb-4 text-gray-700">
+                Any special considerations or preferences? (Optional)
+              </p>
+              <textarea
                 value={lifestyleNote}
                 onChange={(e) => setLifestyleNote(e.target.value)}
                 placeholder="E.g. 'I have a knee injury', 'I prefer workouts under 30 min', etc."
                 className="w-full p-2 border border-gray-300 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-pink-300"
               />
               <div className="flex justify-between">
-                <button 
-                  onClick={handleBack} 
+                <button
+                  onClick={handleBack}
                   className="py-2 px-4 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
                 >
                   Back
                 </button>
-                <button 
+                <button
                   onClick={handleNext}
                   disabled={loading}
-                  className={`py-2 px-4 bg-pink-600 text-white rounded hover:bg-pink-700 ${loading && 'opacity-50 cursor-wait'}`}
+                  className={`py-2 px-4 bg-pink-600 text-white rounded hover:bg-pink-700 ${
+                    loading && "opacity-50 cursor-wait"
+                  }`}
                 >
                   {loading ? <LoadingSpinner /> : "Finish"}
                 </button>
