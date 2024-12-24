@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import Header from "../components/Header";
 import SideDrawer from "../components/SideDrawer";
 
-// Types for gym search results
 type Gym = {
   id: string;
   name: string;
@@ -26,7 +25,7 @@ export default function ProfilePage() {
   // Validation errors
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // State for loading/saving
+  // Loading/saving
   const [loadingProfile, setLoadingProfile] = useState<boolean>(false);
   const [savingProfile, setSavingProfile] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +37,8 @@ export default function ProfilePage() {
   const [gymResults, setGymResults] = useState<Gym[]>([]);
   const [selectedGym, setSelectedGym] = useState<Gym | null>(null);
   const [memberCode, setMemberCode] = useState<string>("");
+
+  // If the user already has an invitation in flight, we’ll hide certain UI
   const [invitationPending, setInvitationPending] = useState<boolean>(false);
 
   useEffect(() => {
@@ -50,6 +51,7 @@ export default function ProfilePage() {
     }
   }, [isLoading, session, userData, router]);
 
+  // Fetch profile details
   const fetchProfile = useCallback(async () => {
     if (!isLoading && userData?.onboarding_completed) {
       setLoadingProfile(true);
@@ -63,13 +65,14 @@ export default function ProfilePage() {
           throw new Error(errData.error || "Failed to load profile");
         }
         const data = await res.json();
+
         setDisplayName(data.profile.display_name || "");
         setBio(data.profile.bio || "");
         setPhone(data.profile.phone_number || "");
         setEmergencyContactName(data.profile.emergency_contact_name || "");
         setEmergencyContactPhone(data.profile.emergency_contact || "");
 
-        // Fetch current gym name if present
+        // If user is already associated with a gym, fetch gym name
         if (userData.current_gym_id) {
           const gymRes = await fetch(`/api/gyms/${userData.current_gym_id}`);
           if (gymRes.ok) {
@@ -82,6 +85,17 @@ export default function ProfilePage() {
           setCurrentGymName(null);
         }
 
+        // Check if an invitation is pending
+        const invRes = await fetch("/api/invitations/pending", {
+          credentials: "include",
+        });
+        if (invRes.ok) {
+          const invData = await invRes.json();
+          // If the API says there's an open/pending invitation, set flag
+          if (invData.invitationPending) {
+            setInvitationPending(true);
+          }
+        }
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -94,6 +108,7 @@ export default function ProfilePage() {
     fetchProfile();
   }, [fetchProfile]);
 
+  // Validation
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!displayName.trim()) {
@@ -141,6 +156,7 @@ export default function ProfilePage() {
     }
   };
 
+  // Gym search
   const searchGyms = useCallback(async () => {
     if (!gymQuery.trim()) {
       setGymResults([]);
@@ -165,9 +181,9 @@ export default function ProfilePage() {
     setMemberCode("");
   };
 
+  // Submit gym code → create invitation
   const submitGymCode = async () => {
     if (!selectedGym || !memberCode.trim()) return;
-
     const res = await fetch("/api/invitations", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -176,7 +192,7 @@ export default function ProfilePage() {
     });
 
     if (res.ok) {
-      // Invitation created, pending approval
+      // Invitation created → pending approval
       setInvitationPending(true);
     } else {
       const errData = await res.json();
@@ -194,10 +210,8 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-900 text-gray-100">
-      {/* Global Header */}
       <Header />
 
-      {/* Main Content */}
       <main className="flex-grow p-6 sm:p-8 lg:p-10">
         <div className="max-w-5xl mx-auto bg-gray-800 p-6 rounded-xl shadow border border-gray-700 space-y-8">
           {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -206,7 +220,9 @@ export default function ProfilePage() {
           <section className="space-y-4">
             <h2 className="text-xl font-bold text-gray-200">Sign In Settings</h2>
             <div>
-              <label className="block text-sm font-semibold mb-1 text-gray-200">Email</label>
+              <label className="block text-sm font-semibold mb-1 text-gray-200">
+                Email
+              </label>
               <input
                 type="text"
                 value={userData?.email || ""}
@@ -223,8 +239,11 @@ export default function ProfilePage() {
           {/* Profile Info */}
           <section className="space-y-4">
             <h2 className="text-xl font-bold text-gray-200">Profile Info</h2>
+
             <div>
-              <label className="block text-sm font-semibold mb-1 text-gray-200">Display Name *</label>
+              <label className="block text-sm font-semibold mb-1 text-gray-200">
+                Display Name *
+              </label>
               <input
                 type="text"
                 value={displayName}
@@ -233,11 +252,15 @@ export default function ProfilePage() {
                   errors.displayName ? "border-red-500" : "border-gray-600"
                 } bg-gray-700 text-gray-200`}
               />
-              {errors.displayName && <p className="text-xs text-red-500">{errors.displayName}</p>}
+              {errors.displayName && (
+                <p className="text-xs text-red-500">{errors.displayName}</p>
+              )}
             </div>
 
             <div>
-              <label className="block text-sm font-semibold mb-1 text-gray-200">Bio</label>
+              <label className="block text-sm font-semibold mb-1 text-gray-200">
+                Bio
+              </label>
               <textarea
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
@@ -246,7 +269,9 @@ export default function ProfilePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold mb-1 text-gray-200">Phone *</label>
+              <label className="block text-sm font-semibold mb-1 text-gray-200">
+                Phone *
+              </label>
               <input
                 type="text"
                 value={phone}
@@ -255,11 +280,15 @@ export default function ProfilePage() {
                   errors.phone ? "border-red-500" : "border-gray-600"
                 } bg-gray-700 text-gray-200`}
               />
-              {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
+              {errors.phone && (
+                <p className="text-xs text-red-500">{errors.phone}</p>
+              )}
             </div>
 
             <div>
-              <label className="block text-sm font-semibold mb-1 text-gray-200">Emergency Contact Name *</label>
+              <label className="block text-sm font-semibold mb-1 text-gray-200">
+                Emergency Contact Name *
+              </label>
               <input
                 type="text"
                 value={emergencyContactName}
@@ -274,7 +303,9 @@ export default function ProfilePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold mb-1 text-gray-200">Emergency Contact Phone *</label>
+              <label className="block text-sm font-semibold mb-1 text-gray-200">
+                Emergency Contact Phone *
+              </label>
               <input
                 type="text"
                 value={emergencyContactPhone}
@@ -292,7 +323,9 @@ export default function ProfilePage() {
               onClick={saveProfile}
               disabled={savingProfile}
               className={`px-4 py-2 rounded ${
-                savingProfile ? "bg-gray-600 cursor-not-allowed" : "bg-pink-600 hover:bg-pink-500"
+                savingProfile
+                  ? "bg-gray-600 cursor-not-allowed"
+                  : "bg-pink-600 hover:bg-pink-500"
               } text-white`}
             >
               {savingProfile ? "Saving..." : "Save Profile"}
@@ -303,13 +336,22 @@ export default function ProfilePage() {
           <section className="space-y-4">
             <h2 className="text-xl font-bold text-gray-200">Gym Association</h2>
             {invitationPending && (
-              <p className="text-sm text-gray-300">Your membership request is pending approval.</p>
+              <p className="text-sm text-gray-300">
+                Your membership request is pending approval.
+              </p>
             )}
+
             {currentGymName ? (
+              // If the user *already has* a gym, show it
               <div className="flex items-center justify-between">
                 <p className="text-sm text-gray-300">
-                  Associated Gym: <span className="font-semibold text-gray-100">{currentGymName}</span>
+                  Associated Gym:{" "}
+                  <span className="font-semibold text-gray-100">
+                    {currentGymName}
+                  </span>
                 </p>
+
+                {/* If user not pending a new invitation, allow changing gym */}
                 {!invitationPending && (
                   <button
                     onClick={() => setShowGymDrawer(true)}
@@ -320,6 +362,7 @@ export default function ProfilePage() {
                 )}
               </div>
             ) : (
+              // If user has NO gym yet, show the button
               !invitationPending && (
                 <button
                   onClick={() => setShowGymDrawer(true)}
@@ -346,9 +389,42 @@ export default function ProfilePage() {
         <h3 className="text-xl font-bold text-gray-800 mb-4">
           {selectedGym || invitationPending ? "Change Gym" : "Set Gym Association"}
         </h3>
-        {!selectedGym && !invitationPending && (
+
+        {/* If invitation pending, show a short message instead of a new form */}
+        {invitationPending ? (
+          <p className="text-sm text-gray-500 mt-4">
+            Your request has been submitted. Please wait for the gym to approve.
+          </p>
+        ) : selectedGym ? (
+          // Selected a gym → show code input
+          <div className="space-y-4">
+            <p className="text-gray-700">
+              Selected Gym:{" "}
+              <span className="font-semibold">{selectedGym.name}</span>
+            </p>
+            <label className="block text-sm font-semibold mb-1 text-gray-700">
+              Enter Member Code
+            </label>
+            <input
+              type="text"
+              value={memberCode}
+              onChange={(e) => setMemberCode(e.target.value)}
+              placeholder="6 digit code"
+              className="w-full p-2 border border-gray-300 rounded text-gray-900"
+            />
+            <button
+              onClick={submitGymCode}
+              className="px-4 py-2 bg-pink-500 text-white hover:bg-pink-600 rounded"
+            >
+              Submit
+            </button>
+          </div>
+        ) : (
+          // No gym selected yet → show search
           <>
-            <label className="block text-sm font-semibold mb-1 text-gray-700">Search for Gym</label>
+            <label className="block text-sm font-semibold mb-1 text-gray-700">
+              Search for Gym
+            </label>
             <input
               type="text"
               value={gymQuery}
@@ -373,39 +449,12 @@ export default function ProfilePage() {
             </ul>
           </>
         )}
-
-        {selectedGym && !invitationPending && (
-          <div className="space-y-4">
-            <p className="text-gray-700">
-              Selected Gym: <span className="font-semibold">{selectedGym.name}</span>
-            </p>
-            <label className="block text-sm font-semibold mb-1 text-gray-700">Enter Member Code</label>
-            <input
-              type="text"
-              value={memberCode}
-              onChange={(e) => setMemberCode(e.target.value)}
-              placeholder="6 digit code"
-              className="w-full p-2 border border-gray-300 rounded text-gray-900"
-            />
-            <button
-              onClick={submitGymCode}
-              className="px-4 py-2 bg-pink-500 text-white hover:bg-pink-600 rounded"
-            >
-              Submit
-            </button>
-          </div>
-        )}
-
-        {invitationPending && (
-          <p className="text-sm text-gray-500 mt-4">
-            Your request has been submitted. Please wait for the gym to approve.
-          </p>
-        )}
       </SideDrawer>
 
-      {/* Footer */}
       <footer className="bg-gray-800 text-center py-4 border-t border-gray-700">
-        <p className="text-sm text-gray-400">&copy; 2024 FitSync. All rights reserved.</p>
+        <p className="text-sm text-gray-400">
+          &copy; 2024 FitSync. All rights reserved.
+        </p>
       </footer>
     </div>
   );

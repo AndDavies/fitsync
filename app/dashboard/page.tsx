@@ -6,6 +6,9 @@ import { useAuth } from "../context/AuthContext";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import DailyWOD from "../components/DailyWOD";
+import ClassDashboardWidget from "@/app/components/ClassDashboardWidget"
+import UserUpcomingClassesWidget from "../components/UserUpcomingClassesWidget";
+import CommunityResultsWidget from "@/app/components/CommunityResultsWidget";
 import GoalsDisplay from "../components/GoalsDisplay";
 import RecentArticles from "../components/RecentArticles";
 import RecentWorkouts from "../components/RecentWorkouts";
@@ -168,13 +171,20 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
-
+            <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
             {/* Daily WOD */}
             <DailyWOD />
-
+            <UserUpcomingClassesWidget />
+            </div>
             {/* Key Metrics */}
             <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
+            <h2 className="text-2xl font-bold text-gray-100 mb-2">
+                Your Snapshot
+              </h2>
               <GoalsDisplay />
+              <CommunityResultsWidget />
+              {/* <ClassDashboardWidget /> */}
+              
               {/* Uncomment if you want to show metrics
               <h3 className="text-lg font-semibold text-gray-100">Key Metrics This Week</h3>
               {metricsError ? (
@@ -197,7 +207,8 @@ export default function Dashboard() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <RecentArticles />
-            <RecentWorkouts />
+            <RecentWorkouts /> 
+            
           </div>
         </div>
       </main>
