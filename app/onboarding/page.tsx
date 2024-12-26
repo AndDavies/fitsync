@@ -1,8 +1,5 @@
 "use client";
 
-// Force dynamic rendering so Next.js does not attempt to pre-render useSearchParams
-export const dynamic = "force-dynamic";
-
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,11 +8,11 @@ import { useAuth } from "../context/AuthContext";
 import { supabase } from "@/utils/supabase/client";
 import LoadingSpinner from "@/app/components/LoadingSpinner";
 
-export default function OnboardingPage() {
+export default function OnboardingClient() {
   const { userData, isLoading, session, refreshUserData } = useAuth();
   const router = useRouter();
-  
-  // Access query parameters via useSearchParams()
+
+  // Now we can safely useSearchParams here
   const searchParams = useSearchParams();
   const gymIdFromQuery = searchParams ? searchParams.get("gym_id") || null : null;
 
@@ -27,7 +24,7 @@ export default function OnboardingPage() {
   const [lifestyleNote, setLifestyleNote] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // If user is already onboarded, or no valid session, redirect or show loading
+  // If user is onboarded or there's no valid session, redirect or show loading
   useEffect(() => {
     if (!isLoading && session && userData?.onboarding_completed) {
       router.push("/dashboard");
