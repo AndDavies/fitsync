@@ -12,9 +12,9 @@ export default function OnboardingClient() {
   const { userData, isLoading, session, refreshUserData } = useAuth();
   const router = useRouter();
 
-  // Now we can safely useSearchParams here
+  // Safely use SearchParams in a client component
   const searchParams = useSearchParams();
-  const gymIdFromQuery = searchParams ? searchParams.get("gym_id") || null : null;
+  const gymIdFromQuery = searchParams.get("gym_id") || null;
 
   const [step, setStep] = useState(1);
   const [displayName, setDisplayName] = useState("");
@@ -24,25 +24,25 @@ export default function OnboardingClient() {
   const [lifestyleNote, setLifestyleNote] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // If user is onboarded or there's no valid session, redirect or show loading
+  // Redirect if already onboarded or if there's no session
   useEffect(() => {
     if (!isLoading && session && userData?.onboarding_completed) {
       router.push("/dashboard");
     }
   }, [isLoading, session, userData?.onboarding_completed, router]);
 
-  // Handle going forward in multi-step form
+  // Next step
   const handleNext = async () => {
-    // Step 4 is the last step, so finalize onboarding in Supabase
+    // Step 4 => finalize onboarding
     if (step === 4) {
       if (!userData?.user_id) return;
 
+      setLoading(true);
       const onboardingResponses = {
         primaryGoal,
         activityLevel,
         lifestyleNote,
       };
-      setLoading(true);
 
       const { error } = await supabase
         .from("user_profiles")
@@ -68,14 +68,14 @@ export default function OnboardingClient() {
     }
   };
 
-  // Handle going backward in multi-step form
+  // Previous step
   const handleBack = () => {
     if (step > 1) {
       setStep((prev) => prev - 1);
     }
   };
 
-  // If we’re still loading user/session, display a spinner
+  // If we’re still loading user/session, show spinner
   if (isLoading || !session) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-100">
@@ -84,7 +84,7 @@ export default function OnboardingClient() {
     );
   }
 
-  // Animation variants for step transitions
+  // Animation variants
   const variants = {
     initial: { opacity: 0, x: 30 },
     animate: { opacity: 1, x: 0 },
