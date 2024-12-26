@@ -1,22 +1,29 @@
 // /app/onboarding/page.tsx
 
-// This tells Next.js not to statically build or cache the page
 export const dynamic = "force-dynamic";
+// ^ Prevents Next.js from statically generating or caching this route
 
 import OnboardingClient from "../components/OnboardingClient";
 
+// Define the props signature that matches Next.js App Router expectations
 type OnboardingPageProps = {
-  // By default, Next.js passes `searchParams` as an object containing
-  // string or string[] values, or it could be undefined if none are present.
+  // Next.js can provide an object `searchParams` with strings or string arrays.
   searchParams?: {
+    gym_id?: string | string[];
     [key: string]: string | string[] | undefined;
   };
 };
 
 export default function OnboardingPage({ searchParams = {} }: OnboardingPageProps) {
-  // Safe access to gym_id in case it's missing
-  const gymIdFromQuery =
-    typeof searchParams.gym_id === "string" ? searchParams.gym_id : null;
+  // Safely parse gym_id, which might be a string, an array, or undefined
+  let gymIdFromQuery: string | null = null;
 
-  return <OnboardingClient gymId={gymIdFromQuery} />;
+  if (Array.isArray(searchParams.gym_id)) {
+    // If we got an array, use its first element or fallback to null
+    gymIdFromQuery = searchParams.gym_id[0] ?? null;
+  } else if (typeof searchParams.gym_id === "string") {
+    gymIdFromQuery = searchParams.gym_id;
+  }
+
+  return <OnboardingClient />;
 }

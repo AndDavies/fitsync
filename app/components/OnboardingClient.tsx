@@ -6,11 +6,11 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import { useAuth } from "@/app/context/AuthContext";
 import { supabase } from "@/utils/supabase/client";
-import LoadingSpinner from "./LoadingSpinner";
+import LoadingSpinner from "@/app/components/LoadingSpinner";
 
 interface OnboardingClientProps {
-  gymId: string | null;
-}
+    gymId: string | null; // <-- Accept null values
+  }
 
 export default function OnboardingClient({ gymId }: OnboardingClientProps) {
   const { userData, isLoading, session, refreshUserData } = useAuth();
@@ -24,20 +24,20 @@ export default function OnboardingClient({ gymId }: OnboardingClientProps) {
   const [lifestyleNote, setLifestyleNote] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // If user is onboarded or there's no valid session, redirect or show loading
+  // If user is already onboarded or no session, redirect
   useEffect(() => {
     if (!isLoading && session && userData?.onboarding_completed) {
       router.push("/dashboard");
     }
   }, [isLoading, session, userData?.onboarding_completed, router]);
 
-  // Handle next step or finalize onboarding
+  // Handle next steps or finalize
   const handleNext = async () => {
     if (step === 4) {
       if (!userData?.user_id) return;
 
       setLoading(true);
-      const onboardingResponses = {
+      const onboardingData = {
         primaryGoal,
         activityLevel,
         lifestyleNote,
@@ -48,9 +48,9 @@ export default function OnboardingClient({ gymId }: OnboardingClientProps) {
         .update({
           display_name: displayName,
           phone_number: phoneNumber,
-          onboarding_data: onboardingResponses,
+          onboarding_data: onboardingData,
           onboarding_completed: true,
-          current_gym_id: gymId, // we pass the prop from server
+          current_gym_id: gymId, // from the dynamic route
         })
         .eq("user_id", userData.user_id);
 
@@ -67,14 +67,14 @@ export default function OnboardingClient({ gymId }: OnboardingClientProps) {
     }
   };
 
-  // Handle going backward
+  // Handle back
   const handleBack = () => {
     if (step > 1) {
       setStep((prev) => prev - 1);
     }
   };
 
-  // If still loading user/session, show spinner
+  // Show loading spinner if user/session is still loading
   if (isLoading || !session) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-100">
@@ -83,7 +83,7 @@ export default function OnboardingClient({ gymId }: OnboardingClientProps) {
     );
   }
 
-  // Animation variants for step transitions
+  // Motion variants
   const variants = {
     initial: { opacity: 0, x: 30 },
     animate: { opacity: 1, x: 0 },
