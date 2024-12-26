@@ -1,19 +1,22 @@
-// /app/onboarding/page.tsx (Server Component)
+// /app/onboarding/page.tsx
 
-// Ensure this route is treated dynamically, not statically generated
+// This tells Next.js not to statically build or cache the page
 export const dynamic = "force-dynamic";
 
 import OnboardingClient from "../components/OnboardingClient";
 
-interface OnboardingPageProps {
-  searchParams: Record<string, any>;
-}
+type OnboardingPageProps = {
+  // By default, Next.js passes `searchParams` as an object containing
+  // string or string[] values, or it could be undefined if none are present.
+  searchParams?: {
+    [key: string]: string | string[] | undefined;
+  };
+};
 
-// By default, page.tsx in the App Router is a Server Component (no "use client" here).
-export default function OnboardingPage({ searchParams }: OnboardingPageProps) {
-  // Read gym_id query param from server side
-  const gymIdFromQuery = searchParams.gym_id ?? null;
+export default function OnboardingPage({ searchParams = {} }: OnboardingPageProps) {
+  // Safe access to gym_id in case it's missing
+  const gymIdFromQuery =
+    typeof searchParams.gym_id === "string" ? searchParams.gym_id : null;
 
-  // Pass gymIdFromQuery to the client component as a prop
   return <OnboardingClient gymId={gymIdFromQuery} />;
 }
