@@ -1,20 +1,17 @@
-// app/onboarding/[gymId]/page.tsx
-export const dynamic = "force-dynamic";
-// ^ Tells Next.js not to statically generate or cache this route.
-
 import OnboardingClient from "@/app/components/OnboardingClient";
 
-interface OnboardingPageProps {
-  // Next.js App Router automatically provides 'params'
-  // matching the dynamic segment "[gymId]" in the route.
-  params: {
-    gymId: string; // The segment from the URL, e.g. "gym_123"
-  };
-}
+// Stop Next.js from statically generating the route
+export const dynamic = "force-dynamic"; 
 
-export default function OnboardingPage({ params }: OnboardingPageProps) {
-  const { gymId } = params;
+// If your route is `onboarding/[gymID]`, Next.js automatically passes `{ gymID: string }` as `params`
+export default function OnboardingPage({
+  params,
+}: {
+  params: { gymID: string };
+}) {
+  // Destructure gymID from the route
+  const { gymID } = params;
 
-  // Just pass it as a prop to your client component
-  return <OnboardingClient gymId={gymId} />;
+  // Pass it down to your client component
+  return <OnboardingClient gymId={gymID} />;
 }

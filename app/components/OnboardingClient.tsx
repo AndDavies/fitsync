@@ -9,7 +9,7 @@ import { supabase } from "@/utils/supabase/client";
 import LoadingSpinner from "@/app/components/LoadingSpinner";
 
 interface OnboardingClientProps {
-    gymId: string | null; // <-- Accept null values
+    gymId: string; // or `string | null`, if you want to allow null
   }
 
 export default function OnboardingClient({ gymId }: OnboardingClientProps) {
