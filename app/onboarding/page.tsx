@@ -1,5 +1,8 @@
 "use client";
 
+// Force dynamic rendering so Next.js does not attempt to pre-render useSearchParams
+export const dynamic = "force-dynamic";
+
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
