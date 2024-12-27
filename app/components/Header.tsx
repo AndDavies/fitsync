@@ -57,6 +57,7 @@ const Header: React.FC = () => {
       await supabase.auth.signOut();
       await refreshUserData();
       router.push("/login");
+      
     } catch (error) {
       console.error("Error logging out:", error);
     }

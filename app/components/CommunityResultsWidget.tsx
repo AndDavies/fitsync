@@ -38,24 +38,49 @@ export default function CommunityResultsWidget() {
     fetchResults();
   }, []);
 
-  // Helper function to format the `result` field based on `scoring_type`
+  // Updated helper function to format the `result` field based on `scoring_type`,
+  // including a new case for "Load"
   function formatResult(scoringType: string, resultArr: any[]): string {
     if (!resultArr || resultArr.length === 0) return "N/A";
-    const resultObj = resultArr[0];
 
     switch (scoringType) {
-      case "Rounds + Reps":
+      case "Rounds + Reps": {
         // e.g. { "reps": "2", "rounds": "20" }
-        return `${resultObj.rounds || 0} rounds + ${resultObj.reps || 0} reps`;
-      case "Time":
+        const obj = resultArr[0];
+        return `${obj.rounds || 0} rounds + ${obj.reps || 0} reps`;
+      }
+
+      case "Time": {
         // e.g. { "minutes": "33", "seconds": "33" }
-        const m = resultObj.minutes || "0";
-        const s = resultObj.seconds || "00";
+        const obj = resultArr[0];
+        const m = obj.minutes || "0";
+        const s = obj.seconds || "00";
         return `${m}:${s} (Time)`;
-      // Handle any other scoring types if you have them
+      }
+
+      case "Load": {
+        // e.g. [{ "weight": 225, "unit": "lbs" }, {...}, ...]
+        if (resultArr.length === 1) {
+          // Single set
+          const single = resultArr[0];
+          const w = single.weight || 0;
+          const u = single.unit || "";
+          return `${w} ${u}`;
+        } else {
+          // Multiple sets
+          return resultArr
+            .map((setObj, i) => {
+              const w = setObj.weight || 0;
+              const u = setObj.unit || "";
+              return `Set ${i + 1}: ${w} ${u}`;
+            })
+            .join(" | ");
+        }
+      }
+
       default:
-        // Fallback: maybe just JSON stringify the result
-        return JSON.stringify(resultObj);
+        // Fallback: JSON stringify the *first* object, or entire array
+        return JSON.stringify(resultArr[0]);
     }
   }
 
@@ -87,7 +112,9 @@ export default function CommunityResultsWidget() {
                 <span className="text-sm text-pink-400 font-medium">
                   {displayName}
                 </span>
-                <span className="text-sm text-slate-100">{formattedScore}</span>
+                <span className="text-sm text-slate-100">
+                  {formattedScore}
+                </span>
                 <span className="text-xs text-gray-400 mt-1">
                   Logged on: {new Date(resItem.date_logged).toLocaleString()}
                 </span>
