@@ -37,7 +37,7 @@ const SideDrawer: React.FC<SideDrawerProps> = ({ isOpen, onClose, title, childre
             &times;
           </button>
         </div>
-        <div className="flex-grow overflow-auto">
+        <div className="flex-grow overflow-auto overflow-y-hidden">
           {children}
         </div>
       </div>

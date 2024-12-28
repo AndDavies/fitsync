@@ -198,64 +198,85 @@ export default function ClassSchedulePage() {
     <div className="bg-gray-900 min-h-screen flex flex-col">
       <Header />
       <main className="flex-grow flex flex-col space-y-8 p-4 sm:p-6 lg:p-8">
-        {/* Week Selector and Class Type Widget */}
-        <div className="flex flex-wrap lg:flex-nowrap justify-between items-start gap-6">
-          <WeekSelector
-            weekStartDate={weekStartDate}
-            onPreviousWeek={goToPreviousWeek}
-            onNextWeek={goToNextWeek}
-            onToday={() => setWeekStartDate(new Date())}
-          />
-          <div className="bg-gray-800 text-gray-200 p-4 rounded-xl shadow border border-gray-700 flex-grow lg:flex-grow-0 lg:w-1/2">
-            <h3 className="text-sm font-semibold border-b border-gray-700 pb-2">Class Types</h3>
-            <ul className="flex flex-wrap gap-2 mt-2">
-              {classTypes.map((ct) => (
-                <li
-                  key={ct.id}
-                  onClick={() =>
-                    canManageUsers && setSelectedClassType(selectedClassType?.id === ct.id ? null : ct)
-                  }
-                  className={`cursor-pointer px-3 py-1 rounded-full border-2 transition duration-300 ease-in-out text-sm font-medium ${
-                    selectedClassType?.id === ct.id
-                      ? "text-white bg-pink-600 border-pink-600"
-                      : "text-gray-200 border-gray-600 hover:border-pink-500 hover:text-pink-300"
-                  }`}
-                  style={{
-                    borderColor: selectedClassType?.id === ct.id ? ct.color : undefined,
-                    backgroundColor: selectedClassType?.id === ct.id ? ct.color : undefined,
-                  }}
-                >
-                  {ct.class_name}
-                </li>
-              ))}
-              {canManageUsers && (
-                <li
-                  className="cursor-pointer text-pink-400 hover:text-pink-300 transition text-sm font-medium"
-                  onClick={() => setIsClassTypeModalOpen(true)}
-                >
-                  + new type
-                </li>
-              )}
-            </ul>
-          </div>
-          {selectedClassType && canManageUsers && (
-            <div className="w-full lg:w-1/4 flex items-center justify-center">
-              <button
-                onClick={() => setIsDrawerOpen(true)}
-                className="px-4 py-2 bg-pink-600 text-white rounded-full hover:bg-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-500 font-medium"
-              >
-                Schedule Classes
-              </button>
-            </div>
-          )}
-        </div>
-        {/* Calendar Display */}
-        <div className="flex-grow bg-gray-800 rounded-xl shadow p-4 border border-gray-700">
-          <GymGuard>
-            <ClassCalendar schedules={schedules} weekDates={weekDates} onClassClick={handleClassClick} />
-          </GymGuard>
-        </div>
-      </main>
+  {/* Top row: Week Selector, Class Types, and (optionally) Schedule Button */}
+  <div className="flex flex-wrap lg:flex-nowrap items-start gap-6">
+    {/* WEEK SELECTOR: flex-initial so it only grows to content size */}
+    <div className="flex-initial bg-gray-900 rounded-xl shadow">
+      <WeekSelector
+        weekStartDate={weekStartDate}
+        onPreviousWeek={goToPreviousWeek}
+        onNextWeek={goToNextWeek}
+        onToday={() => setWeekStartDate(new Date())}
+      />
+    </div>
+
+    {/* CLASS TYPES: flex-1 so it fills remaining space */}
+    <div className="flex-1 bg-gray-800 text-gray-200 p-4 h-32 rounded-xl shadow border border-gray-700">
+      <h3 className="text-sm font-semibold border-b border-gray-700 pb-2">
+        Class Types
+      </h3>
+      <ul className="flex flex-wrap gap-2 mt-2">
+        {classTypes.map((ct) => (
+          <li
+            key={ct.id}
+            onClick={() =>
+              canManageUsers &&
+              setSelectedClassType(
+                selectedClassType?.id === ct.id ? null : ct
+              )
+            }
+            className={`cursor-pointer px-3 py-1 rounded-full border-2 transition duration-300 ease-in-out text-sm font-medium ${
+              selectedClassType?.id === ct.id
+                ? "text-white bg-pink-600 border-pink-600"
+                : "text-gray-200 border-gray-600 hover:border-pink-500 hover:text-pink-300"
+            }`}
+            style={{
+              borderColor:
+                selectedClassType?.id === ct.id ? ct.color : undefined,
+              backgroundColor:
+                selectedClassType?.id === ct.id ? ct.color : undefined,
+            }}
+          >
+            {ct.class_name}
+          </li>
+        ))}
+        {canManageUsers && (
+          <li
+            className="cursor-pointer text-pink-400 hover:text-pink-300 transition text-sm font-medium"
+            onClick={() => setIsClassTypeModalOpen(true)}
+          >
+            + new type
+          </li>
+        )}
+      </ul>
+    </div>
+
+    {/* SCHEDULE CLASSES BUTTON: also flex-initial so it doesn't stretch */}
+    {selectedClassType && canManageUsers && (
+      <div className="flex-initial flex items-center justify-center">
+        <button
+          onClick={() => setIsDrawerOpen(true)}
+          className="px-4 py-2 bg-pink-600 text-white rounded-full hover:bg-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-500 font-medium"
+        >
+          Schedule Classes
+        </button>
+      </div>
+    )}
+  </div>
+
+  {/* CALENDAR DISPLAY */}
+  <div className="flex-grow bg-gray-800 rounded-xl shadow p-4 border border-gray-700">
+    <GymGuard>
+      <ClassCalendar
+        schedules={schedules}
+        weekDates={weekDates}
+        onClassClick={handleClassClick}
+      />
+    </GymGuard>
+  </div>
+</main>
+
+
       <footer className="bg-gray-800 text-center py-4 shadow-inner text-sm text-gray-400 border-t border-gray-700">
         &copy; 2024 FitSync. All rights reserved.
       </footer>

@@ -7,7 +7,7 @@ const WeekSelector: React.FC<{
   onNextWeek: () => void;
   onToday: () => void;
 }> = ({ weekStartDate, onPreviousWeek, onNextWeek, onToday }) => (
-  <div className="week-selection-widget bg-gray-800 border border-gray-700 rounded-xl shadow p-4 flex flex-col items-center justify-center w-1/4 h-32 space-y-2">
+  <div className="week-selection-widget bg-gray-800 border border-gray-700 rounded-xl shadow p-4 flex flex-col items-center justify-center h-32 space-y-2">
     <div className="flex items-center justify-between w-full px-4">
       <button
         onClick={onPreviousWeek}

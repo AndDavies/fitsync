@@ -231,7 +231,7 @@ const AddClassesDrawer: React.FC<AddClassesDrawerProps> = ({
               class_name: classType.class_name,
               start_time: startDateTime,
               end_time: endDateTime,
-              maxParticipants,
+              max_participants: maxParticipants,
               class_type_id: classType.id,
             });
           }
@@ -312,15 +312,17 @@ const AddClassesDrawer: React.FC<AddClassesDrawerProps> = ({
       // Single vs. Recurring
       if (occurrenceType === "single") {
         return (
-          <div className="space-y-3">
+          <div className="space-y-4">
             <h3 className="text-md font-semibold text-pink-400">
               Step 3: Date & Time (Single)
             </h3>
             <div>
-              <label className="block mb-1 text-sm font-medium text-gray-300">Date</label>
+              <label className="block mb-1 text-sm font-medium text-gray-300">
+                Date
+              </label>
               <input
                 type="date"
-                className="w-24 p-2 border border-gray-600 rounded bg-gray-800 text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+                className="w-full max-w-xs p-2 border border-gray-600 rounded bg-gray-800 text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
                 value={singleDate}
                 onChange={(e) => setSingleDate(e.target.value)}
               />
@@ -342,7 +344,8 @@ const AddClassesDrawer: React.FC<AddClassesDrawerProps> = ({
                     </option>
                   ))}
                 </select>
-              </div><br />
+              </div>
+              {/* Removed the <br /> that broke the grid layout */}
               <div>
                 <label className="block mb-1 text-sm font-medium text-gray-300">
                   Duration (minutes)
@@ -368,7 +371,7 @@ const AddClassesDrawer: React.FC<AddClassesDrawerProps> = ({
               <input
                 type="text"
                 readOnly
-                className="w-56 p-2 border border-gray-600 rounded bg-gray-700 text-gray-300 text-sm cursor-not-allowed"
+                className="w-full max-w-xs p-2 border border-gray-600 rounded bg-gray-700 text-gray-300 text-sm cursor-not-allowed"
                 value={singleEndTime}
               />
             </div>
@@ -376,21 +379,32 @@ const AddClassesDrawer: React.FC<AddClassesDrawerProps> = ({
         );
       } else {
         // recurring
-        const days = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
+        const days = [
+          "sunday",
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday",
+        ];
         return (
-          <div className="space-y-3">
+          <div className="space-y-4">
             <h3 className="text-md font-semibold text-pink-400">
               Step 3: Recurring Details
             </h3>
             <div>
-              <label className="block mb-1 text-sm font-medium text-gray-300">Start Date</label>
+              <label className="block mb-1 text-sm font-medium text-gray-300">
+                Start Date
+              </label>
               <input
                 type="date"
-                className="w-full p-2 border border-gray-600 rounded bg-gray-800 text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+                className="w-full max-w-xs p-2 border border-gray-600 rounded bg-gray-800 text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
               />
             </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block mb-1 text-sm font-medium text-gray-300">
@@ -425,6 +439,7 @@ const AddClassesDrawer: React.FC<AddClassesDrawerProps> = ({
                 </select>
               </div>
             </div>
+
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-300">
                 End Time (auto-calculated)
@@ -432,16 +447,16 @@ const AddClassesDrawer: React.FC<AddClassesDrawerProps> = ({
               <input
                 type="text"
                 readOnly
-                className="w-full p-2 border border-gray-600 rounded bg-gray-700 text-gray-300 text-sm cursor-not-allowed"
+                className="w-full max-w-xs p-2 border border-gray-600 rounded bg-gray-700 text-gray-300 text-sm cursor-not-allowed"
                 value={recurringEndTime}
               />
             </div>
 
-            <div>
+            <div className="border-2">
               <label className="block mb-1 text-sm font-medium text-gray-300">
                 Days of the Week
               </label>
-              <div className="grid grid-cols-4 gap-2 text-sm text-gray-200">
+              <div className="grid grid-cols-2 gap-2 text-sm text-gray-200">
                 {days.map((day) => (
                   <label key={day} className="flex items-center space-x-1">
                     <input
@@ -455,19 +470,21 @@ const AddClassesDrawer: React.FC<AddClassesDrawerProps> = ({
                 ))}
               </div>
             </div>
+
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-300">
                 Number of Weeks
               </label>
               <input
                 type="number"
-                className="w-full p-2 border border-gray-600 rounded bg-gray-800 text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+                className="w-full max-w-xs p-2 border border-gray-600 rounded bg-gray-800 text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
                 value={weeksCount}
                 onChange={(e) => setWeeksCount(Number(e.target.value))}
                 min={1}
               />
               <p className="text-xs text-gray-400 mt-1">
-                E.g., picking Monday & Wednesday for 4 weeks = 8 total classes.
+                E.g., picking Monday &amp; Wednesday for 4 weeks = 8 total
+                classes.
               </p>
             </div>
           </div>
@@ -481,7 +498,7 @@ const AddClassesDrawer: React.FC<AddClassesDrawerProps> = ({
           </h3>
           <input
             type="number"
-            className="w-full p-2 border border-gray-600 rounded bg-gray-800 text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+            className="w-full max-w-xs p-2 border border-gray-600 rounded bg-gray-800 text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
             value={maxParticipants}
             onChange={(e) => setMaxParticipants(Number(e.target.value))}
             min={1}
@@ -495,7 +512,7 @@ const AddClassesDrawer: React.FC<AddClassesDrawerProps> = ({
       return (
         <div className="space-y-3">
           <h3 className="text-md font-semibold text-pink-400">
-            Step 5: Review & Confirm
+            Step 5: Review &amp; Confirm
           </h3>
           {renderPreview()}
           <p className="text-sm text-gray-400">
