@@ -1,4 +1,3 @@
-// app/signup/_components/SignUpForm.tsx
 "use client";
 
 import { useState } from "react";
@@ -38,7 +37,16 @@ export default function SignUpForm() {
     });
 
     if (authError) {
-      setErrorMessage(authError.message);
+      // Provide a friendlier message if it's a duplicate key / email
+      if (
+        authError.message.toLowerCase().includes("duplicate key") ||
+        authError.message.toLowerCase().includes("already registered") ||
+        authError.message.toLowerCase().includes("already exists")
+      ) {
+        setErrorMessage("An account with that email already exists. Please try logging in.");
+      } else {
+        setErrorMessage(authError.message);
+      }
       setIsSigningUp(false);
       return;
     }
@@ -57,7 +65,15 @@ export default function SignUpForm() {
         });
 
       if (userProfileError) {
-        setErrorMessage(userProfileError.message);
+        // Again, check for friendlier messaging if needed
+        if (
+          userProfileError.message.toLowerCase().includes("duplicate key") ||
+          userProfileError.message.toLowerCase().includes("already exists")
+        ) {
+          setErrorMessage("An account with that email already exists. Please try logging in.");
+        } else {
+          setErrorMessage(userProfileError.message);
+        }
         setIsSigningUp(false);
         return;
       }

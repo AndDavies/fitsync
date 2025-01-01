@@ -93,6 +93,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     };
     initialize();
+    console.log("AuthContext updated userData:", userData);
   }, [isAuthLoading, session]);
 
   return (

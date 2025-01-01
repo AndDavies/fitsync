@@ -53,13 +53,12 @@ const Header: React.FC = () => {
   const pathname = usePathname();
 
   const handleSignOut = async () => {
-    try {
-      await supabase.auth.signOut();
-      await refreshUserData(); 
-      router.push("/login");
-    } catch (error) {
-      console.error("Error logging out:", error);
-    }
+    console.log("=== Attempting Sign Out ===");
+    await supabase.auth.signOut();
+    console.log("=== signOut complete ===");
+    await refreshUserData(); 
+    console.log("=== refreshUserData done, userData:", userData);
+    router.push("/login");
   };
 
   const canManageUsers =

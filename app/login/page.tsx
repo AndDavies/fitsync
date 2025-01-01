@@ -1,27 +1,21 @@
-// app/login/page.tsx
+"use client";
 
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
-
-// This is your client form
+import { useRouter } from "next/navigation";
+import { useSessionContext } from "@supabase/auth-helpers-react";
+import { useEffect } from "react";
 import LoginForm from "@/app/components/LoginForm";
 
-export default async function LoginPage() {
-  const supabase = createServerComponentClient({ cookies });
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+export default function LoginPage() {
+  const router = useRouter();
+  const { session, isLoading } = useSessionContext();
 
-  // If there is a session, redirect server-side
-  if (session) {
-    redirect("/dashboard");
-  }
+  // If already logged in, redirect to dashboard
+  useEffect(() => {
+    if (!isLoading && session) {
+      router.push("/dashboard");
+    }
+  }, [session, isLoading, router]);
 
-  // If no session, show the login form
-  return (
-    <div className="flex items-center justify-center h-screen bg-gray-100">
-      <LoginForm />
-    </div>
-  );
+  // Show the login form if no session
+  return <LoginForm />;
 }
