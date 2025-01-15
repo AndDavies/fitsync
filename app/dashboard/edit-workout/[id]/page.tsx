@@ -1,9 +1,8 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import Header from "../../components/Header";
-import LeftNav from "../../components/LeftNav";
-import WorkoutEditor from "../../components/WorkoutEditor";
+import Header from "@/app/components/Header";
+import WorkoutEditor from "@/app/components/WorkoutEditor";
 
 export default function EditWorkoutPage() {
   const params = useParams();
@@ -14,7 +13,7 @@ export default function EditWorkoutPage() {
       <div className="min-h-screen flex flex-col bg-gray-900 text-gray-100">
         <Header />
         <div className="flex flex-grow">
-          <LeftNav />
+          
           <main className="flex flex-grow p-6">
             <div className="flex-grow">
               <p className="text-gray-300">No workout ID provided. Please select a workout to edit.</p>
@@ -32,7 +31,7 @@ export default function EditWorkoutPage() {
     <div className="min-h-screen flex flex-col bg-gray-900 text-gray-100">
       <Header />
       <div className="flex flex-grow">
-        <LeftNav />
+      
         <main className="flex flex-grow p-6">
           <div className="w-full max-w-3xl mx-auto">
             <WorkoutEditor workoutId={workoutId} />

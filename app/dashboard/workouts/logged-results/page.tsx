@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import Header from "../../components/Header";
-import Footer from "../../components/Footer"; // Importing the universal Footer
+import Header from "@/app/components/Header";
+import Footer from "@/app/components/Footer";
 import LoggedResultsPage from "@/app/components/LoggedResultsPage";
 
 export default function Dashboard() {
