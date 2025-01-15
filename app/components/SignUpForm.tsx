@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/utils/supabase/client"; // <--- new import
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Mail, Lock } from "lucide-react";
 
 export default function SignUpForm() {
   const router = useRouter();
-  const supabaseClient = createClientComponentClient();
+  const supabase = createClient(); // instantiate your new supabase browser client
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,17 +31,18 @@ export default function SignUpForm() {
     }
 
     // 1) Attempt to sign up the user via Supabase
-    const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+    const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
     });
 
     if (authError) {
-      // Provide a friendlier message if it's a duplicate key / email
+      // Provide friendlier message if it's a duplicate key / email
+      const msg = authError.message.toLowerCase();
       if (
-        authError.message.toLowerCase().includes("duplicate key") ||
-        authError.message.toLowerCase().includes("already registered") ||
-        authError.message.toLowerCase().includes("already exists")
+        msg.includes("duplicate key") ||
+        msg.includes("already registered") ||
+        msg.includes("already exists")
       ) {
         setErrorMessage("An account with that email already exists. Please try logging in.");
       } else {
@@ -54,7 +55,7 @@ export default function SignUpForm() {
     // 2) If user created, insert into user_profiles
     if (authData.user) {
       const userId = authData.user.id;
-      const { error: userProfileError } = await supabaseClient
+      const { error: userProfileError } = await supabase
         .from("user_profiles")
         .insert({
           user_id: userId,
@@ -65,7 +66,6 @@ export default function SignUpForm() {
         });
 
       if (userProfileError) {
-        // Again, check for friendlier messaging if needed
         if (
           userProfileError.message.toLowerCase().includes("duplicate key") ||
           userProfileError.message.toLowerCase().includes("already exists")
@@ -79,7 +79,7 @@ export default function SignUpForm() {
       }
 
       // 3) Create a default personal track
-      const { error: trackError } = await supabaseClient
+      const { error: trackError } = await supabase
         .from("tracks")
         .insert({
           user_id: userId,
@@ -117,7 +117,6 @@ export default function SignUpForm() {
 
         {isSigningUp ? (
           <div className="flex flex-col items-center space-y-2">
-            {/* Or your existing LoadingSpinner component */}
             <p className="text-gray-700">Creating your account...</p>
           </div>
         ) : (

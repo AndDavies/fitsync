@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useAuth } from "../context/AuthContext";
 
-// Shape for the JSON returned by /api/workouts/recent
+// The shape your updated route returns
 type RecentWorkout = {
   date_performed: string;
   user_display_name: string | null;
@@ -12,24 +11,19 @@ type RecentWorkout = {
   result?: string | Record<string, any> | Record<string, any>[];
 };
 
-const RecentWorkouts: React.FC = () => {
-  const { userData } = useAuth();
+export default function RecentWorkouts() {
   const [workouts, setWorkouts] = useState<RecentWorkout[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchWorkouts = async () => {
+    async function fetchWorkouts() {
       try {
         setLoading(true);
         setError(null);
 
-        let url = "/api/workouts/recent";
-        if (userData && userData.current_gym_id) {
-          url += `?gym_id=${userData.current_gym_id}`;
-        }
-
-        const res = await fetch(url);
+        // Call our updated route
+        const res = await fetch("/api/workouts/recent");
         if (!res.ok) {
           const errData = await res.json();
           throw new Error(errData.error || "Failed to fetch recent workouts");
@@ -42,10 +36,10 @@ const RecentWorkouts: React.FC = () => {
       } finally {
         setLoading(false);
       }
-    };
+    }
 
     fetchWorkouts();
-  }, [userData]);
+  }, []);
 
   if (loading) {
     return <p className="text-sm text-gray-400">Loading workouts...</p>;
@@ -65,11 +59,7 @@ const RecentWorkouts: React.FC = () => {
 
       <ul className="space-y-3">
         {workouts.map((wo, idx) => {
-          // Only parse & format if scoring_type is "Load" (case-insensitive).
-          const resultString = formatWorkoutResult(
-            wo.scoring_type,
-            wo.result
-          );
+          const resultString = formatWorkoutResult(wo.scoring_type, wo.result);
 
           return (
             <li
@@ -79,14 +69,9 @@ const RecentWorkouts: React.FC = () => {
               <p className="text-pink-400 font-semibold text-sm">
                 {wo.user_display_name || "An Athlete"}
               </p>
-
-              {/* Show the formatted “Load” sets if any */}
               {resultString && (
-                <p className="text-pink-300 text-sm">
-                  {resultString}
-                </p>
+                <p className="text-pink-300 text-sm">{resultString}</p>
               )}
-
               <p className="text-xs text-gray-400 mt-1">
                 Logged on: {new Date(wo.date_performed).toLocaleString()}
               </p>
@@ -96,27 +81,24 @@ const RecentWorkouts: React.FC = () => {
       </ul>
     </div>
   );
-};
+}
 
 /**
- * For a workout with "Load" scoring_type, parse the JSON array (or object/string) 
- * and display each set's "weight unit" (like "225 lbs").
- * Otherwise, return null or adapt for other scoring types.
+ * If a workout has "Load" scoring_type, parse the JSON 
+ * and display each set's weight & unit. Otherwise returns null
  */
 function formatWorkoutResult(
   scoringType?: string,
   rawResult?: string | Record<string, any> | Record<string, any>[]
 ): string | null {
   if (!scoringType || !rawResult) return null;
-
-  // Check case-insensitively
   if (scoringType.toLowerCase() !== "load") {
     return null;
   }
 
   let parsed: Array<Record<string, any>> = [];
 
-  // 1) If rawResult is a string, parse JSON
+  // If rawResult is a JSON string, parse it
   if (typeof rawResult === "string") {
     try {
       parsed = JSON.parse(rawResult);
@@ -124,18 +106,16 @@ function formatWorkoutResult(
         parsed = [parsed];
       }
     } catch {
-      // Not valid JSON
       return rawResult;
     }
   } else if (Array.isArray(rawResult)) {
     parsed = rawResult;
-  } else if (typeof rawResult === "object" && rawResult !== null) {
+  } else if (typeof rawResult === "object") {
     parsed = [rawResult];
   }
 
   if (parsed.length === 0) return null;
 
-  // If multiple sets
   if (parsed.length > 1) {
     return parsed
       .map((setObj, i) => {
@@ -145,12 +125,9 @@ function formatWorkoutResult(
       })
       .join(" | ");
   } else {
-    // Single set
     const first = parsed[0];
     const w = first.weight || 0;
     const u = first.unit || "";
     return `${w} ${u}`;
   }
 }
-
-export default RecentWorkouts;

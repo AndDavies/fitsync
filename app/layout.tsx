@@ -1,8 +1,6 @@
 // layout.tsx (No major changes, but an idea)
 import "./globals.css";
 import Providers from "./providers";          
-import SupabaseProvider from "./supabase-provider";  
-import { AuthProvider } from "./context/AuthContext";
 
 export const metadata = {
   title: 'FitSync',
@@ -25,11 +23,11 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <Providers>
-          <SupabaseProvider>
-            <AuthProvider>
+          
+            
               {children}
-            </AuthProvider>
-          </SupabaseProvider>
+            
+          
         </Providers>
       </body>
     </html>

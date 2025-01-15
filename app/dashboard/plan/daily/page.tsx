@@ -2,9 +2,9 @@
 "use client";
 
 import React, { Suspense, ReactNode } from 'react';
-import Header from "../../components/Header";
-import LeftNav from "../../components/LeftNav";
-import DailyView from "../../components/DailyView";
+import Header from "../../../components/Header";
+import LeftNav from "../../../components/LeftNav";
+import DailyView from "../../../components/DailyView";
 
 type ErrorBoundaryProps = {
   children: ReactNode;

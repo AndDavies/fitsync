@@ -1,24 +1,18 @@
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { type NextRequest } from 'next/server'
+import { updateSession } from './../utils/supabase/middleware'
 
-export async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
-  const supabase = createMiddlewareClient({ req, res });
+export async function middleware(request: NextRequest) {
+  return await updateSession(request)
+}
 
-  const { data: { session } } = await supabase.auth.getSession();
+export const config = {
+  matcher: [
+    // Protect everything under /dashboard
+    '/dashboard/:path*',
 
-  const protectedRoutes = ['/dashboard', '/onboarding'];
+    // Also protect all /api routes
+    '/api/:path*',
 
-  // Check if the request is for a protected route
-  if (protectedRoutes.some((route) => req.nextUrl.pathname.startsWith(route))) {
-    // Redirect to login if session is not valid
-    if (!session) {
-      const loginUrl = new URL('/login', req.url);
-      return NextResponse.redirect(loginUrl);
-    }
-  }
-
-  // Sync the session from the request's cookies to the response's cookies
-  return res;
+    // Or any other custom paths
+  ],
 }

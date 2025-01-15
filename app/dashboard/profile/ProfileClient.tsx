@@ -1,18 +1,28 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useAuth } from "../context/AuthContext";
 import { useRouter } from "next/navigation";
-import Header from "../components/Header";
-import SideDrawer from "../components/SideDrawer";
+import Header from "../../components/Header";
+import SideDrawer from "../../components/SideDrawer";
 
 type Gym = {
   id: string;
   name: string;
 };
 
-export default function ProfilePage() {
-  const { session, isLoading, userData } = useAuth();
+type UserProfile = {
+  user_id: string;
+  email: string | null;          // if you want to display user’s email
+  onboarding_completed: boolean; // from DB
+  current_gym_id?: string | null;
+  // Add any other fields if relevant
+};
+
+interface ProfileClientProps {
+  userProfile: UserProfile;
+}
+
+export default function ProfileClient({ userProfile }: ProfileClientProps) {
   const router = useRouter();
 
   // Profile fields
@@ -41,68 +51,64 @@ export default function ProfilePage() {
   // If the user already has an invitation in flight, we’ll hide certain UI
   const [invitationPending, setInvitationPending] = useState<boolean>(false);
 
+  // If the userProfile says not onboarded, we can redirect or handle
   useEffect(() => {
-    if (!isLoading) {
-      if (!session) {
-        router.push("/login");
-      } else if (userData && !userData.onboarding_completed) {
-        router.push("/onboarding");
-      }
+    if (!userProfile.onboarding_completed) {
+      router.push("/onboarding");
     }
-  }, [isLoading, session, userData, router]);
+  }, [userProfile, router]);
 
   // Fetch profile details
   const fetchProfile = useCallback(async () => {
-    if (!isLoading && userData?.onboarding_completed) {
-      setLoadingProfile(true);
-      setError(null);
-      try {
-        const res = await fetch("/api/user/profile", {
-          credentials: "include",
-        });
-        if (!res.ok) {
-          const errData = await res.json();
-          throw new Error(errData.error || "Failed to load profile");
-        }
-        const data = await res.json();
+    setLoadingProfile(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/user/profile", {
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || "Failed to load profile");
+      }
+      const data = await res.json();
 
-        setDisplayName(data.profile.display_name || "");
-        setBio(data.profile.bio || "");
-        setPhone(data.profile.phone_number || "");
-        setEmergencyContactName(data.profile.emergency_contact_name || "");
-        setEmergencyContactPhone(data.profile.emergency_contact || "");
+      // Populate fields
+      setDisplayName(data.profile.display_name || "");
+      setBio(data.profile.bio || "");
+      setPhone(data.profile.phone_number || "");
+      setEmergencyContactName(data.profile.emergency_contact_name || "");
+      setEmergencyContactPhone(data.profile.emergency_contact || "");
 
-        // If user is already associated with a gym, fetch gym name
-        if (userData.current_gym_id) {
-          const gymRes = await fetch(`/api/gyms/${userData.current_gym_id}`);
-          if (gymRes.ok) {
-            const gymData = await gymRes.json();
-            setCurrentGymName(gymData.name);
-          } else {
-            setCurrentGymName(null);
-          }
+      // If user is already associated with a gym, fetch gym name
+      if (userProfile.current_gym_id) {
+        const gymRes = await fetch(`/api/gyms/${userProfile.current_gym_id}`);
+        if (gymRes.ok) {
+          const gymData = await gymRes.json();
+          setCurrentGymName(gymData.name);
         } else {
           setCurrentGymName(null);
         }
-
-        // Check if an invitation is pending
-        const invRes = await fetch("/api/invitations/pending", {
-          credentials: "include",
-        });
-        if (invRes.ok) {
-          const invData = await invRes.json();
-          // If the API says there's an open/pending invitation, set flag
-          if (invData.invitationPending) {
-            setInvitationPending(true);
-          }
-        }
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoadingProfile(false);
+      } else {
+        setCurrentGymName(null);
       }
+
+      // Check if an invitation is pending
+      const invRes = await fetch("/api/invitations/pending", {
+        credentials: "include",
+      });
+      if (invRes.ok) {
+        const invData = await invRes.json();
+        // If the API says there's an open/pending invitation, set flag
+        if (invData.invitationPending) {
+          setInvitationPending(true);
+        }
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoadingProfile(false);
     }
-  }, [isLoading, userData]);
+  }, [userProfile.current_gym_id]);
 
   useEffect(() => {
     fetchProfile();
@@ -200,7 +206,8 @@ export default function ProfilePage() {
     }
   };
 
-  if ((isLoading || loadingProfile) && !userData) {
+  // If we are loading the profile & there's no userProfile info, show spinner
+  if (loadingProfile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900 text-gray-100">
         <p>Loading profile...</p>
@@ -225,7 +232,7 @@ export default function ProfilePage() {
               </label>
               <input
                 type="text"
-                value={userData?.email || ""}
+                value={userProfile.email || ""}
                 disabled
                 className="w-full p-2 border border-gray-600 rounded bg-gray-700 text-gray-300 cursor-not-allowed"
               />
@@ -351,7 +358,6 @@ export default function ProfilePage() {
                   </span>
                 </p>
 
-                {/* If user not pending a new invitation, allow changing gym */}
                 {!invitationPending && (
                   <button
                     onClick={() => setShowGymDrawer(true)}
@@ -362,7 +368,6 @@ export default function ProfilePage() {
                 )}
               </div>
             ) : (
-              // If user has NO gym yet, show the button
               !invitationPending && (
                 <button
                   onClick={() => setShowGymDrawer(true)}
@@ -390,13 +395,11 @@ export default function ProfilePage() {
           {selectedGym || invitationPending ? "Change Gym" : "Set Gym Association"}
         </h3>
 
-        {/* If invitation pending, show a short message instead of a new form */}
         {invitationPending ? (
           <p className="text-sm text-gray-500 mt-4">
             Your request has been submitted. Please wait for the gym to approve.
           </p>
         ) : selectedGym ? (
-          // Selected a gym → show code input
           <div className="space-y-4">
             <p className="text-gray-700">
               Selected Gym:{" "}
@@ -420,7 +423,6 @@ export default function ProfilePage() {
             </button>
           </div>
         ) : (
-          // No gym selected yet → show search
           <>
             <label className="block text-sm font-semibold mb-1 text-gray-700">
               Search for Gym
@@ -439,7 +441,10 @@ export default function ProfilePage() {
               {gymResults.map((g) => (
                 <li key={g.id}>
                   <button
-                    onClick={() => handleSelectGym(g)}
+                    onClick={() => {
+                      setSelectedGym(g);
+                      setMemberCode("");
+                    }}
                     className="block w-full text-left p-2 bg-gray-100 hover:bg-gray-200 rounded"
                   >
                     {g.name}

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { supabase } from "@/utils/supabase/client";
+import { createClient } from "@/utils/supabase/client"; // <--- updated import
 import { format, parseISO, isValid, addWeeks, addMinutes } from "date-fns";
 
 interface ClassType {
@@ -18,7 +18,7 @@ interface AddClassesDrawerProps {
   refreshSchedules: () => void;
 }
 
-/** 
+/**
  * Common start times in 15-min increments from 5:00 to 22:00 (10 PM).
  */
 const possibleStartTimes = [
@@ -42,15 +42,18 @@ const possibleStartTimes = [
   "22:00",
 ];
 
-/** Durations in minutes to offer, e.g. 45, 60, 90, 120. */
+/** Durations in minutes to offer, e.g., 45, 60, 90, 120. */
 const possibleDurations = [45, 50, 60, 90, 120];
 
-const AddClassesDrawer: React.FC<AddClassesDrawerProps> = ({
+export default function AddClassesDrawer({
   classType,
   currentGymId,
   onClose,
   refreshSchedules,
-}) => {
+}: AddClassesDrawerProps) {
+  // We now create our Supabase client instance here
+  const supabase = createClient();
+
   // Wizard steps
   const [currentStep, setCurrentStep] = useState<number>(1);
   const totalSteps = 5;
@@ -99,8 +102,8 @@ const AddClassesDrawer: React.FC<AddClassesDrawerProps> = ({
     setRecurringEndTime(newEnd);
   }, [recurringStartTime, recurringDuration]);
 
-  /** 
-   * Helper: parse "HH:mm" + duration (mins) → new "HH:mm" 
+  /**
+   * Helper: parse "HH:mm" + duration (mins) → new "HH:mm"
    */
   function computeEndTime(start: string, durationMins: number): string {
     const [hh, mm] = start.split(":");
@@ -119,11 +122,7 @@ const AddClassesDrawer: React.FC<AddClassesDrawerProps> = ({
   // Basic validation per step
   function validateFieldsForCurrentStep(): boolean {
     setError(null);
-    if (currentStep === 1) {
-      return true;
-    } else if (currentStep === 2) {
-      return true;
-    } else if (currentStep === 3) {
+    if (currentStep === 3) {
       if (occurrenceType === "single") {
         if (!singleDate) {
           setError("Please select a date for the single class.");
@@ -144,15 +143,11 @@ const AddClassesDrawer: React.FC<AddClassesDrawerProps> = ({
           return false;
         }
       }
-      return true;
     } else if (currentStep === 4) {
       if (maxParticipants < 1) {
         setError("Max participants must be at least 1.");
         return false;
       }
-      return true;
-    } else if (currentStep === 5) {
-      return true;
     }
     return true;
   }
@@ -188,7 +183,7 @@ const AddClassesDrawer: React.FC<AddClassesDrawerProps> = ({
           class_name: classType.class_name,
           start_time: startDateTime,
           end_time: endDateTime,
-          max_participants: maxParticipants,
+          maxParticipants,
           class_type_id: classType.id,
         });
       } else {
@@ -231,7 +226,7 @@ const AddClassesDrawer: React.FC<AddClassesDrawerProps> = ({
               class_name: classType.class_name,
               start_time: startDateTime,
               end_time: endDateTime,
-              max_participants: maxParticipants,
+              maxParticipants,
               class_type_id: classType.id,
             });
           }
@@ -309,7 +304,6 @@ const AddClassesDrawer: React.FC<AddClassesDrawerProps> = ({
         </div>
       );
     } else if (currentStep === 3) {
-      // Single vs. Recurring
       if (occurrenceType === "single") {
         return (
           <div className="space-y-4">
@@ -345,7 +339,6 @@ const AddClassesDrawer: React.FC<AddClassesDrawerProps> = ({
                   ))}
                 </select>
               </div>
-              {/* Removed the <br /> that broke the grid layout */}
               <div>
                 <label className="block mb-1 text-sm font-medium text-gray-300">
                   Duration (minutes)
@@ -483,8 +476,7 @@ const AddClassesDrawer: React.FC<AddClassesDrawerProps> = ({
                 min={1}
               />
               <p className="text-xs text-gray-400 mt-1">
-                E.g., picking Monday &amp; Wednesday for 4 weeks = 8 total
-                classes.
+                E.g., picking Monday & Wednesday for 4 weeks = 8 total classes.
               </p>
             </div>
           </div>
@@ -512,7 +504,7 @@ const AddClassesDrawer: React.FC<AddClassesDrawerProps> = ({
       return (
         <div className="space-y-3">
           <h3 className="text-md font-semibold text-pink-400">
-            Step 5: Review &amp; Confirm
+            Step 5: Review & Confirm
           </h3>
           {renderPreview()}
           <p className="text-sm text-gray-400">
@@ -564,7 +556,6 @@ const AddClassesDrawer: React.FC<AddClassesDrawerProps> = ({
     }
   }
 
-  // Step indicator
   const StepIndicator = () => (
     <div className="mb-4">
       <p className="text-sm text-gray-400 font-semibold">
@@ -584,7 +575,6 @@ const AddClassesDrawer: React.FC<AddClassesDrawerProps> = ({
   );
 
   return (
-    // Add classes for full-height, no extra padding
     <div className="w-full h-full bg-gray-900 text-gray-200 flex flex-col overflow-y-auto p-2">
       <StepIndicator />
 
@@ -628,6 +618,4 @@ const AddClassesDrawer: React.FC<AddClassesDrawerProps> = ({
       </div>
     </div>
   );
-};
-
-export default AddClassesDrawer;
+}

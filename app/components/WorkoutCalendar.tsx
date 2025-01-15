@@ -1,18 +1,18 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/utils/supabase/client";
+import React, { useState, useEffect } from "react";
 import { format, startOfWeek, addDays, parseISO, isToday } from "date-fns";
 import Link from "next/link";
-import { useAuth } from "../context/AuthContext";
+import { Skeleton } from "@/components/ui/skeleton"; // ShadCN Skeleton
 import WorkoutDisplay from "./WorkoutDisplay";
 import { ParsedWorkout } from "./types";
 
+/** Types for grouping workouts by day-of-week */
 type Workout = {
   id: string;
   trackName: string;
   name: string;
-  workoutDetails: ParsedWorkout; // Ensured to be ParsedWorkout
+  workoutDetails: ParsedWorkout;
   warmUp?: string;
   coolDown?: string;
   date: string;
@@ -29,11 +29,26 @@ type WeeklyWorkouts = {
 };
 
 type WorkoutCalendarProps = {
+  /** If provided, the calendar starts on this date (yyyy-mm-dd). Otherwise, it starts on today's date. */
   defaultDate?: string;
 };
 
-const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ defaultDate }) => {
-  const { userData, isLoading: authLoading } = useAuth();
+export default function WorkoutCalendar({ defaultDate }: WorkoutCalendarProps) {
+  const startOnMonday = true;
+  const weekStartsOn = startOnMonday ? 1 : 0;
+
+  // Manages the starting date for the calendar’s displayed week.
+  const [weekStartDate, setWeekStartDate] = useState<Date>(
+    defaultDate ? parseISO(defaultDate) : new Date()
+  );
+
+  // Store the 7 days for the current displayed week
+  const [weekDates, setWeekDates] = useState<Date[]>([]);
+
+  // Loading state for ShadCN skeleton
+  const [loading, setLoading] = useState<boolean>(true);
+
+  // The final grouped workouts
   const [workouts, setWorkouts] = useState<WeeklyWorkouts>({
     monday: [],
     tuesday: [],
@@ -44,66 +59,45 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ defaultDate }) => {
     sunday: [],
   });
 
-  const [weekDates, setWeekDates] = useState<Date[]>([]);
-  const startOnMonday = true;
-  const weekStartsOn = startOnMonday ? 1 : 0;
-
-  const [weekStartDate, setWeekStartDate] = useState<Date>(
-    defaultDate ? parseISO(defaultDate) : new Date()
-  );
-
-  // Update weekStartDate whenever defaultDate changes
+  /**
+   * Whenever defaultDate changes from props, reset the weekStartDate.
+   */
   useEffect(() => {
     if (defaultDate) {
       setWeekStartDate(parseISO(defaultDate));
     }
   }, [defaultDate]);
 
-  const fetchWorkoutsWithTracks = useCallback(async () => {
-    if (authLoading || !userData) return;
+  /**
+   * Fetch workouts from /api/workouts/by-week?start=...&end=...,
+   * then group them by day of the week.
+   */
+  async function fetchWorkoutsForWeek() {
+    setLoading(true);
 
+    // Start of the displayed week
     const currentWeekStart = startOfWeek(weekStartDate, { weekStartsOn });
     const startDate = format(currentWeekStart, "yyyy-MM-dd");
     const endDate = format(addDays(currentWeekStart, 6), "yyyy-MM-dd");
 
     try {
-      let tracksData, tracksError;
-
-      if (!userData.current_gym_id) {
-        ({ data: tracksData, error: tracksError } = await supabase
-          .from("tracks")
-          .select("id, name")
-          .eq("user_id", userData.user_id));
-      } else {
-        ({ data: tracksData, error: tracksError } = await supabase
-          .from("tracks")
-          .select("id, name")
-          .eq("gym_id", userData.current_gym_id));
-      }
-
-      if (tracksError) {
-        console.error("Error fetching tracks:", tracksError.message);
+      // Make a request to your new SSR-based endpoint
+      const res = await fetch(
+        `/api/workouts/by-week?start=${startDate}&end=${endDate}`,
+        { credentials: "include" }
+      );
+      if (!res.ok) {
+        // handle error if desired
+        console.error("Failed to fetch workouts by week");
+        setLoading(false);
         return;
       }
 
-      const trackIds = tracksData?.map((track: any) => track.id);
+      const jsonData = await res.json();
+      const fetchedWorkouts = jsonData.workouts || [];
 
-      const { data: workoutData, error: workoutError } = await supabase
-        .from("scheduled_workouts")
-        .select("id, date, name, workout_details, warm_up, cool_down, track_id")
-        .in("track_id", trackIds || [])
-        .gte("date", startDate)
-        .lte("date", endDate)
-        .order("date", { ascending: true });
-
-      if (workoutError) {
-        console.error("Error fetching workouts:", workoutError.message);
-        return;
-      }
-
-      const trackMap = new Map(tracksData?.map((track: any) => [track.id, track.name]));
-
-      const groupedWorkouts: WeeklyWorkouts = {
+      // Build a map for day-of-week -> array of workouts
+      const grouped: WeeklyWorkouts = {
         monday: [],
         tuesday: [],
         wednesday: [],
@@ -113,108 +107,130 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ defaultDate }) => {
         sunday: [],
       };
 
-      workoutData?.forEach((workout) => {
-        const workoutDate = new Date(workout.date);
-        const dayOfWeek = format(workoutDate, "EEEE").toLowerCase() as keyof WeeklyWorkouts;
+      fetchedWorkouts.forEach((wo: any) => {
+        // date property is a string "yyyy-mm-dd"
+        const woDate = parseISO(wo.date); 
+        const dayKey = format(woDate, "EEEE").toLowerCase() as keyof WeeklyWorkouts;
 
+        // Ensure workout_details is properly parsed
         let parsedDetails: ParsedWorkout;
-        if (typeof workout.workout_details === "string") {
-          // If it's a string, parse it
-          parsedDetails = JSON.parse(workout.workout_details);
+        if (typeof wo.workout_details === "string") {
+          parsedDetails = JSON.parse(wo.workout_details);
         } else {
-          // Assume it's already an object
-          parsedDetails = workout.workout_details as ParsedWorkout;
+          parsedDetails = wo.workout_details;
         }
 
-        groupedWorkouts[dayOfWeek].push({
-          id: workout.id,
-          trackName: trackMap.get(workout.track_id) || "Personal Track",
-          name: workout.name,
+        // If you store trackName in the DB, or need additional logic, adapt as needed
+        const trackName = wo.trackName || "No Track"; 
+
+        grouped[dayKey].push({
+          id: wo.id,
+          date: wo.date,
+          trackName,
+          name: wo.name,
           workoutDetails: parsedDetails,
-          warmUp: workout.warm_up || "",
-          coolDown: workout.cool_down || "",
-          date: workout.date,
+          warmUp: wo.warm_up ?? "",
+          coolDown: wo.cool_down ?? "",
         });
       });
 
-      setWorkouts(groupedWorkouts);
-    } catch (error) {
-      console.error("Unexpected error:", error);
+      setWorkouts(grouped);
+    } catch (err) {
+      console.error("Error fetching weekly workouts:", err);
+    } finally {
+      setLoading(false);
     }
-  }, [authLoading, userData, weekStartDate, weekStartsOn]);
+  }
 
+  // On mount or when weekStartDate changes, recalc the 7 days + fetch data
   useEffect(() => {
     const currentWeekStart = startOfWeek(weekStartDate, { weekStartsOn });
+    // Build array of 7 days
     const dates = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
     setWeekDates(dates);
-    fetchWorkoutsWithTracks();
-  }, [weekStartDate, weekStartsOn, fetchWorkoutsWithTracks]);
 
+    // Fetch workouts for that range
+    fetchWorkoutsForWeek();
+  }, [weekStartDate, weekStartsOn]);
+
+  /**
+   * Render
+   */
   return (
     <div className="calendar-grid mt-4 overflow-auto">
-      <div className="grid grid-cols-7 auto-rows-auto text-sm antialiased border border-gray-700 rounded-xl">
-        {/* Header Row */}
-        {weekDates.map((date, index) => {
-          const today = isToday(date);
-          return (
-            <div
-              key={index}
-              className={`bg-gray-700 p-3 border-b border-gray-600 text-center font-semibold text-gray-200 ${
-                index < 6 ? "border-r border-gray-600" : ""
-              } ${today ? "text-pink-300" : ""}`}
-            >
-              {format(date, "EEE MM/dd")}
-            </div>
-          );
-        })}
+      {loading ? (
+        /* ShadCN skeleton placeholders for the weekly calendar */
+        <div className="space-y-3">
+          <Skeleton className="h-6 w-1/3" />
+          <Skeleton className="h-6 w-full" />
+          <Skeleton className="h-6 w-4/5" />
+          <Skeleton className="h-6 w-5/6" />
+          <Skeleton className="h-6 w-full" />
+          <Skeleton className="h-6 w-2/3" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-7 auto-rows-auto text-sm antialiased border border-gray-700 rounded-xl">
+          {/* Header Row: Day names & dates */}
+          {weekDates.map((date, index) => {
+            const today = isToday(date);
+            return (
+              <div
+                key={`header-${index}`}
+                className={`bg-gray-700 p-3 border-b border-gray-600 text-center font-semibold text-gray-200 ${
+                  index < 6 ? "border-r border-gray-600" : ""
+                } ${today ? "text-pink-300" : ""}`}
+              >
+                {format(date, "EEE MM/dd")}
+              </div>
+            );
+          })}
 
-        {/* Workouts Row */}
-        {weekDates.map((date, index) => {
-          const dayKey = format(date, "EEEE").toLowerCase() as keyof WeeklyWorkouts;
-          const dayWorkouts = workouts[dayKey];
+          {/* Workouts Row(s) */}
+          {weekDates.map((date, index) => {
+            const dayKey = format(date, "EEEE").toLowerCase() as keyof WeeklyWorkouts;
+            const dayWorkouts = workouts[dayKey];
 
-          return (
-            <div
-              key={index}
-              className={`p-2 bg-gray-800 relative ${
-                index < 6 ? "border-r border-gray-700" : ""
-              }`}
-            >
-              {dayWorkouts && dayWorkouts.length > 0 ? (
-                dayWorkouts.map((workout) => (
-                  
-                  <div
-                    key={workout.id}
-                    className="schedule-item mb-2 rounded bg-gray-700 p-2 text-sm border-l-4 border-pink-500 hover:scale-[1.01] transition-transform hover:bg-pink-700/20 cursor-pointer"
-                  >
-                    <div className="font-semibold mb-1 text-pink-400">
-                      {workout.trackName} 
-                    </div>
-                    
-                    <WorkoutDisplay
-                      workoutData={workout.workoutDetails}
-                      workoutName={workout.name}
-                      warmUp={workout.warmUp}
-                      coolDown={workout.coolDown}
-                    />
-                          {/* Log Result Link */}
-                    <Link
-                      href={`/workouts/log-result/${workout.id}`}
-                      className="text-sm text-pink-400 mt-2 inline-block hover:underline"
+            return (
+              <div
+                key={`col-${index}`}
+                className={`p-2 bg-gray-800 relative ${
+                  index < 6 ? "border-r border-gray-700" : ""
+                }`}
+              >
+                {dayWorkouts && dayWorkouts.length > 0 ? (
+                  dayWorkouts.map((workout) => (
+                    <div
+                      key={workout.id}
+                      className="schedule-item mb-2 rounded bg-gray-700 p-2 text-sm border-l-4 border-pink-500 hover:scale-[1.01] transition-transform hover:bg-pink-700/20 cursor-pointer"
                     >
-                      Log Result
-                    </Link>
-                  </div>
-                ))
-              ) : (
-                <div className="text-sm text-gray-500 italic">No Workouts</div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+                      <div className="font-semibold mb-1 text-pink-400">
+                        {workout.trackName}
+                      </div>
+
+                      <WorkoutDisplay
+                        workoutData={workout.workoutDetails}
+                        workoutName={workout.name}
+                        warmUp={workout.warmUp}
+                        coolDown={workout.coolDown}
+                      />
+
+                      {/* Log Result Link */}
+                      <Link
+                        href={`/workouts/log-result/${workout.id}`}
+                        className="text-sm text-pink-400 mt-2 inline-block hover:underline"
+                      >
+                        Log Result
+                      </Link>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-sm text-gray-500 italic">No Workouts</div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
-};
-
-export default WorkoutCalendar;
+}

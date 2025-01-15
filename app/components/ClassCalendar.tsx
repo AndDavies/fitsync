@@ -23,7 +23,7 @@ type ClassCalendarProps = {
   onClassClick?: (cls: ClassSchedule) => void;
 };
 
-const ClassCalendar: React.FC<ClassCalendarProps> = ({ schedules, weekDates, onClassClick }) => {
+export default function ClassCalendar({ schedules, weekDates, onClassClick }: ClassCalendarProps) {
   const formatTime = (time: string | null) => {
     if (!time) return "Time not provided";
     const date = parseISO(time);
@@ -44,41 +44,38 @@ const ClassCalendar: React.FC<ClassCalendarProps> = ({ schedules, weekDates, onC
           </div>
         ))}
 
-        {/* Time slots */}
+        {/* Time slots: from 6:00 AM to 8:00 PM if you want 15 rows */}
         {Array.from({ length: 15 }, (_, i) => {
           const hour = 6 + i;
           const formattedHour = hour <= 12 ? `${hour}:00 AM` : `${hour - 12}:00 PM`;
           return (
             <React.Fragment key={i}>
-              {/* Time Slot Column */}
+              {/* Time slot column */}
               <div className="time-slot p-3 border-r border-gray-600 bg-gray-800 text-gray-400 text-center font-medium">
                 {formattedHour}
               </div>
-              {weekDates.map((date, index) => {
+              {weekDates.map((date, idx) => {
                 const dayStr = format(date, "EEEE").toLowerCase();
-                const daySchedules = schedules[dayStr as keyof WeeklySchedule].filter((schedule) => {
-                  const st = schedule.start_time ? parseISO(schedule.start_time) : null;
-                  return st && isValid(st) && st.getHours() === hour;
-                });
+                const daySchedules = schedules[dayStr as keyof WeeklySchedule].filter(
+                  (schedule) => {
+                    const st = schedule.start_time ? parseISO(schedule.start_time) : null;
+                    return st && isValid(st) && st.getHours() === hour;
+                  }
+                );
 
                 return (
                   <div
-                    key={`${i}-${index}`}
+                    key={`${i}-${idx}`}
                     className="day-slot p-2 border-b border-gray-600 bg-gray-800 relative"
                   >
                     {daySchedules.map((schedule) => (
                       <div
                         key={schedule.id}
                         className="schedule-item mb-2 rounded bg-gray-700 p-2 text-sm cursor-pointer transition-transform duration-150 hover:scale-105 hover:bg-pink-700/20"
-                        style={{
-                          borderLeft: `4px solid ${schedule.color || "#fff"}`,
-                        }}
-                        onClick={() => onClassClick && onClassClick(schedule)}
+                        style={{ borderLeft: `4px solid ${schedule.color || "#fff"}` }}
+                        onClick={() => onClassClick?.(schedule)}
                       >
-                        <div
-                          style={{ color: schedule.color }}
-                          className="font-semibold mb-1"
-                        >
+                        <div style={{ color: schedule.color }} className="font-semibold mb-1">
                           {schedule.class_name}
                         </div>
                         <div className="text-gray-300 text-xs mb-1">
@@ -98,6 +95,4 @@ const ClassCalendar: React.FC<ClassCalendarProps> = ({ schedules, weekDates, onC
       </div>
     </div>
   );
-};
-
-export default ClassCalendar;
+}

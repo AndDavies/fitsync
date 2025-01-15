@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { supabase } from "@/utils/supabase/client";
+import { createClient } from "@/utils/supabase/client"; // <--- updated import
 import BaseModal from "./BaseModal";
 
 interface CreateClassTypeModalProps {
@@ -17,12 +17,15 @@ const availableColors = [
   "#fab1a0", "#fdcb6e",
 ];
 
-const CreateClassTypeModal: React.FC<CreateClassTypeModalProps> = ({
+export default function CreateClassTypeModal({
   onClose,
   currentGymId,
   isVisible,
   refreshClassTypes,
-}) => {
+}: CreateClassTypeModalProps) {
+  // create supabase client
+  const supabase = createClient();
+
   const [className, setClassName] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [color, setColor] = useState<string>("#6b5b95");
@@ -42,7 +45,14 @@ const CreateClassTypeModal: React.FC<CreateClassTypeModalProps> = ({
     try {
       const { error: supabaseError } = await supabase
         .from("class_types")
-        .insert([{ class_name: className, description, color, gym_id: currentGymId }]);
+        .insert([
+          {
+            class_name: className,
+            description,
+            color,
+            gym_id: currentGymId,
+          },
+        ]);
 
       if (supabaseError) {
         setError(supabaseError.message);
@@ -135,6 +145,4 @@ const CreateClassTypeModal: React.FC<CreateClassTypeModalProps> = ({
       </div>
     </BaseModal>
   );
-};
-
-export default CreateClassTypeModal;
+}

@@ -1,19 +1,19 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { useAuth } from "../context/AuthContext";
-import { supabase } from "@/utils/supabase/client";
-import Link from "next/link";
 
-function startOfCurrentWeek(): { start: string; end: string } {
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { createClient } from "@/utils/supabase/client"; // New import
+// Helpers
+function startOfCurrentWeek() {
   const now = new Date();
-  const dayOfWeek = now.getDay(); // Sunday=0, Monday=1...
-  const diffToMonday = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
+  const dayOfWeek = now.getDay(); // Sunday=0, Monday=1, ...
+  const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
   const monday = new Date(now);
   monday.setDate(now.getDate() - diffToMonday);
-  monday.setHours(0,0,0,0);
+  monday.setHours(0, 0, 0, 0);
 
   const weekStart = monday.toISOString();
-  const weekEnd = new Date(monday.getTime() + 7*24*60*60*1000).toISOString();
+  const weekEnd = new Date(monday.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
   return { start: weekStart, end: weekEnd };
 }
 
@@ -25,38 +25,45 @@ interface Goals {
   weekly_workout_goal?: number;
 }
 
-const GoalsDisplay: React.FC = () => {
-  const { userData } = useAuth();
-  const [classProgress, setClassProgress] = useState<{goal: number|null, completed: number}>({goal: null, completed: 0});
-  const [workoutProgress, setWorkoutProgress] = useState<{goal: number|null, completed: number}>({goal: null, completed: 0});
+interface UserProfile {
+  user_id: string;          // from user_profiles
+  goals?: Goals | null;     // or whatever type you store
+  // ... any additional columns like role, current_gym_id, etc.
+}
+
+interface GoalsDisplayProps {
+  userProfile: UserProfile;
+}
+
+const GoalsDisplay: React.FC<GoalsDisplayProps> = ({ userProfile }) => {
+  const supabase = createClient(); // create our supabase browser client
+  const [classProgress, setClassProgress] = useState({ goal: null as number|null, completed: 0 });
+  const [workoutProgress, setWorkoutProgress] = useState({ goal: null as number|null, completed: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string|null>(null);
-  // Future AI suggestion placeholder:
   const [aiSuggestion, setAiSuggestion] = useState<string|null>(null);
 
   useEffect(() => {
     const fetchProgress = async () => {
-      if (!userData || !userData.user_id) {
+      // If no user ID, skip
+      if (!userProfile || !userProfile.user_id) {
         setLoading(false);
         return;
       }
 
-      let goalsData: Goals = {};
-      if (userData?.goals) {
-        goalsData = userData.goals; // userData.goals is now correctly typed as OnboardingData
-      }
-
-      // Set defaults if not present
-      const weeklyClassGoal = goalsData.weekly_class_goal ?? 3; // or derive logic from activityLevel
-      const weeklyWorkoutGoal = goalsData.weekly_workout_goal ?? 3; // same logic as above
+      // Extract goals from userProfile
+      let goalsData: Goals = userProfile.goals || {};
+      const weeklyClassGoal = goalsData.weekly_class_goal ?? 3;
+      const weeklyWorkoutGoal = goalsData.weekly_workout_goal ?? 3;
 
       const { start, end } = startOfCurrentWeek();
+
       try {
-        // Fetch class registrations
+        // 1) Fetch class registrations
         const { data: classData, error: classError } = await supabase
           .from("class_registrations")
           .select("id")
-          .eq("user_profile_id", userData.user_id)
+          .eq("user_profile_id", userProfile.user_id)
           .eq("status", "confirmed")
           .gte("registration_date", start)
           .lt("registration_date", end);
@@ -64,13 +71,11 @@ const GoalsDisplay: React.FC = () => {
         if (classError) throw new Error(classError.message);
         const classCount = classData?.length ?? 0;
 
-        // Fetch logged workouts
-        // Assuming we have a 'logged_workouts' table with a 'user_id' and 'workout_date'.
-        // If we don’t, we can just skip this for now or mock it.
+        // 2) Fetch logged workouts
         const { data: workoutData, error: workoutError } = await supabase
           .from("workout_results")
           .select("id")
-          .eq("user_profile_id", userData.user_id)
+          .eq("user_profile_id", userProfile.user_id)
           .gte("date_logged", start)
           .lt("date_logged", end);
 
@@ -80,7 +85,7 @@ const GoalsDisplay: React.FC = () => {
         setClassProgress({ goal: weeklyClassGoal, completed: classCount });
         setWorkoutProgress({ goal: weeklyWorkoutGoal, completed: workoutCount });
 
-        // Future: fetch AI suggestion (commented out for now)
+        // Example: if you had an AI suggestions endpoint
         // const aiRes = await fetch("/api/ai/advice");
         // if (aiRes.ok) {
         //   const aiData = await aiRes.json();
@@ -96,7 +101,7 @@ const GoalsDisplay: React.FC = () => {
     };
 
     fetchProgress();
-  }, [userData]);
+  }, [userProfile, supabase]);
 
   if (loading) {
     return (
@@ -116,7 +121,7 @@ const GoalsDisplay: React.FC = () => {
     );
   }
 
-  // If no goals are set at all (both null), prompt user:
+  // If no goals are set at all:
   if (classProgress.goal === null && workoutProgress.goal === null) {
     return (
       <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
@@ -131,12 +136,12 @@ const GoalsDisplay: React.FC = () => {
     );
   }
 
-  // Helper function for the circular progress
-  const CircleProgress = ({ goal, completed }: {goal: number; completed: number}) => {
+  // Helper for circle progress
+  const CircleProgress = ({ goal, completed }: { goal: number; completed: number }) => {
     const ratio = goal > 0 ? completed / goal : 0;
     const radius = 45;
     const circumference = 2 * Math.PI * radius;
-    const offset = circumference - (ratio * circumference);
+    const offset = circumference - ratio * circumference;
 
     return (
       <div className="relative" style={{ width: "100px", height: "100px" }}>

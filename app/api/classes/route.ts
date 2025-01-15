@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/utils/supabase/client";
+import { createClient } from "@/utils/supabase/client";
 
 // Utility function to validate UUIDs
 const isValidUUID = (id: string) =>
@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   if (!gymId || !isValidUUID(gymId)) {
     return NextResponse.json({ error: "Invalid or missing gym ID." }, { status: 400 });
   }
-
+  const supabase = createClient();
   const { data, error } = await supabase
     .from("class_schedules")
     .select("*")
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
   if (!gym_id || !isValidUUID(gym_id) || !class_name || !start_time || !end_time) {
     return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
   }
-
+  const supabase = createClient();
   const { data, error } = await supabase.from("class_schedules").insert([
     {
       gym_id,
@@ -62,7 +62,7 @@ export async function DELETE(request: Request) {
   if (!classId || !isValidUUID(classId)) {
     return NextResponse.json({ error: "Invalid or missing class ID." }, { status: 400 });
   }
-
+  const supabase = createClient();
   const { error } = await supabase.from("class_schedules").delete().eq("id", classId);
 
   if (error) {

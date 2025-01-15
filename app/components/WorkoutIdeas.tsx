@@ -1,8 +1,11 @@
 "use client";
-import React, { useState, useEffect, useMemo } from 'react';
-import { supabase } from '@/utils/supabase/client';
-import { MdOutlineContentCopy } from 'react-icons/md';
-import { Text } from '@geist-ui/core';
+
+import React, { useState, useEffect, useMemo } from "react";
+import { MdOutlineContentCopy } from "react-icons/md";
+import { Text } from "@geist-ui/core";
+
+// import { supabase } from '@/utils/supabase/client'; // REMOVED
+// We'll fetch from our new SSR route instead
 
 type Workout = {
   workoutid: string;
@@ -54,48 +57,47 @@ function convertJsonToHumanReadable(json: any): string {
 
   return lines.length > 0 ? lines.join('\n') : "No details available.";
 }
-
 const WorkoutIdeas: React.FC<WorkoutIdeasProps> = ({ setWorkoutBuilderText, setWorkoutBuilderId, category }) => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
 
+  // 1) Replacing direct supabase calls with a fetch to our new SSR endpoint
   useEffect(() => {
     if (!category) return;
-    const fetchWorkouts = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('workouts')
-          .select('workoutid, title, description')
-          .eq('category', category)
-          .neq('title', 'Warm Up')
-          .neq('title', 'warm up')
-          .limit(10);
 
-        if (error) {
-          console.error('Error fetching workouts:', error.message);
-        } else {
-          setWorkouts(data || []);
+    async function fetchWorkouts() {
+      try {
+        const res = await fetch(`/api/workouts/ideas?category=${encodeURIComponent(category)}`, {
+          credentials: "include", // ensures cookies (for SSR auth) are sent
+        });
+        if (!res.ok) {
+          const { error } = await res.json().catch(() => ({ error: "Failed" }));
+          console.error("Error fetching workouts from SSR endpoint:", error);
+          return;
         }
+        const { workouts } = await res.json();
+        setWorkouts(workouts || []);
       } catch (err) {
-        console.error('Unexpected error fetching workouts:', err);
+        console.error("Unexpected error fetching workouts:", err);
       }
-    };
+    }
 
     fetchWorkouts();
   }, [category]);
 
+  // 2) Filter logic remains the same
   const filteredWorkouts = useMemo(() => {
-    return workouts.filter((w) =>
-      w.title.toLowerCase().includes(search.toLowerCase())
-    );
+    return workouts.filter((w) => w.title.toLowerCase().includes(search.toLowerCase()));
   }, [workouts, search]);
 
+  // 3) Use the returned data
   const handleUseWorkout = (workout: Workout) => {
     const humanReadableText = convertJsonToHumanReadable(workout.description);
     setWorkoutBuilderText(humanReadableText);
     setWorkoutBuilderId(workout.workoutid);
   };
 
+  // 4) Render
   return (
     <div className="space-y-4">
       <input
@@ -105,16 +107,20 @@ const WorkoutIdeas: React.FC<WorkoutIdeasProps> = ({ setWorkoutBuilderText, setW
         className="w-full p-2 border border-gray-700 rounded bg-gray-800 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500"
       />
 
-      {filteredWorkouts.map((workout, index) => {
-        const humanReadable = workout.description ? convertJsonToHumanReadable(workout.description) : 'No data';
+      {filteredWorkouts.map((workout) => {
+        const humanReadable = workout.description
+          ? convertJsonToHumanReadable(workout.description)
+          : "No data";
 
         return (
           <div
-            key={index}
+            key={workout.workoutid}
             className="border border-gray-700 rounded p-4 bg-gray-800 hover:border-pink-500 transition"
           >
             <div className="flex items-center justify-between mb-2">
-              <Text b style={{ color: '#F9FAFB' }}>{workout.title}</Text>
+              <Text b style={{ color: "#F9FAFB" }}>
+                {workout.title}
+              </Text>
               <button
                 onClick={() => handleUseWorkout(workout)}
                 className="text-xs py-1 px-2 bg-pink-500 hover:bg-pink-600 text-white rounded flex items-center space-x-1 focus:outline-none focus:ring-2 focus:ring-pink-500 transition"
@@ -127,16 +133,16 @@ const WorkoutIdeas: React.FC<WorkoutIdeasProps> = ({ setWorkoutBuilderText, setW
               readOnly
               value={humanReadable}
               style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #4B5563',
-                borderRadius: '4px',
-                resize: 'none',
-                overflow: 'auto',
-                fontSize: '0.875rem',
-                backgroundColor: '#111827',
-                color: '#F9FAFB',
-                minHeight: '6em'
+                width: "100%",
+                padding: "8px",
+                border: "1px solid #4B5563",
+                borderRadius: "4px",
+                resize: "none",
+                overflow: "auto",
+                fontSize: "0.875rem",
+                backgroundColor: "#111827",
+                color: "#F9FAFB",
+                minHeight: "6em",
               }}
               className="focus:outline-none focus:ring-2 focus:ring-pink-500 placeholder-gray-500 mt-2 transition-colors duration-300"
             />

@@ -6,10 +6,7 @@ import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { Menu, X } from "@geist-ui/icons";
 
-import { useAuth } from "../context/AuthContext";
-import { supabase } from "@/utils/supabase/client";
-
-// Updated import from the new simplified NavigationMenu
+// If you use Shadcn menu items (adjust these imports as needed)
 import {
   NavigationMenu,
   NavigationMenuList,
@@ -48,42 +45,59 @@ function ListItem({
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { userData, refreshUserData } = useAuth();
+  const [loading, setLoading] = useState(false);
+
   const router = useRouter();
   const pathname = usePathname();
 
+  // In a future iteration, you could pass `displayName` or `role` as props
+  // from a server layout or a server page. For now, we just use placeholders.
+  const displayName = "User";  
+  const isAdminOrCoach = false; // or pass as prop if you want role-based nav
+
+  // sign out using your server route
   const handleSignOut = async () => {
-    console.log("=== Attempting Sign Out ===");
-    await supabase.auth.signOut();
-    console.log("=== signOut complete ===");
-    await refreshUserData(); 
-    console.log("=== refreshUserData done, userData:", userData);
-    router.push("/login");
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (res.ok) {
+        router.push("/login");
+      } else {
+        console.error("Failed to log out:", await res.json());
+      }
+    } catch (err) {
+      console.error("Error logging out:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const canManageUsers =
-    userData?.role === "admin" || userData?.role === "coach";
-
+  // Example role-based nav checks
   const navItems = [
     { href: "/dashboard", label: "Dashboard" },
     {
       label: "Workouts",
       children: [
-        { href: "/workouts", label: "Explore Workouts" },
-        { href: "/benchmarks", label: "Benchmarks" },
-        { href: "/workouts/logged-results", label: "Logged Results" },
+        { href: "/dashboard/workouts", label: "Explore Workouts" },
+        { href: "/dashboard/benchmarks", label: "Benchmarks" },
+        { href: "/dashboard/workouts/logged-results", label: "Logged Results" },
       ],
     },
-    { href: "/plan", label: "Programming Calendar" },
-    { href: "/classes", label: "Class Calendar" },
-    { href: "/profile", label: "Profile" },
-    ...(canManageUsers
+    { href: "/dashboard/plan", label: "Programming Calendar" },
+    { href: "/dashboard/classes", label: "Class Calendar" },
+    { href: "/dashboard/profile", label: "Profile" },
+
+    // If user can manage users, add admin items
+    ...(isAdminOrCoach
       ? [
           {
             label: "Admin",
             children: [
-              { href: "/users", label: "User Management" },
-              { href: "/gym-dashboard", label: "Gym Dashboard" },
+              { href: "/dashboard/users", label: "User Management" },
+              { href: "/dashboard/gym-dashboard", label: "Gym Dashboard" },
             ],
           },
         ]
@@ -114,7 +128,6 @@ const Header: React.FC = () => {
                     <NavigationMenuItem key={idx}>
                       <NavigationMenuTrigger>{item.label}</NavigationMenuTrigger>
                       <NavigationMenuContent>
-                        {/* Use list-none here too */}
                         <ul className="list-none">
                           {item.children.map((child, i) => (
                             <ListItem
@@ -153,13 +166,14 @@ const Header: React.FC = () => {
         {/* User Actions */}
         <div className="flex items-center space-x-4">
           <span className="hidden md:block text-xs text-gray-300">
-            Welcome, {userData?.display_name || "User"}
+            Welcome, {displayName}
           </span>
           <button
             onClick={handleSignOut}
-            className="px-3 py-1 bg-red-500 text-xs text-white rounded-full hover:bg-red-600 transition focus:outline-none focus:ring-2 focus:ring-red-400"
+            disabled={loading}
+            className="px-3 py-1 bg-red-500 text-xs text-white rounded-full hover:bg-red-600 transition focus:outline-none focus:ring-2 focus:ring-red-400 disabled:opacity-50"
           >
-            Log Out
+            {loading ? "Logging Out..." : "Log Out"}
           </button>
           {/* Mobile Menu Toggle */}
           <button

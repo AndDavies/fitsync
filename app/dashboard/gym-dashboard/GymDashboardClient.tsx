@@ -1,122 +1,50 @@
 "use client";
 
 import React, { useEffect, useState, Suspense } from "react";
-import { useAuth } from "../context/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
-import Header from "../components/Header";
+import Header from "../../components/Header";
 
-export default function GymDashboardPage() {
-  const { userData, isLoading } = useAuth();
+// shape of your user profile from DB
+type UserProfile = {
+  user_id: string;
+  current_gym_id?: string | null;
+  role?: string | null;
+  // etc.
+};
+
+interface GymDashboardClientProps {
+  userProfile: UserProfile;
+}
+
+export default function GymDashboardClient({ userProfile }: GymDashboardClientProps) {
   const router = useRouter();
-  
+  const searchParams = useSearchParams();
+
+  // If there's a ?gym_id= param, use it; otherwise fallback to userProfile.current_gym_id
+  const gym_id = searchParams.get("gym_id") || userProfile.current_gym_id || "";
+
   const [metrics, setMetrics] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadingMetrics, setLoadingMetrics] = useState<boolean>(true);
 
-  // We'll handle fetching inside the child component once we know gym_id
+  // On mount or when gym_id changes, fetch dashboard metrics
   useEffect(() => {
-    // No direct fetching here since we rely on searchParams in the child component
-  }, [isLoading, userData, router]);
-
-  return (
-    <Suspense fallback={<LoadingFallback />}>
-      <GymDashboardContent
-        isLoading={isLoading}
-        userData={userData}
-        router={router}
-        metrics={metrics}
-        setMetrics={setMetrics}
-        error={error}
-        setError={setError}
-        loadingMetrics={loadingMetrics}
-        setLoadingMetrics={setLoadingMetrics}
-      />
-    </Suspense>
-  );
-
-  function LoadingFallback() {
-    return (
-      <div className="min-h-screen flex flex-col bg-gray-800 text-gray-100">
-        <Header />
-        <main className="flex-grow flex items-center justify-center">
-          <div className="flex flex-col items-center justify-center">
-            <div className="animate-spin h-8 w-8 border-4 border-pink-500 border-t-transparent rounded-full mb-4"></div>
-            <p className="text-gray-300 text-sm">Loading dashboard...</p>
-          </div>
-        </main>
-      </div>
-    );
-  }
-}
-
-interface GymDashboardContentProps {
-  isLoading: boolean;
-  userData: any; 
-  router: ReturnType<typeof useRouter>;
-  metrics: any;
-  setMetrics: React.Dispatch<React.SetStateAction<any>>;
-  error: string | null;
-  setError: React.Dispatch<React.SetStateAction<string | null>>;
-  loadingMetrics: boolean;
-  setLoadingMetrics: React.Dispatch<React.SetStateAction<boolean>>;
-}
-
-function GymDashboardContent({
-  isLoading,
-  userData,
-  router,
-  metrics,
-  setMetrics,
-  error,
-  setError,
-  loadingMetrics,
-  setLoadingMetrics,
-}: GymDashboardContentProps) {
-
-  const searchParams = useSearchParams();
-  const gym_id = searchParams.get("gym_id") || userData?.current_gym_id || "";
-
-  // Fetch metrics if conditions are met
-  if (!isLoading && userData && loadingMetrics && gym_id) {
-    fetch(`/api/gym-dashboard?gym_id=${gym_id}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.error) {
-          setError(data.error);
-        } else {
-          setMetrics(data);
-        }
-      })
-      .catch(() => setError("Failed to load metrics"))
-      .finally(() => setLoadingMetrics(false));
-  }
-
-  if (!isLoading) {
-    if (!userData || (userData.role !== "admin" && userData.role !== "coach")) {
-      router.push("/login");
+    if (gym_id && loadingMetrics) {
+      fetch(`/api/gym-dashboard?gym_id=${gym_id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.error) {
+            setError(data.error);
+          } else {
+            setMetrics(data);
+          }
+        })
+        .catch(() => setError("Failed to load metrics"))
+        .finally(() => setLoadingMetrics(false));
     }
-  }
+  }, [gym_id, loadingMetrics]);
 
-  function LoadingFallback() {
-    return (
-      <div className="min-h-screen flex flex-col bg-gray-800 text-gray-100">
-        <Header />
-        <main className="flex-grow flex items-center justify-center">
-          <div className="flex flex-col items-center justify-center">
-            <div className="animate-spin h-8 w-8 border-4 border-pink-500 border-t-transparent rounded-full mb-4"></div>
-            <p className="text-gray-300 text-sm">Loading dashboard...</p>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  // Handle loading state
-  if (isLoading || !userData || loadingMetrics) {
-    return <LoadingFallback />;
-  }
-
-  // Handle error state
+  // If error, or no metrics
   if (error) {
     return (
       <div className="min-h-screen flex flex-col bg-gray-800 text-gray-100">
@@ -128,7 +56,20 @@ function GymDashboardContent({
     );
   }
 
-  // Handle no metrics state
+  if (loadingMetrics) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gray-800 text-gray-100">
+        <Header />
+        <main className="flex-grow flex items-center justify-center">
+          <div className="flex flex-col items-center justify-center">
+            <div className="animate-spin h-8 w-8 border-4 border-pink-500 border-t-transparent rounded-full mb-4"></div>
+            <p className="text-gray-300 text-sm">Loading dashboard...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   if (!metrics) {
     return (
       <div className="min-h-screen flex flex-col bg-gray-800 text-gray-100">
@@ -140,6 +81,7 @@ function GymDashboardContent({
     );
   }
 
+  // destructure the metrics
   const {
     total_active_members,
     new_memberships_month,

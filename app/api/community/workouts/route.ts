@@ -1,22 +1,38 @@
 // app/api/community/workouts/route.ts
 import { NextResponse } from "next/server";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 export async function GET() {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-  // Optional: If you only want authenticated users to see this feed,
-  // you can check for a session:
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session) {
+  // In Next.js 15, cookies() is async:
+  const cookieStore = await cookies();
+  // Let's store them synchronously in a variable
+  const allCookies = cookieStore.getAll();
+
+  // Create minimal “sync” cookie interface:
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll: () => allCookies,
+      setAll: () => {
+        // no-op if you don't need to set cookies from this route
+        // or if you do, you can wire up next/headers writing logic here
+      },
+    },
+  });
+
+  // 1) Attempt to get user
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError) {
+    return NextResponse.json({ error: userError.message }, { status: 500 });
+  }
+  if (!userData?.user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  // 1. Get recent results, join user profile (for display name)
-  //    (Assuming user_profile_id -> user_profiles.id relationship)
+  // 2) Then do your DB query:
   const { data: results, error } = await supabase
     .from("workout_results")
     .select(`
@@ -28,10 +44,10 @@ export async function GET() {
       user_profiles (display_name)
     `)
     .order("date_logged", { ascending: false })
-    .limit(10); // last 10 results, for example
+    .limit(10);
 
   if (error) {
-    console.error(error);
+    console.error("Supabase error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

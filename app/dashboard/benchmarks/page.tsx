@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
-import Header from "../components/Header";
+import Header from "../../components/Header";
 
 type Benchmark = {
   id: string;

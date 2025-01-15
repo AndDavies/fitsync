@@ -1,22 +1,20 @@
-// components/SideDrawer.tsx
-
 "use client";
 import React, { useEffect } from "react";
 
 interface SideDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  title?: string; // Optional title prop
+  title?: string;
   children: React.ReactNode;
 }
 
-const SideDrawer: React.FC<SideDrawerProps> = ({ isOpen, onClose, title, children }) => {
+export default function SideDrawer({ isOpen, onClose, title, children }: SideDrawerProps) {
   useEffect(() => {
-    document.body.style.overflow = isOpen ? 'hidden' : '';
+    document.body.style.overflow = isOpen ? "hidden" : "";
   }, [isOpen]);
 
   return (
-    <div className={`fixed inset-0 z-50 flex ${isOpen ? '' : 'pointer-events-none'}`}>
+    <div className={`fixed inset-0 z-50 flex ${isOpen ? "" : "pointer-events-none"}`}>
       {isOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
@@ -25,7 +23,7 @@ const SideDrawer: React.FC<SideDrawerProps> = ({ isOpen, onClose, title, childre
       )}
       <div
         className={`fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-xl transform transition-transform duration-300 ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
+          isOpen ? "translate-x-0" : "translate-x-full"
         } flex flex-col`}
       >
         <div className="p-4 border-b border-gray-300 flex items-center justify-between">
@@ -37,12 +35,8 @@ const SideDrawer: React.FC<SideDrawerProps> = ({ isOpen, onClose, title, childre
             &times;
           </button>
         </div>
-        <div className="flex-grow overflow-auto overflow-y-hidden">
-          {children}
-        </div>
+        <div className="flex-grow overflow-auto overflow-y-hidden">{children}</div>
       </div>
     </div>
   );
-};
-
-export default SideDrawer;
+}
