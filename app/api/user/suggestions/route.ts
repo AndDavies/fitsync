@@ -1,110 +1,122 @@
-import { NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import axios from 'axios';
-import https from 'https'; // Only needed if you're dealing with self-signed certs
+// app/api/user/suggestions/route.ts
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
+import axios from "axios";
+import https from "https";
 
 const XAI_API_KEY = process.env.XAI_API_KEY;
-
 if (!XAI_API_KEY) {
-    throw new Error('Missing XAI_API_KEY environment variable');
+  throw new Error("Missing XAI_API_KEY environment variable");
 }
 
-// If you previously encountered self-signed certificate errors, you can use this agent in dev only
+// If you use self-signed certs, you might define an httpsAgent, but typically not needed
 // const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 
 export async function GET() {
-    const supabase = createRouteHandlerClient({ cookies });
-    const {
-        data: { session },
-    } = await supabase.auth.getSession();
+  // 1) Grab cookies
+  const cookieStore = await cookies();
+  const allCookies = cookieStore.getAll();
 
-    if (!session) {
-        return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-    }
+  // 2) Create the supabase server client
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  const supabase = createServerClient(supabaseUrl, supabaseKey, {
+    cookies: {
+      getAll: () => allCookies,
+      setAll: () => {},
+    },
+  });
 
-    const userId = session.user.id;
+  // 3) Confirm user session
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (!userData?.user) {
+    return NextResponse.json({ error: userError?.message || "Not authenticated" }, { status: 401 });
+  }
 
-    // Fetch the user's goals and onboarding data
-    const { data: userProfile, error: userProfileError } = await supabase
-        .from('user_profiles')
-        .select('goals, onboarding_data')
-        .eq('user_id', userId)
-        .maybeSingle();
+  const userId = userData.user.id;
 
-    if (userProfileError) {
-        console.error('Error fetching user profile:', userProfileError.message);
-        return NextResponse.json({ error: 'Error fetching user profile' }, { status: 500 });
-    }
+  // 4) Fetch user goals + onboarding_data
+  const { data: userProfile, error: userProfileError } = await supabase
+    .from("user_profiles")
+    .select("goals, onboarding_data")
+    .eq("user_id", userId)
+    .maybeSingle();
 
-    const userGoal = userProfile?.goals || 'general_health';
-    const onboardingData = userProfile?.onboarding_data || {};
+  if (userProfileError) {
+    console.error("Error fetching user profile:", userProfileError.message);
+    return NextResponse.json({ error: "Error fetching user profile" }, { status: 500 });
+  }
 
-    // Fetch recent workouts from the last 7 days
-    const now = new Date();
-    const sevenDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+  const userGoal = userProfile?.goals || "general_health";
+  const onboardingData = userProfile?.onboarding_data || {};
 
-    const { data: recentWorkouts, error: workoutsError } = await supabase
-        .from('workout_results')
-        .select('id, date_logged, result')
-        .eq('user_profile_id', userId)
-        .gte('date_logged', sevenDaysAgo.toISOString());
+  // 5) Fetch recent workouts (last 7 days)
+  const now = new Date();
+  const sevenDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
 
-    if (workoutsError) {
-        console.error('Error fetching recent workouts:', workoutsError.message);
-        return NextResponse.json({ error: 'Error fetching recent workouts' }, { status: 500 });
-    }
+  const { data: recentWorkouts, error: workoutsError } = await supabase
+    .from("workout_results")
+    .select("id, date_logged, result")
+    .eq("user_profile_id", userId)
+    .gte("date_logged", sevenDaysAgo.toISOString());
 
-    const completedWorkoutsCount = recentWorkouts ? recentWorkouts.length : 0;
+  if (workoutsError) {
+    console.error("Error fetching recent workouts:", workoutsError.message);
+    return NextResponse.json({ error: "Error fetching recent workouts" }, { status: 500 });
+  }
 
-    // Construct the prompt with onboarding and workout data
-    const prompt = `
+  const completedWorkoutsCount = recentWorkouts ? recentWorkouts.length : 0;
+
+  // 6) Build the prompt for xAI
+  const prompt = `
     User Onboarding Data:
-    - Primary Goal: ${onboardingData.primaryGoal || 'not specified'}
-    - Activity Level: ${onboardingData.activityLevel || 'not specified'}
-    - Lifestyle Note: ${onboardingData.lifestyleNote || 'no notes'}
+    - Primary Goal: ${onboardingData.primaryGoal || "not specified"}
+    - Activity Level: ${onboardingData.activityLevel || "not specified"}
+    - Lifestyle Note: ${onboardingData.lifestyleNote || "no notes"}
 
     Recent Activity (Last 7 Days):
     - Total Workouts Completed: ${completedWorkoutsCount}
-    - Recent Workout Types: ${recentWorkouts.map(w => w.result).join(', ') || 'None'}
+    - Recent Workout Types: ${recentWorkouts.map((w) => w.result).join(", ") || "None"}
 
-    Based on the user's primary goal and recent activity, provide a motivational and actionable suggestion to help them progress. It should be short, concise. Provide insight. any recommendations should be bullet points. 
-    `;
+    Provide a motivational, concise suggestion with bullet points.
+  `;
 
-    try {
-        // Call the xAI API
-        const xaiResponse = await axios.post(
-            'https://api.x.ai/v1/chat/completions',
-            {
-                messages: [
-                    { role: 'system', content: 'You are a motivational fitness assistant.' },
-                    { role: 'user', content: prompt },
-                ],
-                model: 'grok-2-1212', // cost-effective model choice
-                stream: false,
-                temperature: 0.7,
-            },
-            {
-                headers: {
-                    'Authorization': `Bearer ${XAI_API_KEY}`,
-                    'Content-Type': 'application/json',
-                },
-                // httpsAgent, // Uncomment if needed for local SSL issues (dev only)
-            }
-        );
+  // 7) Call xAI API
+  try {
+    const xaiResponse = await axios.post(
+      "https://api.x.ai/v1/chat/completions",
+      {
+        messages: [
+          { role: "system", content: "You are a motivational fitness assistant." },
+          { role: "user", content: prompt },
+        ],
+        model: "grok-2-1212",
+        stream: false,
+        temperature: 0.7,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${XAI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        // httpsAgent, // if needed for local SSL
+      }
+    );
 
-        const suggestion = xaiResponse.data?.choices?.[0]?.message?.content || 'Keep pushing forward!';
-        return NextResponse.json({ suggestion });
-    } catch (error) {
-        const err = error as any;
-        console.error(
-            'Error calling xAI API:',
-            err?.response?.data || err?.message || 'Unknown error occurred'
-        );
+    const suggestion =
+      xaiResponse.data?.choices?.[0]?.message?.content || "Keep pushing forward!";
+    return NextResponse.json({ suggestion });
+  } catch (error) {
+    const err = error as any;
+    console.error(
+      "Error calling xAI API:",
+      err?.response?.data || err?.message || "Unknown error occurred"
+    );
 
-        return NextResponse.json(
-            { error: 'Failed to generate suggestion. Please try again later.' },
-            { status: 500 }
-        );
-    }
+    return NextResponse.json(
+      { error: "Failed to generate suggestion. Please try again later." },
+      { status: 500 }
+    );
+  }
 }

@@ -1,20 +1,31 @@
-// app/api/classes/route.ts
+// app/api/classes/fetch/route.ts  (or /api/classes/fetch)
 import { NextResponse } from "next/server";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 
 export async function GET() {
-  const supabase = createRouteHandlerClient({ cookies });
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  // 1) Grab cookies
+  const cookieStore = await cookies();
+  const allCookies = cookieStore.getAll();
 
-  if (!session) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  // 2) Create a Supabase server client with SSR
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  const supabase = createServerClient(supabaseUrl, supabaseKey, {
+    cookies: {
+      getAll: () => allCookies,
+      setAll: () => {},
+    },
+  });
+
+  // 3) Check user
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (!userData?.user) {
+    return NextResponse.json({ error: userError?.message || "Not authenticated" }, { status: 401 });
   }
 
-  // 1. Identify user’s gym (assuming user_profiles.gym_id)
-  const userId = session.user.id;
+  // 4) userId + fetch userProfile to get gymId
+  const userId = userData.user.id;
   const { data: userProfile, error: profileError } = await supabase
     .from("user_profiles")
     .select("current_gym_id")
@@ -24,17 +35,15 @@ export async function GET() {
   if (profileError) {
     return NextResponse.json({ error: profileError.message }, { status: 500 });
   }
+
   if (!userProfile?.current_gym_id) {
+    // user has no current_gym_id
     return NextResponse.json({ classes: [] });
   }
-
   const gymId = userProfile.current_gym_id;
 
-  // 2. Fetch upcoming classes for this gym
-  //    and join on the "class_registrations" table.
-  //    We'll use a Supabase relationship alias:
-  //    "class_registrations" -> references "class_schedule_id".
-  //    Within that, also join user_profiles to get display_name.
+  // 5) Fetch upcoming classes for this gym
+  //    and join on class_registrations + user_profiles
   const { data: classes, error: classesError } = await supabase
     .from("class_schedules")
     .select(`
@@ -52,7 +61,7 @@ export async function GET() {
       )
     `)
     .eq("current_gym_id", gymId)
-    .gte("start_time", new Date().toISOString()) // only upcoming
+    .gte("start_time", new Date().toISOString())
     .order("start_time", { ascending: true })
     .limit(10);
 

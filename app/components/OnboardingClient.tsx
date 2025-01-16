@@ -3,46 +3,69 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-
-import { useAuth } from "@/app/context/AuthContext";
-import { supabase } from "@/utils/supabase/client";
+// We import our supabase client or call fetch(...) from the client side:
+import { createClient } from "@/utils/supabase/client";
 import LoadingSpinner from "@/app/components/LoadingSpinner";
 
+interface UserProfile {
+  user_id: string
+  display_name?: string
+  phone_number?: string
+  onboarding_completed?: boolean
+  onboarding_data?: any
+  current_gym_id?: string
+}
+
 interface OnboardingClientProps {
-    gymId: string; // or `string | null`, if you want to allow null
+  userProfile: UserProfile | null;
+  gymId: string;
+}
+
+export default function OnboardingClient({ userProfile, gymId }: OnboardingClientProps) {
+
+  if (!userProfile) {
+    // Maybe redirect or show some error/placeholder
+    return <div>No user profile found. Please log in.</div>;
   }
-
-export default function OnboardingClient({ gymId }: OnboardingClientProps) {
-  const { userData, isLoading, session, refreshUserData } = useAuth();
   const router = useRouter();
+  const supabase = createClient();
 
+  // Local steps
   const [step, setStep] = useState(1);
-  const [displayName, setDisplayName] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [displayName, setDisplayName] = useState(userProfile.display_name || "");
+  const [phoneNumber, setPhoneNumber] = useState(userProfile.phone_number || "");
   const [primaryGoal, setPrimaryGoal] = useState("");
   const [activityLevel, setActivityLevel] = useState("");
   const [lifestyleNote, setLifestyleNote] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // If user is already onboarded or no session, redirect
+  // If user is already onboarded, or no user_id, we can do a check:
   useEffect(() => {
-    if (!isLoading && session && userData?.onboarding_completed) {
+    if (userProfile.onboarding_completed) {
+      // user is already onboarded
       router.push("/dashboard");
     }
-  }, [isLoading, session, userData?.onboarding_completed, router]);
+    if (!userProfile.user_id) {
+      // no user? Possibly force a redirect
+      router.push("/login");
+    }
+  }, [userProfile, router]);
 
-  // Handle next steps or finalize
+  // Step transitions
   const handleNext = async () => {
     if (step === 4) {
-      if (!userData?.user_id) return;
+      if (!userProfile.user_id) return;
 
       setLoading(true);
+
+      // Build an onboarding object
       const onboardingData = {
         primaryGoal,
         activityLevel,
         lifestyleNote,
       };
 
+      // Update user_profiles in supabase
       const { error } = await supabase
         .from("user_profiles")
         .update({
@@ -50,14 +73,14 @@ export default function OnboardingClient({ gymId }: OnboardingClientProps) {
           phone_number: phoneNumber,
           onboarding_data: onboardingData,
           onboarding_completed: true,
-          current_gym_id: gymId, // from the dynamic route
+          current_gym_id: gymId,
         })
-        .eq("user_id", userData.user_id);
+        .eq("user_id", userProfile.user_id);
 
       setLoading(false);
 
       if (!error) {
-        await refreshUserData();
+        // success => move to dashboard
         router.push("/dashboard");
       } else {
         alert("Error completing onboarding. Please try again.");
@@ -67,15 +90,17 @@ export default function OnboardingClient({ gymId }: OnboardingClientProps) {
     }
   };
 
-  // Handle back
   const handleBack = () => {
-    if (step > 1) {
-      setStep((prev) => prev - 1);
-    }
+    if (step > 1) setStep((prev) => prev - 1);
   };
 
-  // Show loading spinner if user/session is still loading
-  if (isLoading || !session) {
+  // We do not rely on isLoading from AuthContext anymore
+  // If you want to show a spinner while "loading" data from supabase in the client,
+  // you can do that with local state if needed. But the SSR approach already
+  // gave us userProfile, so we should be ready to go.
+
+  // If there's truly "no userProfile" at all, you might do:
+  if (!userProfile.user_id) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-100">
         <LoadingSpinner />
@@ -83,7 +108,6 @@ export default function OnboardingClient({ gymId }: OnboardingClientProps) {
     );
   }
 
-  // Motion variants
   const variants = {
     initial: { opacity: 0, x: 30 },
     animate: { opacity: 1, x: 0 },
@@ -153,7 +177,7 @@ export default function OnboardingClient({ gymId }: OnboardingClientProps) {
               <select
                 value={primaryGoal}
                 onChange={(e) => setPrimaryGoal(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-pink-300"
+                className="w-full p-2 border border-gray-300 rounded mb-4"
               >
                 <option value="">Select a goal</option>
                 <option value="improve_strength">Improve Strength</option>
@@ -198,7 +222,7 @@ export default function OnboardingClient({ gymId }: OnboardingClientProps) {
               <select
                 value={activityLevel}
                 onChange={(e) => setActivityLevel(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-pink-300"
+                className="w-full p-2 border border-gray-300 rounded mb-4"
               >
                 <option value="">Select activity level</option>
                 <option value="sedentary">Sedentary</option>
@@ -246,7 +270,7 @@ export default function OnboardingClient({ gymId }: OnboardingClientProps) {
                 value={lifestyleNote}
                 onChange={(e) => setLifestyleNote(e.target.value)}
                 placeholder="E.g. 'I have a knee injury', 'I prefer workouts under 30 min', etc."
-                className="w-full p-2 border border-gray-300 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-pink-300"
+                className="w-full p-2 border border-gray-300 rounded mb-4"
               />
               <div className="flex justify-between">
                 <button
