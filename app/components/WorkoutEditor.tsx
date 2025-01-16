@@ -1,28 +1,35 @@
+// app/components/WorkoutEditor.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { supabase } from "@/utils/supabase/client";
+import { createClient } from "@/utils/supabase/client";  // <-- updated
 import { useRouter } from "next/navigation";
-import toast from 'react-hot-toast';
-import { useAuth } from "../context/AuthContext";
+import toast from "react-hot-toast";
 
+// If you previously used an AuthContext, either remove it or
+// pass needed data as props to WorkoutEditor.
 type WorkoutEditorProps = {
   workoutId: string;
+  userGymId?: string; // If you need to pass a gym from the server
+  userId?: string;    // If you need the user ID from the server
 };
 
+// For type-checking track objects
 type Track = {
   id: string;
   name: string;
 };
 
-const isValidUUID = (id: string) =>
-  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(id);
+function isValidUUID(id: string) {
+  return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(id);
+}
 
-const WorkoutEditor: React.FC<WorkoutEditorProps> = ({ workoutId }) => {
+export default function WorkoutEditor({ workoutId, userGymId, userId }: WorkoutEditorProps) {
+  const supabase = createClient(); // Create a browser Supabase client
   const router = useRouter();
-  const { userData } = useAuth();
 
+  // State
   const [workoutName, setWorkoutName] = useState<string>("");
   const [workoutDate, setWorkoutDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [workoutText, setWorkoutText] = useState<string>("");
@@ -32,17 +39,24 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({ workoutId }) => {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
   const [validated, setValidated] = useState(false);
-  const [loading, setLoading] = useState(true); // Overall loading state
-  const [tracksLoading, setTracksLoading] = useState(false); // Loading state for tracks
 
+  // Loading states
+  const [loadingWorkout, setLoadingWorkout] = useState(true);
+  const [loadingTracks, setLoadingTracks] = useState(false);
+
+  // 1) Validate the workoutId
   useEffect(() => {
     if (!isValidUUID(workoutId)) {
       console.error("Invalid workout ID.");
       toast.error("Invalid workout ID.");
-      return;
+      // Optionally router.push("/dashboard") or something
     }
+  }, [workoutId]);
 
-    const fetchWorkout = async () => {
+  // 2) Fetch the existing workout data
+  useEffect(() => {
+    async function fetchWorkout() {
+      setLoadingWorkout(true);
       try {
         const { data, error } = await supabase
           .from("scheduled_workouts")
@@ -52,62 +66,62 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({ workoutId }) => {
 
         if (error) throw error;
         if (data) {
-          setWorkoutName(data.name || "");
-          setWorkoutDate(data.date || format(new Date(), "yyyy-MM-dd"));
-          setWorkoutText(data.workout_details || "");
-          setWarmUp(data.warm_up || "");
-          setCoolDown(data.cool_down || "");
-          setCoachNotes(data.notes || "");
-          setSelectedTrackId(data.track_id || null);
+          setWorkoutName(data.name ?? "");
+          setWorkoutDate(data.date ?? format(new Date(), "yyyy-MM-dd"));
+          setWorkoutText(data.workout_details ?? "");
+          setWarmUp(data.warm_up ?? "");
+          setCoolDown(data.cool_down ?? "");
+          setCoachNotes(data.notes ?? "");
+          setSelectedTrackId(data.track_id ?? null);
         }
       } catch (err: any) {
         console.error("Error fetching workout:", err.message);
         toast.error("Error loading workout. Please try again.");
       } finally {
-        setLoading(false);
+        setLoadingWorkout(false);
       }
-    };
+    }
 
     fetchWorkout();
-  }, [workoutId]);
+  }, [workoutId, supabase]);
 
+  // 3) Fetch tracks
   useEffect(() => {
-    const fetchTracks = async () => {
-      if (!userData) {
+    async function fetchTracks() {
+      if (!userId) {
+        // If you rely on userId from SSR or context, check that
         return;
       }
-
-      setTracksLoading(true);
-      let fetchedTracks: { id: string; name: string }[] = [];
+      setLoadingTracks(true);
+      let fetchedTracks: Track[] = [];
 
       try {
-        if (userData.current_gym_id) {
-          // Fetch gym tracks
+        if (userGymId) {
+          // They have a gym
           const { data: gymTracks, error: gymError } = await supabase
             .from("tracks")
             .select("id, name")
-            .eq("gym_id", userData.current_gym_id);
+            .eq("gym_id", userGymId);
 
           if (gymError) throw gymError;
           if (gymTracks) fetchedTracks.push(...gymTracks);
         } else {
-          // Fetch personal tracks
+          // personal tracks
           const { data: personalTracks, error: personalError } = await supabase
             .from("tracks")
             .select("id, name")
-            .eq("user_id", userData.user_id);
+            .eq("user_id", userId);
 
           if (personalError) throw personalError;
-          if (personalTracks && personalTracks.length) {
+          if (personalTracks?.length) {
             fetchedTracks.push(...personalTracks);
           } else {
-            // Create a personal track if none exists
+            // create personal track if none
             const { data: newTrack, error: trackError } = await supabase
               .from("tracks")
-              .insert({ user_id: userData.user_id, name: "Personal Track" })
+              .insert({ user_id: userId, name: "Personal Track" })
               .select("id, name")
               .single();
-
             if (trackError) throw trackError;
             if (newTrack) fetchedTracks.push(newTrack);
           }
@@ -118,19 +132,17 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({ workoutId }) => {
         console.error("Error fetching tracks:", error.message);
         toast.error("Failed to load tracks. Please refresh.");
       } finally {
-        setTracksLoading(false);
+        setLoadingTracks(false);
       }
-    };
-
-    if (userData) {
-      fetchTracks();
-    } else {
-      // If userData not ready, could still be loading
-      if (!userData) setTracksLoading(true);
     }
-  }, [userData]);
 
-  const validateForm = () => {
+    if (userId) {
+      fetchTracks();
+    }
+  }, [userId, userGymId, supabase]);
+
+  // 4) Validate the form
+  function validateForm() {
     const isFormValid =
       workoutName.trim() !== "" &&
       workoutDate.trim() !== "" &&
@@ -140,9 +152,10 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({ workoutId }) => {
     if (!isFormValid) {
       toast.error("Please fill in all required fields.");
     }
-  };
+  }
 
-  const handleSaveChanges = async () => {
+  // 5) Save changes
+  async function handleSaveChanges() {
     validateForm();
     if (!validated) return;
 
@@ -168,9 +181,10 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({ workoutId }) => {
       console.error(err.message);
       toast.error("Error saving changes. Please try again.");
     }
-  };
+  }
 
-  if (loading || tracksLoading || !userData) {
+  // 6) Render
+  if (loadingWorkout || loadingTracks) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-gray-300">
         <div className="animate-spin h-8 w-8 border-4 border-pink-500 border-t-transparent rounded-full mb-4"></div>
@@ -321,6 +335,4 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({ workoutId }) => {
       </div>
     </div>
   );
-};
-
-export default WorkoutEditor;
+}

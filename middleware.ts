@@ -1,52 +1,48 @@
+// /middleware.ts (the final one)
 import { NextRequest, NextResponse } from "next/server";
-import { createMiddlewareSupabaseClient } from "@supabase/auth-helpers-nextjs";
+import { createServerClient } from "@supabase/ssr";
 
 export async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
-  const supabase = createMiddlewareSupabaseClient({ req, res });
+  let res = NextResponse.next();
+  const cookieStore = req.cookies.getAll();
 
-  // Get user session from Supabase
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll: () => cookieStore,
+        setAll: () => {},
+      },
+    }
+  );
 
-  // If no session, redirect to the login page
-  if (!session) {
+  // Check user
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData?.user) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  // Fetch the user's role from the database
-  const { data: user, error } = await supabase
+  // Possibly fetch user role, etc.
+  const { data: profile } = await supabase
     .from("user_profiles")
     .select("role")
-    .eq("id", session.user.id)
+    .eq("user_id", userData.user.id)
     .single();
 
-  if (error || !user?.role) {
-    console.error("Error fetching user role:", error?.message);
-    return NextResponse.redirect(new URL("/login", req.url)); // Default to redirect to login if role isn't available
-  }
+  // If user tries /admin but not admin, redirect...
+  // If user tries /user but not user, redirect...
+  // If user tries /dashboard etc.
 
-  const userRole = user.role;
-
-  // Role-based route protection
-  const pathname = req.nextUrl.pathname;
-
-  if (pathname.startsWith("/admin") && userRole !== "admin") {
-    // Redirect non-admin users trying to access admin routes
-    return NextResponse.redirect(new URL("/dashboard", req.url));
-  }
-
-  if (pathname.startsWith("/user") && userRole !== "user") {
-    // Redirect non-regular users trying to access user-only routes
-    return NextResponse.redirect(new URL("/dashboard", req.url));
-  }
-
-  // Allow request to continue if role matches
   return res;
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/user/:path*"], // Apply middleware to these routes
+  // Merge all matchers in 1 place:
+  matcher: [
+    "/admin/:path*",
+    "/user/:path*",
+    "/dashboard/:path*",
+    "/api/:path*",
+  ],
 };
-  
