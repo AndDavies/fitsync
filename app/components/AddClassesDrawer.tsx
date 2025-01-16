@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { createClient } from "@/utils/supabase/client"; // <--- updated import
+import { createClient } from "@/utils/supabase/client";
 import { format, parseISO, isValid, addWeeks, addMinutes } from "date-fns";
 
 interface ClassType {
@@ -18,9 +18,6 @@ interface AddClassesDrawerProps {
   refreshSchedules: () => void;
 }
 
-/**
- * Common start times in 15-min increments from 5:00 to 22:00 (10 PM).
- */
 const possibleStartTimes = [
   "05:00","05:15","05:30","05:45",
   "06:00","06:15","06:30","06:45",
@@ -42,7 +39,6 @@ const possibleStartTimes = [
   "22:00",
 ];
 
-/** Durations in minutes to offer, e.g., 45, 60, 90, 120. */
 const possibleDurations = [45, 50, 60, 90, 120];
 
 export default function AddClassesDrawer({
@@ -51,18 +47,14 @@ export default function AddClassesDrawer({
   onClose,
   refreshSchedules,
 }: AddClassesDrawerProps) {
-  // We now create our Supabase client instance here
   const supabase = createClient();
 
-  // Wizard steps
   const [currentStep, setCurrentStep] = useState<number>(1);
   const totalSteps = 5;
 
-  // Error & loading state
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // Single vs recurring
   const [occurrenceType, setOccurrenceType] = useState<"single" | "recurring">("single");
 
   // Single fields
@@ -87,24 +79,19 @@ export default function AddClassesDrawer({
     saturday: false,
   });
 
-  // Common field
+  // Common
   const [maxParticipants, setMaxParticipants] = useState<number>(10);
 
-  // Recompute singleEndTime whenever singleStartTime / singleDuration changes
   useEffect(() => {
     const newEnd = computeEndTime(singleStartTime, singleDuration);
     setSingleEndTime(newEnd);
   }, [singleStartTime, singleDuration]);
 
-  // Recompute recurringEndTime whenever recurringStartTime / recurringDuration changes
   useEffect(() => {
     const newEnd = computeEndTime(recurringStartTime, recurringDuration);
     setRecurringEndTime(newEnd);
   }, [recurringStartTime, recurringDuration]);
 
-  /**
-   * Helper: parse "HH:mm" + duration (mins) → new "HH:mm"
-   */
   function computeEndTime(start: string, durationMins: number): string {
     const [hh, mm] = start.split(":");
     const dateObj = new Date();
@@ -119,7 +106,6 @@ export default function AddClassesDrawer({
     setSelectedDays((prev) => ({ ...prev, [day]: !prev[day] }));
   }
 
-  // Basic validation per step
   function validateFieldsForCurrentStep(): boolean {
     setError(null);
     if (currentStep === 3) {
@@ -166,7 +152,6 @@ export default function AddClassesDrawer({
     }
   }
 
-  // Submit to supabase
   async function handleCreateClasses() {
     setIsSubmitting(true);
     setError(null);
@@ -177,17 +162,15 @@ export default function AddClassesDrawer({
       if (occurrenceType === "single") {
         const startDateTime = `${singleDate}T${singleStartTime}`;
         const endDateTime = `${singleDate}T${singleEndTime}`;
-
         inserts.push({
           current_gym_id: currentGymId,
           class_name: classType.class_name,
           start_time: startDateTime,
           end_time: endDateTime,
-          maxParticipants,
+          max_participants: maxParticipants,
           class_type_id: classType.id,
         });
       } else {
-        // recurring
         const startDateObj = parseISO(startDate);
         if (!isValid(startDateObj)) {
           setError("Invalid start date. Please enter a valid date.");
@@ -214,9 +197,7 @@ export default function AddClassesDrawer({
           for (const day of daysSelected) {
             const dayIndex = dayToIndex[day];
             const tempDate = new Date(newWeekDate);
-            // shift to correct day of that week
             tempDate.setDate(tempDate.getDate() + (dayIndex - tempDate.getDay()));
-
             const classDate = format(tempDate, "yyyy-MM-dd");
             const startDateTime = `${classDate}T${recurringStartTime}`;
             const endDateTime = `${classDate}T${recurringEndTime}`;
@@ -226,17 +207,14 @@ export default function AddClassesDrawer({
               class_name: classType.class_name,
               start_time: startDateTime,
               end_time: endDateTime,
-              maxParticipants,
+              max_participants: maxParticipants,
               class_type_id: classType.id,
             });
           }
         }
       }
 
-      const { error: insertError } = await supabase
-        .from("class_schedules")
-        .insert(inserts);
-
+      const { error: insertError } = await supabase.from("class_schedules").insert(inserts);
       if (insertError) {
         setError(insertError.message);
       } else {
@@ -250,278 +228,12 @@ export default function AddClassesDrawer({
     }
   }
 
-  // Step content
-  function renderStepContent() {
-    if (currentStep === 1) {
-      return (
-        <div className="space-y-1">
-          <h3 className="text-md font-semibold text-pink-400">
-            Step 1: Confirm Class Type
-          </h3>
-          <p className="text-sm text-gray-300">
-            You have selected:{" "}
-            <span className="font-bold text-white">{classType.class_name}</span>
-          </p>
-          {classType.description && (
-            <p className="text-xs text-gray-400">{classType.description}</p>
-          )}
-          <p className="text-xs text-gray-500">Click “Next” to proceed.</p>
-        </div>
-      );
-    } else if (currentStep === 2) {
-      return (
-        <div className="space-y-3">
-          <h3 className="text-md font-semibold text-pink-400">
-            Step 2: Single vs Recurring
-          </h3>
-          <p className="text-sm text-gray-300">
-            Create a single class or schedule multiple recurring ones.
-          </p>
-          <div className="flex items-center space-x-6 mt-2">
-            <label className="flex items-center space-x-2 text-sm text-gray-300">
-              <input
-                type="radio"
-                name="occurrence"
-                value="single"
-                checked={occurrenceType === "single"}
-                onChange={() => setOccurrenceType("single")}
-                className="focus:ring-pink-500"
-              />
-              <span>Single Class</span>
-            </label>
-            <label className="flex items-center space-x-2 text-sm text-gray-300">
-              <input
-                type="radio"
-                name="occurrence"
-                value="recurring"
-                checked={occurrenceType === "recurring"}
-                onChange={() => setOccurrenceType("recurring")}
-                className="focus:ring-pink-500"
-              />
-              <span>Recurring Schedule</span>
-            </label>
-          </div>
-        </div>
-      );
-    } else if (currentStep === 3) {
-      if (occurrenceType === "single") {
-        return (
-          <div className="space-y-4">
-            <h3 className="text-md font-semibold text-pink-400">
-              Step 3: Date & Time (Single)
-            </h3>
-            <div>
-              <label className="block mb-1 text-sm font-medium text-gray-300">
-                Date
-              </label>
-              <input
-                type="date"
-                className="w-full max-w-xs p-2 border border-gray-600 rounded bg-gray-800 text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
-                value={singleDate}
-                onChange={(e) => setSingleDate(e.target.value)}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block mb-1 text-sm font-medium text-gray-300">
-                  Start Time
-                </label>
-                <select
-                  className="w-full p-2 border border-gray-600 rounded bg-gray-800 text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
-                  value={singleStartTime}
-                  onChange={(e) => setSingleStartTime(e.target.value)}
-                >
-                  {possibleStartTimes.map((time) => (
-                    <option key={time} value={time}>
-                      {time}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block mb-1 text-sm font-medium text-gray-300">
-                  Duration (minutes)
-                </label>
-                <select
-                  className="w-full p-2 border border-gray-600 rounded bg-gray-800 text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
-                  value={singleDuration}
-                  onChange={(e) => setSingleDuration(Number(e.target.value))}
-                >
-                  {possibleDurations.map((d) => (
-                    <option key={d} value={d}>
-                      {d} min
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block mb-1 text-sm font-medium text-gray-300">
-                End Time (auto-calculated)
-              </label>
-              <input
-                type="text"
-                readOnly
-                className="w-full max-w-xs p-2 border border-gray-600 rounded bg-gray-700 text-gray-300 text-sm cursor-not-allowed"
-                value={singleEndTime}
-              />
-            </div>
-          </div>
-        );
-      } else {
-        // recurring
-        const days = [
-          "sunday",
-          "monday",
-          "tuesday",
-          "wednesday",
-          "thursday",
-          "friday",
-          "saturday",
-        ];
-        return (
-          <div className="space-y-4">
-            <h3 className="text-md font-semibold text-pink-400">
-              Step 3: Recurring Details
-            </h3>
-            <div>
-              <label className="block mb-1 text-sm font-medium text-gray-300">
-                Start Date
-              </label>
-              <input
-                type="date"
-                className="w-full max-w-xs p-2 border border-gray-600 rounded bg-gray-800 text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block mb-1 text-sm font-medium text-gray-300">
-                  Start Time
-                </label>
-                <select
-                  className="w-full p-2 border border-gray-600 rounded bg-gray-800 text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
-                  value={recurringStartTime}
-                  onChange={(e) => setRecurringStartTime(e.target.value)}
-                >
-                  {possibleStartTimes.map((time) => (
-                    <option key={time} value={time}>
-                      {time}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block mb-1 text-sm font-medium text-gray-300">
-                  Duration (minutes)
-                </label>
-                <select
-                  className="w-full p-2 border border-gray-600 rounded bg-gray-800 text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
-                  value={recurringDuration}
-                  onChange={(e) => setRecurringDuration(Number(e.target.value))}
-                >
-                  {possibleDurations.map((d) => (
-                    <option key={d} value={d}>
-                      {d} min
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block mb-1 text-sm font-medium text-gray-300">
-                End Time (auto-calculated)
-              </label>
-              <input
-                type="text"
-                readOnly
-                className="w-full max-w-xs p-2 border border-gray-600 rounded bg-gray-700 text-gray-300 text-sm cursor-not-allowed"
-                value={recurringEndTime}
-              />
-            </div>
-
-            <div className="border-2">
-              <label className="block mb-1 text-sm font-medium text-gray-300">
-                Days of the Week
-              </label>
-              <div className="grid grid-cols-2 gap-2 text-sm text-gray-200">
-                {days.map((day) => (
-                  <label key={day} className="flex items-center space-x-1">
-                    <input
-                      type="checkbox"
-                      className="focus:ring-pink-500"
-                      checked={selectedDays[day]}
-                      onChange={() => handleDayToggle(day)}
-                    />
-                    <span className="capitalize">{day}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="block mb-1 text-sm font-medium text-gray-300">
-                Number of Weeks
-              </label>
-              <input
-                type="number"
-                className="w-full max-w-xs p-2 border border-gray-600 rounded bg-gray-800 text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
-                value={weeksCount}
-                onChange={(e) => setWeeksCount(Number(e.target.value))}
-                min={1}
-              />
-              <p className="text-xs text-gray-400 mt-1">
-                E.g., picking Monday & Wednesday for 4 weeks = 8 total classes.
-              </p>
-            </div>
-          </div>
-        );
-      }
-    } else if (currentStep === 4) {
-      return (
-        <div className="space-y-3">
-          <h3 className="text-md font-semibold text-pink-400">
-            Step 4: Max Participants
-          </h3>
-          <input
-            type="number"
-            className="w-full max-w-xs p-2 border border-gray-600 rounded bg-gray-800 text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
-            value={maxParticipants}
-            onChange={(e) => setMaxParticipants(Number(e.target.value))}
-            min={1}
-          />
-          <p className="text-xs text-gray-400">
-            The maximum number of people who can register for this class.
-          </p>
-        </div>
-      );
-    } else if (currentStep === 5) {
-      return (
-        <div className="space-y-3">
-          <h3 className="text-md font-semibold text-pink-400">
-            Step 5: Review & Confirm
-          </h3>
-          {renderPreview()}
-          <p className="text-sm text-gray-400">
-            If everything looks correct, click "Create Classes".
-          </p>
-        </div>
-      );
-    }
-    return null;
-  }
-
   function renderPreview() {
     if (occurrenceType === "single") {
       return (
-        <div className="text-sm text-gray-300 space-y-1">
+        <div className="text-sm text-muted-foreground space-y-1">
           <p>
-            Class: <span className="text-white">{classType.class_name}</span>
+            Class: <span className="text-foreground">{classType.class_name}</span>
           </p>
           <p>Date: {singleDate || "N/A"}</p>
           <p>
@@ -536,9 +248,9 @@ export default function AddClassesDrawer({
         .map(([day]) => day)
         .join(", ");
       return (
-        <div className="text-sm text-gray-300 space-y-1">
+        <div className="text-sm text-muted-foreground space-y-1">
           <p>
-            Class: <span className="text-white">{classType.class_name}</span>
+            Class: <span className="text-foreground">{classType.class_name}</span>
           </p>
           <p>Start Date: {startDate || "N/A"}</p>
           <p>Days: {daysSelected || "None"}</p>
@@ -547,18 +259,269 @@ export default function AddClassesDrawer({
           </p>
           <p>Number of Weeks: {weeksCount}</p>
           <p>Max Participants: {maxParticipants}</p>
-          <p className="text-xs text-gray-400">
-            This will create multiple classes. E.g., 2 days/week for 4 weeks =
-            8 classes.
+          <p className="text-xs text-muted-foreground">
+            This will create multiple classes. E.g., 2 days/week for 4 weeks = 8 classes.
           </p>
         </div>
       );
     }
   }
 
+  function renderStepContent() {
+    if (currentStep === 1) {
+      return (
+        <div className="space-y-1">
+          <h3 className="text-md font-semibold text-accent">Step 1: Confirm Class Type</h3>
+          <p className="text-sm text-muted-foreground">
+            You have selected:{" "}
+            <span className="font-bold text-foreground">{classType.class_name}</span>
+          </p>
+          {classType.description && (
+            <p className="text-xs text-muted-foreground">{classType.description}</p>
+          )}
+          <p className="text-xs text-muted-foreground">Click “Next” to proceed.</p>
+        </div>
+      );
+    } else if (currentStep === 2) {
+      return (
+        <div className="space-y-3">
+          <h3 className="text-md font-semibold text-accent">Step 2: Single vs Recurring</h3>
+          <p className="text-sm text-muted-foreground">
+            Create a single class or schedule multiple recurring ones.
+          </p>
+          <div className="flex items-center space-x-6 mt-2">
+            <label className="flex items-center space-x-2 text-sm text-foreground">
+              <input
+                type="radio"
+                name="occurrence"
+                value="single"
+                checked={occurrenceType === "single"}
+                onChange={() => setOccurrenceType("single")}
+                className="focus:ring-accent"
+              />
+              <span>Single Class</span>
+            </label>
+            <label className="flex items-center space-x-2 text-sm text-foreground">
+              <input
+                type="radio"
+                name="occurrence"
+                value="recurring"
+                checked={occurrenceType === "recurring"}
+                onChange={() => setOccurrenceType("recurring")}
+                className="focus:ring-accent"
+              />
+              <span>Recurring Schedule</span>
+            </label>
+          </div>
+        </div>
+      );
+    } else if (currentStep === 3) {
+      if (occurrenceType === "single") {
+        return (
+          <div className="space-y-4">
+            <h3 className="text-md font-semibold text-accent">
+              Step 3: Date & Time (Single)
+            </h3>
+            <div>
+              <label className="block mb-1 text-sm font-medium text-foreground">Date</label>
+              <input
+                type="date"
+                className="w-full max-w-xs p-2 border border-border rounded bg-secondary text-secondary-foreground text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+                value={singleDate}
+                onChange={(e) => setSingleDate(e.target.value)}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block mb-1 text-sm font-medium text-foreground">
+                  Start Time
+                </label>
+                <select
+                  className="w-full p-2 border border-border rounded bg-secondary text-secondary-foreground text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+                  value={singleStartTime}
+                  onChange={(e) => setSingleStartTime(e.target.value)}
+                >
+                  {possibleStartTimes.map((time) => (
+                    <option key={time} value={time}>
+                      {time}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block mb-1 text-sm font-medium text-foreground">
+                  Duration (minutes)
+                </label>
+                <select
+                  className="w-full p-2 border border-border rounded bg-secondary text-secondary-foreground text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+                  value={singleDuration}
+                  onChange={(e) => setSingleDuration(Number(e.target.value))}
+                >
+                  {possibleDurations.map((d) => (
+                    <option key={d} value={d}>
+                      {d} min
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block mb-1 text-sm font-medium text-foreground">
+                End Time (auto-calculated)
+              </label>
+              <input
+                type="text"
+                readOnly
+                className="w-full max-w-xs p-2 border border-border rounded bg-secondary text-muted-foreground text-sm cursor-not-allowed"
+                value={singleEndTime}
+              />
+            </div>
+          </div>
+        );
+      } else {
+        const days = [
+          "sunday",
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday",
+        ];
+        return (
+          <div className="space-y-4">
+            <h3 className="text-md font-semibold text-accent">Step 3: Recurring Details</h3>
+            <div>
+              <label className="block mb-1 text-sm font-medium text-foreground">
+                Start Date
+              </label>
+              <input
+                type="date"
+                className="w-full max-w-xs p-2 border border-border rounded bg-secondary text-secondary-foreground text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block mb-1 text-sm font-medium text-foreground">
+                  Start Time
+                </label>
+                <select
+                  className="w-full p-2 border border-border rounded bg-secondary text-secondary-foreground text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+                  value={recurringStartTime}
+                  onChange={(e) => setRecurringStartTime(e.target.value)}
+                >
+                  {possibleStartTimes.map((time) => (
+                    <option key={time} value={time}>
+                      {time}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block mb-1 text-sm font-medium text-foreground">
+                  Duration (minutes)
+                </label>
+                <select
+                  className="w-full p-2 border border-border rounded bg-secondary text-secondary-foreground text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+                  value={recurringDuration}
+                  onChange={(e) => setRecurringDuration(Number(e.target.value))}
+                >
+                  {possibleDurations.map((d) => (
+                    <option key={d} value={d}>
+                      {d} min
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block mb-1 text-sm font-medium text-foreground">
+                End Time (auto-calculated)
+              </label>
+              <input
+                type="text"
+                readOnly
+                className="w-full max-w-xs p-2 border border-border rounded bg-secondary text-muted-foreground text-sm cursor-not-allowed"
+                value={recurringEndTime}
+              />
+            </div>
+
+            <div className="border-2 border-border p-2 rounded">
+              <label className="block mb-1 text-sm font-medium text-foreground">
+                Days of the Week
+              </label>
+              <div className="grid grid-cols-2 gap-2 text-sm text-foreground">
+                {days.map((day) => (
+                  <label key={day} className="flex items-center space-x-1">
+                    <input
+                      type="checkbox"
+                      className="focus:ring-accent"
+                      checked={selectedDays[day]}
+                      onChange={() => handleDayToggle(day)}
+                    />
+                    <span className="capitalize">{day}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block mb-1 text-sm font-medium text-foreground">
+                Number of Weeks
+              </label>
+              <input
+                type="number"
+                className="w-full max-w-xs p-2 border border-border rounded bg-secondary text-secondary-foreground text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+                value={weeksCount}
+                onChange={(e) => setWeeksCount(Number(e.target.value))}
+                min={1}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                E.g., picking Monday &amp; Wednesday for 4 weeks = 8 total classes.
+              </p>
+            </div>
+          </div>
+        );
+      }
+    } else if (currentStep === 4) {
+      return (
+        <div className="space-y-3">
+          <h3 className="text-md font-semibold text-accent">Step 4: Max Participants</h3>
+          <input
+            type="number"
+            className="w-full max-w-xs p-2 border border-border rounded bg-secondary text-secondary-foreground text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+            value={maxParticipants}
+            onChange={(e) => setMaxParticipants(Number(e.target.value))}
+            min={1}
+          />
+          <p className="text-xs text-muted-foreground">
+            The maximum number of people who can register for this class.
+          </p>
+        </div>
+      );
+    } else if (currentStep === 5) {
+      return (
+        <div className="space-y-3">
+          <h3 className="text-md font-semibold text-accent">Step 5: Review &amp; Confirm</h3>
+          {renderPreview()}
+          <p className="text-sm text-muted-foreground">
+            If everything looks correct, click "Create Classes".
+          </p>
+        </div>
+      );
+    }
+    return null;
+  }
+
   const StepIndicator = () => (
     <div className="mb-4">
-      <p className="text-sm text-gray-400 font-semibold">
+      <p className="text-sm text-muted-foreground font-semibold">
         Step {currentStep} of {totalSteps}
       </p>
       <div className="flex space-x-1 mt-2">
@@ -566,7 +529,7 @@ export default function AddClassesDrawer({
           <div
             key={idx}
             className={`h-2 flex-grow rounded-full ${
-              idx < currentStep ? "bg-pink-500" : "bg-gray-600"
+              idx < currentStep ? "bg-accent" : "bg-secondary"
             }`}
           />
         ))}
@@ -575,18 +538,16 @@ export default function AddClassesDrawer({
   );
 
   return (
-    <div className="w-full h-full bg-gray-900 text-gray-200 flex flex-col overflow-y-auto p-2">
+    <div className="w-full h-full bg-background text-foreground flex flex-col overflow-y-auto p-2">
       <StepIndicator />
-
       {renderStepContent()}
-
-      {error && <div className="text-red-500 text-sm mt-4">{error}</div>}
+      {error && <div className="text-destructive text-sm mt-4">{error}</div>}
 
       <div className="flex justify-between mt-6">
         {currentStep > 1 && (
           <button
             type="button"
-            className="px-4 py-2 bg-gray-700 text-gray-200 rounded hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-pink-500"
+            className="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-accent"
             onClick={goBack}
             disabled={isSubmitting}
           >
@@ -597,7 +558,7 @@ export default function AddClassesDrawer({
           {currentStep < totalSteps && (
             <button
               type="button"
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-pink-500"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-accent"
               onClick={goNext}
               disabled={isSubmitting}
             >
@@ -608,7 +569,7 @@ export default function AddClassesDrawer({
             <button
               type="button"
               onClick={handleCreateClasses}
-              className="px-4 py-2 bg-pink-600 text-white rounded hover:bg-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-500"
+              className="px-4 py-2 bg-accent text-accent-foreground rounded hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent"
               disabled={isSubmitting}
             >
               {isSubmitting ? "Creating..." : "Create Classes"}

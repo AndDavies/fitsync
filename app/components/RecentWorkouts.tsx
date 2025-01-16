@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 
-// The shape your updated route returns
 type RecentWorkout = {
   date_performed: string;
   user_display_name: string | null;
@@ -21,8 +20,6 @@ export default function RecentWorkouts() {
       try {
         setLoading(true);
         setError(null);
-
-        // Call our updated route
         const res = await fetch("/api/workouts/recent");
         if (!res.ok) {
           const errData = await res.json();
@@ -37,42 +34,36 @@ export default function RecentWorkouts() {
         setLoading(false);
       }
     }
-
     fetchWorkouts();
   }, []);
 
   if (loading) {
-    return <p className="text-sm text-gray-400">Loading workouts...</p>;
+    return <p className="text-sm text-muted-foreground">Loading workouts...</p>;
   }
   if (error) {
-    return <p className="text-sm text-red-400">{error}</p>;
+    return <p className="text-sm text-destructive">{error}</p>;
   }
   if (!workouts || workouts.length === 0) {
-    return <p className="text-sm text-gray-500 italic">No recent workouts found.</p>;
+    return <p className="text-sm text-muted-foreground italic">No recent workouts found.</p>;
   }
 
   return (
-    <div className="p-4 bg-gray-900 rounded-xl border border-gray-700">
-      <h3 className="text-lg font-semibold mb-2 text-gray-100">
-        Recent Workouts from Your Community
-      </h3>
+    <div className="p-4 bg-card rounded-xl border border-border text-card-foreground">
+      <h3 className="text-lg font-semibold mb-2">Recent Workouts from Your Community</h3>
 
       <ul className="space-y-3">
         {workouts.map((wo, idx) => {
           const resultString = formatWorkoutResult(wo.scoring_type, wo.result);
 
           return (
-            <li
-              key={idx}
-              className="bg-gray-800 p-3 rounded border border-gray-600"
-            >
-              <p className="text-pink-400 font-semibold text-sm">
+            <li key={idx} className="bg-secondary p-3 rounded border border-border">
+              <p className="text-accent font-semibold text-sm">
                 {wo.user_display_name || "An Athlete"}
               </p>
               {resultString && (
-                <p className="text-pink-300 text-sm">{resultString}</p>
+                <p className="text-accent text-sm">{resultString}</p>
               )}
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Logged on: {new Date(wo.date_performed).toLocaleString()}
               </p>
             </li>
@@ -83,10 +74,6 @@ export default function RecentWorkouts() {
   );
 }
 
-/**
- * If a workout has "Load" scoring_type, parse the JSON 
- * and display each set's weight & unit. Otherwise returns null
- */
 function formatWorkoutResult(
   scoringType?: string,
   rawResult?: string | Record<string, any> | Record<string, any>[]
@@ -98,7 +85,6 @@ function formatWorkoutResult(
 
   let parsed: Array<Record<string, any>> = [];
 
-  // If rawResult is a JSON string, parse it
   if (typeof rawResult === "string") {
     try {
       parsed = JSON.parse(rawResult);

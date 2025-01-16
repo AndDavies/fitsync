@@ -2,11 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { createClient } from "@/utils/supabase/client"; // New import
+import { createClient } from "@/utils/supabase/client";
+
 // Helpers
 function startOfCurrentWeek() {
   const now = new Date();
-  const dayOfWeek = now.getDay(); // Sunday=0, Monday=1, ...
+  const dayOfWeek = now.getDay();
   const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
   const monday = new Date(now);
   monday.setDate(now.getDate() - diffToMonday);
@@ -26,9 +27,8 @@ interface Goals {
 }
 
 interface UserProfile {
-  user_id: string;          // from user_profiles
-  goals?: Goals | null;     // or whatever type you store
-  // ... any additional columns like role, current_gym_id, etc.
+  user_id: string;
+  goals?: Goals | null;
 }
 
 interface GoalsDisplayProps {
@@ -36,30 +36,27 @@ interface GoalsDisplayProps {
 }
 
 const GoalsDisplay: React.FC<GoalsDisplayProps> = ({ userProfile }) => {
-  const supabase = createClient(); // create our supabase browser client
-  const [classProgress, setClassProgress] = useState({ goal: null as number|null, completed: 0 });
-  const [workoutProgress, setWorkoutProgress] = useState({ goal: null as number|null, completed: 0 });
+  const supabase = createClient();
+  const [classProgress, setClassProgress] = useState({ goal: null as number | null, completed: 0 });
+  const [workoutProgress, setWorkoutProgress] = useState({ goal: null as number | null, completed: 0 });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string|null>(null);
-  const [aiSuggestion, setAiSuggestion] = useState<string|null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProgress = async () => {
-      // If no user ID, skip
       if (!userProfile || !userProfile.user_id) {
         setLoading(false);
         return;
       }
 
-      // Extract goals from userProfile
       let goalsData: Goals = userProfile.goals || {};
       const weeklyClassGoal = goalsData.weekly_class_goal ?? 3;
       const weeklyWorkoutGoal = goalsData.weekly_workout_goal ?? 3;
-
       const { start, end } = startOfCurrentWeek();
 
       try {
-        // 1) Fetch class registrations
+        // 1) class registrations
         const { data: classData, error: classError } = await supabase
           .from("class_registrations")
           .select("id")
@@ -71,7 +68,7 @@ const GoalsDisplay: React.FC<GoalsDisplayProps> = ({ userProfile }) => {
         if (classError) throw new Error(classError.message);
         const classCount = classData?.length ?? 0;
 
-        // 2) Fetch logged workouts
+        // 2) logged workouts
         const { data: workoutData, error: workoutError } = await supabase
           .from("workout_results")
           .select("id")
@@ -85,12 +82,8 @@ const GoalsDisplay: React.FC<GoalsDisplayProps> = ({ userProfile }) => {
         setClassProgress({ goal: weeklyClassGoal, completed: classCount });
         setWorkoutProgress({ goal: weeklyWorkoutGoal, completed: workoutCount });
 
-        // Example: if you had an AI suggestions endpoint
-        // const aiRes = await fetch("/api/ai/advice");
-        // if (aiRes.ok) {
-        //   const aiData = await aiRes.json();
-        //   setAiSuggestion(aiData.suggestion);
-        // }
+        // Possibly fetch AI suggestions
+        // setAiSuggestion(aiData.suggestion);
 
         setLoading(false);
       } catch (err: any) {
@@ -99,44 +92,42 @@ const GoalsDisplay: React.FC<GoalsDisplayProps> = ({ userProfile }) => {
         setLoading(false);
       }
     };
-
     fetchProgress();
   }, [userProfile, supabase]);
 
   if (loading) {
     return (
-      <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
-        <h3 className="text-lg font-semibold text-gray-100">Weekly Goals</h3>
-        <p className="text-sm text-gray-400 mt-2">Loading your progress...</p>
+      <div className="bg-card p-6 rounded-xl border border-border text-card-foreground">
+        <h3 className="text-lg font-semibold">Weekly Goals</h3>
+        <p className="text-sm text-muted-foreground mt-2">Loading your progress...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
-        <h3 className="text-lg font-semibold text-gray-100">Weekly Goals</h3>
-        <p className="text-sm text-red-400 mt-2">{error}</p>
+      <div className="bg-card p-6 rounded-xl border border-border text-card-foreground">
+        <h3 className="text-lg font-semibold">Weekly Goals</h3>
+        <p className="text-sm text-destructive mt-2">{error}</p>
       </div>
     );
   }
 
-  // If no goals are set at all:
+  // If no goals are set:
   if (classProgress.goal === null && workoutProgress.goal === null) {
     return (
-      <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
-        <h3 className="text-lg font-semibold text-gray-100 mb-2">Set Your Weekly Goals</h3>
-        <p className="text-sm text-gray-300 mb-4">
+      <div className="bg-card p-6 rounded-xl border border-border text-card-foreground">
+        <h3 className="text-lg font-semibold mb-2">Set Your Weekly Goals</h3>
+        <p className="text-sm text-muted-foreground mb-4">
           You haven’t set any weekly goals yet. Set them now to stay on track.
         </p>
-        <Link href="/goals" className="text-sm text-blue-400 hover:underline">
+        <Link href="/goals" className="text-sm text-accent hover:underline">
           Set Weekly Goals
         </Link>
       </div>
     );
   }
 
-  // Helper for circle progress
   const CircleProgress = ({ goal, completed }: { goal: number; completed: number }) => {
     const ratio = goal > 0 ? completed / goal : 0;
     const radius = 45;
@@ -146,12 +137,19 @@ const GoalsDisplay: React.FC<GoalsDisplayProps> = ({ userProfile }) => {
     return (
       <div className="relative" style={{ width: "100px", height: "100px" }}>
         <svg className="transform -rotate-90" width="100" height="100">
-          <circle cx="50" cy="50" r={radius} stroke="#2d2d2d" strokeWidth="10" fill="none" />
           <circle
             cx="50"
             cy="50"
             r={radius}
-            stroke="#00b894"
+            stroke="var(--muted-foreground)"
+            strokeWidth="10"
+            fill="none"
+          />
+          <circle
+            cx="50"
+            cy="50"
+            r={radius}
+            stroke="var(--accent)"
             strokeWidth="10"
             fill="none"
             strokeDasharray={circumference}
@@ -169,25 +167,25 @@ const GoalsDisplay: React.FC<GoalsDisplayProps> = ({ userProfile }) => {
   };
 
   return (
-    <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 text-gray-100">
+    <div className="bg-card p-6 rounded-xl border border-border text-card-foreground">
       <h3 className="text-lg font-semibold mb-4">Your Weekly Goals</h3>
       <div className="flex space-x-8">
         {classProgress.goal !== null && (
           <div className="flex flex-col items-center">
             <CircleProgress goal={classProgress.goal} completed={classProgress.completed} />
-            <p className="text-sm text-gray-300 mt-2">Classes Attended</p>
+            <p className="text-sm text-muted-foreground mt-2">Classes Attended</p>
           </div>
         )}
         {workoutProgress.goal !== null && (
           <div className="flex flex-col items-center">
             <CircleProgress goal={workoutProgress.goal} completed={workoutProgress.completed} />
-            <p className="text-sm text-gray-300 mt-2">Workouts Logged</p>
+            <p className="text-sm text-muted-foreground mt-2">Workouts Logged</p>
           </div>
         )}
       </div>
 
       {aiSuggestion && (
-        <div className="mt-4 p-4 bg-gray-900 rounded-xl border border-blue-500 text-blue-400">
+        <div className="mt-4 p-4 bg-background rounded-xl border border-accent text-accent-foreground">
           <h3 className="text-lg font-semibold mb-2">Coach’s AI Tip</h3>
           <p className="text-sm">{aiSuggestion}</p>
         </div>

@@ -1,6 +1,6 @@
 // layout.tsx (No major changes, but an idea)
-import "./globals.css";
-import Providers from "./providers";          
+import "./globals.css";     
+import { Providers } from "./providers";   
 
 export const metadata = {
   title: 'FitSync',
@@ -23,12 +23,8 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <Providers>
-          
-            
               {children}
-            
-          
-        </Providers>
+        </Providers >
       </body>
     </html>
   );

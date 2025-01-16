@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Header from "../../components/Header";
 import SideDrawer from "../../components/SideDrawer";
 
 type Gym = {
@@ -217,7 +216,6 @@ export default function ProfileClient({ userProfile }: ProfileClientProps) {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-900 text-gray-100">
-      <Header />
 
       <main className="flex-grow p-6 sm:p-8 lg:p-10">
         <div className="max-w-5xl mx-auto bg-gray-800 p-6 rounded-xl shadow border border-gray-700 space-y-8">
@@ -455,12 +453,6 @@ export default function ProfileClient({ userProfile }: ProfileClientProps) {
           </>
         )}
       </SideDrawer>
-
-      <footer className="bg-gray-800 text-center py-4 border-t border-gray-700">
-        <p className="text-sm text-gray-400">
-          &copy; 2024 FitSync. All rights reserved.
-        </p>
-      </footer>
     </div>
   );
 }

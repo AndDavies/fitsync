@@ -1,21 +1,34 @@
-import { NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+// app/api/gyms/route.ts
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 
 export async function GET(req: Request) {
-  const supabase = createRouteHandlerClient({ cookies });
-  
+  // 1) Retrieve cookies
+  const cookieStore = await cookies();
+  const allCookies = cookieStore.getAll();
+
+  // 2) Create supabase server client
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  const supabase = createServerClient(supabaseUrl, supabaseKey, {
+    cookies: {
+      getAll: () => allCookies,
+      setAll: () => {},
+    },
+  });
+
+  // 3) Parse search param
   const { searchParams } = new URL(req.url);
-  const query = searchParams.get('query');
+  const query = searchParams.get("query") || "";
 
-  let q = supabase.from('gyms').select('id,name');
-
-  if (query && query.trim().length > 0) {
-    q = q.ilike('name', `%${query.trim()}%`);
+  // 4) Build query
+  let q = supabase.from("gyms").select("id, name");
+  if (query.trim().length > 0) {
+    q = q.ilike("name", `%${query.trim()}%`);
   }
 
   const { data, error } = await q;
-
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

@@ -26,8 +26,6 @@ const RecentArticles: React.FC = () => {
           throw new Error(errData.error || "Failed to fetch articles");
         }
         const data = await res.json();
-        
-        // Limit the number of articles displayed, e.g., show only first 3
         const limitedArticles = (data.articles || []).slice(0, 3);
         setArticles(limitedArticles);
       } catch (err: any) {
@@ -41,24 +39,23 @@ const RecentArticles: React.FC = () => {
   }, []);
 
   return (
-    <div className="p-4 bg-gray-900 rounded-xl border border-gray-700">
-      <h3 className="text-lg font-semibold mb-4 text-gray-100">Recommended Reads</h3>
-      
-      {loading && <p className="text-sm text-gray-400">Loading articles...</p>}
-      {error && <p className="text-sm text-red-400">{error}</p>}
-      
+    <div className="p-4 bg-card rounded-xl border border-border text-card-foreground">
+      <h3 className="text-lg font-semibold mb-4">Recommended Reads</h3>
+
+      {loading && <p className="text-sm text-muted-foreground">Loading articles...</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
+
       {articles && !loading && !error && articles.length === 0 && (
-        <p className="text-sm text-gray-500 italic">No articles found.</p>
+        <p className="text-sm text-muted-foreground italic">No articles found.</p>
       )}
-      
+
       {articles && !loading && !error && articles.length > 0 && (
         <ul className="space-y-4">
           {articles.map((article, idx) => (
             <li
               key={idx}
-              className="bg-gray-800 p-3 rounded border border-gray-600 hover:border-pink-500 transition relative"
+              className="bg-secondary p-3 rounded border border-border hover:border-accent transition relative"
             >
-              {/* If the article has an image, show it */}
               {article.imageUrl && (
                 <div className="w-full h-40 mb-3 overflow-hidden rounded">
                   <img
@@ -68,24 +65,24 @@ const RecentArticles: React.FC = () => {
                   />
                 </div>
               )}
-              
+
               <a
                 href={article.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-pink-400 font-semibold text-md hover:underline"
+                className="text-accent font-semibold text-md hover:underline"
               >
                 {article.title}
               </a>
-              
+
               {article.pubDate && (
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Published: {new Date(article.pubDate).toLocaleDateString()}
                 </p>
               )}
-              
+
               {article.contentSnippet && (
-                <p className="text-sm text-gray-300 mt-2 line-clamp-3 overflow-hidden">
+                <p className="text-sm text-foreground mt-2 line-clamp-3 overflow-hidden">
                   {article.contentSnippet}
                 </p>
               )}

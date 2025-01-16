@@ -6,7 +6,6 @@ import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { Menu, X } from "@geist-ui/icons";
 
-// If you use Shadcn menu items (adjust these imports as needed)
 import {
   NavigationMenu,
   NavigationMenuList,
@@ -17,6 +16,7 @@ import {
 } from "./NavigationMenu";
 
 import { cn } from "@/utils/utils";
+import { ModeToggle } from "./ModeToggle";
 
 function ListItem({
   title,
@@ -32,11 +32,15 @@ function ListItem({
       <NavigationMenuLink asChild>
         <Link
           href={href}
-          className="block select-none space-y-1 rounded-md p-3 no-underline transition-colors
-                     hover:bg-gray-800 hover:text-pink-400 focus:bg-gray-800 focus:text-pink-400"
+          className="block select-none space-y-1 rounded-md p-3 no-underline transition-colors 
+            hover:bg-secondary hover:text-accent-foreground focus:bg-secondary focus:text-accent-foreground"
         >
-          <div className="text-sm font-medium leading-none text-gray-200">{title}</div>
-          <p className="text-sm leading-snug text-gray-400">{description}</p>
+          <div className="text-sm font-medium leading-none text-foreground">
+            {title}
+          </div>
+          <p className="text-xs leading-snug text-muted-foreground">
+            {description}
+          </p>
         </Link>
       </NavigationMenuLink>
     </li>
@@ -50,12 +54,9 @@ const Header: React.FC = () => {
   const router = useRouter();
   const pathname = usePathname();
 
-  // In a future iteration, you could pass `displayName` or `role` as props
-  // from a server layout or a server page. For now, we just use placeholders.
-  const displayName = "User";  
-  const isAdminOrCoach = false; // or pass as prop if you want role-based nav
+  const displayName = "User";
+  const isAdminOrCoach = false;
 
-  // sign out using your server route
   const handleSignOut = async () => {
     setLoading(true);
     try {
@@ -75,7 +76,6 @@ const Header: React.FC = () => {
     }
   };
 
-  // Example role-based nav checks
   const navItems = [
     { href: "/dashboard", label: "Dashboard" },
     {
@@ -89,8 +89,6 @@ const Header: React.FC = () => {
     { href: "/dashboard/plan", label: "Programming Calendar" },
     { href: "/dashboard/classes", label: "Class Calendar" },
     { href: "/dashboard/profile", label: "Profile" },
-
-    // If user can manage users, add admin items
     ...(isAdminOrCoach
       ? [
           {
@@ -105,7 +103,11 @@ const Header: React.FC = () => {
   ];
 
   return (
-    <header className="bg-gray-900 text-gray-100 shadow-md border-b border-gray-800">
+    <header
+      className={cn(
+        "bg-card text-card-foreground shadow-md border-b border-border"
+      )}
+    >
       <div className="flex items-center justify-between px-4 py-3">
         {/* Logo */}
         <Link href="/">
@@ -126,9 +128,11 @@ const Header: React.FC = () => {
                 if (item.children) {
                   return (
                     <NavigationMenuItem key={idx}>
-                      <NavigationMenuTrigger>{item.label}</NavigationMenuTrigger>
+                      <NavigationMenuTrigger>
+                        {item.label}
+                      </NavigationMenuTrigger>
                       <NavigationMenuContent>
-                        <ul className="list-none">
+                        <ul className="list-none p-2 space-y-1 bg-card rounded-md">
                           {item.children.map((child, i) => (
                             <ListItem
                               key={i}
@@ -149,8 +153,10 @@ const Header: React.FC = () => {
                     <Link href={item.href!} passHref legacyBehavior>
                       <NavigationMenuLink
                         className={cn(
-                          "px-4 py-2 text-sm font-medium text-gray-300 rounded-md transition-colors hover:bg-gray-800 hover:text-pink-400",
-                          isActive ? "text-pink-500" : ""
+                          "px-4 py-2 text-sm font-medium rounded-md transition-colors hover:bg-secondary hover:text-accent-foreground",
+                          isActive
+                            ? "text-accent font-semibold"
+                            : "text-foreground"
                         )}
                       >
                         {item.label}
@@ -165,17 +171,20 @@ const Header: React.FC = () => {
 
         {/* User Actions */}
         <div className="flex items-center space-x-4">
-          <span className="hidden md:block text-xs text-gray-300">
+          <span className="hidden md:block text-xs text-muted-foreground">
             Welcome, {displayName}
           </span>
           <button
             onClick={handleSignOut}
             disabled={loading}
-            className="px-3 py-1 bg-red-500 text-xs text-white rounded-full hover:bg-red-600 transition focus:outline-none focus:ring-2 focus:ring-red-400 disabled:opacity-50"
+            className={cn(
+              "px-3 py-1 rounded-full text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-destructive",
+              "bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
+            )}
           >
             {loading ? "Logging Out..." : "Log Out"}
           </button>
-          {/* Mobile Menu Toggle */}
+          <ModeToggle />
           <button
             onClick={() => setIsMenuOpen((prev) => !prev)}
             className="md:hidden focus:outline-none"
@@ -187,19 +196,21 @@ const Header: React.FC = () => {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <nav className="md:hidden bg-gray-800 border-t border-gray-700">
+        <nav className="md:hidden border-t border-border bg-card">
           <ul className="flex flex-col space-y-3 p-3 list-none">
             {navItems.map((item, idx) => {
               if (item.children) {
                 return item.children.map((child, cidx) => {
                   const isActive = pathname === child.href;
                   return (
-                    <li key={`${idx}-${cidx}`} className="list-none">
+                    <li key={`${idx}-${cidx}`}>
                       <Link href={child.href}>
                         <span
                           className={cn(
-                            "block text-sm font-medium text-gray-300 hover:text-pink-400",
-                            isActive ? "text-pink-500" : ""
+                            "block text-sm font-medium transition-colors px-2 py-1 rounded hover:bg-secondary hover:text-accent-foreground",
+                            isActive
+                              ? "text-accent font-semibold"
+                              : "text-foreground"
                           )}
                         >
                           {child.label}
@@ -211,12 +222,14 @@ const Header: React.FC = () => {
               } else {
                 const isActive = pathname === item.href;
                 return (
-                  <li key={idx} className="list-none">
+                  <li key={idx}>
                     <Link href={item.href!}>
                       <span
                         className={cn(
-                          "block text-sm font-medium text-gray-300 hover:text-pink-400",
-                          isActive ? "text-pink-500" : ""
+                          "block text-sm font-medium transition-colors px-2 py-1 rounded hover:bg-secondary hover:text-accent-foreground",
+                          isActive
+                            ? "text-accent font-semibold"
+                            : "text-foreground"
                         )}
                       >
                         {item.label}

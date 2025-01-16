@@ -1,51 +1,50 @@
-// File: app/api/class/cancel/route.ts
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { NextResponse } from 'next/server';
+// app/api/class/cancel/route.ts
+
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 
 export async function POST(request: Request) {
   try {
-    // 1. Create a Supabase client tied to server-side session
-    const supabase = createRouteHandlerClient({ cookies });
+    // 1) Retrieve cookies + create SSR supabase client
+    const cookieStore = await cookies();
+    const allCookies = cookieStore.getAll();
 
-    // 2. Get current session to find out which user is logged in
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    const supabase = createServerClient(supabaseUrl, supabaseKey, {
+      cookies: {
+        getAll: () => allCookies,
+        setAll: () => {},
+      },
+    });
 
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { error: 'Unauthorized - no user session found' },
-        { status: 401 }
-      );
+    // 2) Check user
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (!userData?.user) {
+      return NextResponse.json({ error: userError?.message || "Unauthorized" }, { status: 401 });
     }
+    const userId = userData.user.id;
 
-    const userId = session.user.id;
-
-    // 3. Parse the incoming JSON body for class_schedule_id
+    // 3) Parse incoming JSON
     const { class_schedule_id } = await request.json();
 
-    // 4. Remove (or update) the user's registration from the table
-    //    If you prefer "soft" cancellations, do .update({ status: 'cancelled' }) instead.
+    // 4) Delete or update the registration
     const { error: deleteError } = await supabase
-      .from('class_registrations')
+      .from("class_registrations")
       .delete()
-      .eq('class_schedule_id', class_schedule_id)
-      .eq('user_profile_id', userId);
+      .eq("class_schedule_id", class_schedule_id)
+      .eq("user_profile_id", userId);
 
     if (deleteError) {
-      return NextResponse.json(
-        { error: deleteError.message },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: deleteError.message }, { status: 400 });
     }
 
-    // 5. Return success
-    return NextResponse.json({ success: true, message: 'Registration canceled' });
+    // 5) Return success
+    return NextResponse.json({ success: true, message: "Registration canceled" });
   } catch (err: any) {
     return NextResponse.json(
-      { error: err.message || 'Unexpected error' },
+      { error: err.message || "Unexpected error" },
       { status: 500 }
     );
   }

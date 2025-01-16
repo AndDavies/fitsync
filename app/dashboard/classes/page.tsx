@@ -1,22 +1,18 @@
-import { redirect } from "next/navigation";
-import { fetchUserProfile } from "@/utils/supabase/fetchUserProfile";
+import { fetchUserProfile, UserProfile } from "@/utils/supabase/fetchUserProfile";
 import ClassesClient from "./ClassesClient";
 
 /**
- * Server Component:
- * 1. Fetches user + profile from server
- * 2. Redirects if not logged in
- * 3. Passes userProfile to the client component
+ * SSR Server Component for /dashboard/classes
  */
 export default async function ClassesPage() {
-  // By default, we want to redirect if there's no user
   const { user, profile } = await fetchUserProfile({ redirectIfNoUser: true });
+  // 'profile' is of type UserProfile | null
 
-  // If there's no user_profiles row, you can handle that scenario:
   if (!profile) {
-    // For example, redirect to onboarding or profile
-    redirect("/profile");
+    return <div className="text-gray-300 p-6">No profile found or not logged in</div>;
   }
 
+  // Pass the profile to ClassesClient
+  // Make sure 'ClassesClient' also expects { userProfile: UserProfile } with the same definition.
   return <ClassesClient userProfile={profile} />;
 }

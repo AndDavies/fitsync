@@ -1,6 +1,5 @@
-// app/components/DailyWOD.tsx
-
 "use client";
+
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { ParsedWorkout } from "./types";
@@ -18,7 +17,6 @@ function getFormattedDate(date: Date): string {
   return date.toISOString().split("T")[0];
 }
 
-// Make sure to export default here:
 export default function DailyWOD() {
   const [scheduledWorkouts, setScheduledWorkouts] = useState<LocalScheduledWorkout[]>([]);
   const [crossfitWOD, setCrossfitWOD] = useState<string | null>(null);
@@ -28,12 +26,10 @@ export default function DailyWOD() {
     async function fetchTodayWorkouts() {
       setLoading(true);
       try {
-        // This calls your new /api/workouts/today route
         const res = await fetch("/api/workouts/today", {
           credentials: "include",
         });
         if (!res.ok) {
-          // fallback logic
           setCrossfitWOD("Unable to load today’s CrossFit WOD.");
           setLoading(false);
           return;
@@ -45,7 +41,6 @@ export default function DailyWOD() {
           setCrossfitWOD("No scheduled workouts found for today.");
         }
       } catch (err) {
-        //console.error("Error fetching scheduled workouts:", err);
         setCrossfitWOD("Unable to load today’s CrossFit WOD.");
       } finally {
         setLoading(false);
@@ -56,14 +51,15 @@ export default function DailyWOD() {
   }, []);
 
   return (
-    <div className="p-6 bg-gray-900 rounded-xl border border-gray-700 text-gray-300">
-      <h4 className="text-md font-bold text-pink-500 mb-4">Today’s Workout</h4>
-      {loading && <p className="text-sm text-gray-400">Loading...</p>}
+    <div className="p-6 bg-card rounded-xl border border-border text-card-foreground">
+      <h4 className="text-md font-bold text-accent mb-4">Today’s Workout</h4>
+
+      {loading && <p className="text-sm text-muted-foreground">Loading...</p>}
 
       {!loading && scheduledWorkouts.length > 0 ? (
         <div className="space-y-4">
           {scheduledWorkouts.map((workout) => (
-            <div key={workout.id} className="border border-gray-600 p-4 rounded">
+            <div key={workout.id} className="border border-border p-4 rounded bg-secondary">
               <WorkoutDisplay
                 workoutData={workout.workout_details}
                 workoutName={workout.name}
@@ -76,10 +72,10 @@ export default function DailyWOD() {
       ) : (
         !loading && (
           <div>
-            <p className="text-sm text-gray-400 mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
               {crossfitWOD || "No scheduled workouts found for today."}
             </p>
-            <Link href="/workouts" className="text-sm text-blue-400 hover:underline">
+            <Link href="/workouts" className="text-sm text-accent hover:underline">
               Plan Your Workout for Today
             </Link>
           </div>

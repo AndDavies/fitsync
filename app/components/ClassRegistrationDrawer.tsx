@@ -1,6 +1,7 @@
 "use client";
+
 import { useState, useEffect } from "react";
-import { createClient } from "@/utils/supabase/client";  // <--- updated
+import { createClient } from "@/utils/supabase/client";
 import SideDrawer from "./SideDrawer";
 
 type ClassSchedule = {
@@ -28,7 +29,6 @@ export default function ClassRegistrationDrawer({
   onClose,
   refreshSchedules,
 }: ClassRegistrationDrawerProps) {
-  // create our supabase client
   const supabase = createClient();
 
   const [loading, setLoading] = useState(false);
@@ -52,7 +52,6 @@ export default function ClassRegistrationDrawer({
       .eq("status", "confirmed");
 
     if (!error && data) {
-      // data is an array; if { count: "exact" }, the .length should match
       setConfirmedCount(data.length);
     }
   };
@@ -121,65 +120,68 @@ export default function ClassRegistrationDrawer({
 
   return (
     <SideDrawer isOpen={isOpen} onClose={onClose}>
-      <div className="p-4">
-        <h2 className="text-xl font-bold">{classSchedule.class_name}</h2>
-        <p>
-          {classSchedule.start_time &&
-            new Date(classSchedule.start_time).toLocaleString()}
-        </p>
+      <div className="p-4 bg-background text-foreground h-full flex flex-col">
+        <h2 className="text-xl font-bold mb-2">{classSchedule.class_name}</h2>
+        {classSchedule.start_time && (
+          <p className="text-sm text-muted-foreground">
+            {new Date(classSchedule.start_time).toLocaleString()}
+          </p>
+        )}
         {confirmedCount !== null && (
-          <p>
+          <p className="text-sm text-muted-foreground mt-1">
             {confirmedCount} / {classSchedule.max_participants} confirmed
           </p>
         )}
 
-        {userStatus === "none" && (
-          <>
-            {confirmedCount !== null && spotsAvailable ? (
-              <button
-                onClick={handleRegister}
-                disabled={loading}
-                className="px-4 py-2 bg-green-500 text-white rounded mt-2"
-              >
-                {loading ? "Registering..." : "Register"}
-              </button>
-            ) : (
-              <button
-                onClick={handleRegister}
-                disabled={loading}
-                className="px-4 py-2 bg-yellow-500 text-white rounded mt-2"
-              >
-                {loading ? "Joining Waitlist..." : "Join Waitlist"}
-              </button>
-            )}
-          </>
-        )}
+        <div className="mt-4">
+          {userStatus === "none" && (
+            <>
+              {spotsAvailable ? (
+                <button
+                  onClick={handleRegister}
+                  disabled={loading}
+                  className="px-4 py-2 bg-accent text-accent-foreground rounded hover:bg-accent/90 transition"
+                >
+                  {loading ? "Registering..." : "Register"}
+                </button>
+              ) : (
+                <button
+                  onClick={handleRegister}
+                  disabled={loading}
+                  className="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-secondary/80 transition"
+                >
+                  {loading ? "Joining Waitlist..." : "Join Waitlist"}
+                </button>
+              )}
+            </>
+          )}
 
-        {userStatus === "confirmed" && (
-          <div className="mt-3">
-            <p>You are confirmed!</p>
-            <button
-              onClick={handleCancel}
-              disabled={loading}
-              className="px-4 py-2 bg-red-500 text-white rounded mt-2"
-            >
-              {loading ? "Cancelling..." : "Cancel Registration"}
-            </button>
-          </div>
-        )}
+          {userStatus === "confirmed" && (
+            <div className="mt-3">
+              <p className="text-sm text-accent">You are confirmed!</p>
+              <button
+                onClick={handleCancel}
+                disabled={loading}
+                className="px-4 py-2 bg-destructive text-destructive-foreground rounded hover:bg-destructive/90 transition mt-2"
+              >
+                {loading ? "Cancelling..." : "Cancel Registration"}
+              </button>
+            </div>
+          )}
 
-        {userStatus === "waitlisted" && (
-          <div className="mt-3">
-            <p>You are waitlisted.</p>
-            <button
-              onClick={handleCancel}
-              disabled={loading}
-              className="px-4 py-2 bg-red-500 text-white rounded mt-2"
-            >
-              {loading ? "Cancelling..." : "Cancel Registration"}
-            </button>
-          </div>
-        )}
+          {userStatus === "waitlisted" && (
+            <div className="mt-3">
+              <p className="text-sm text-accent">You are waitlisted.</p>
+              <button
+                onClick={handleCancel}
+                disabled={loading}
+                className="px-4 py-2 bg-destructive text-destructive-foreground rounded hover:bg-destructive/90 transition mt-2"
+              >
+                {loading ? "Cancelling..." : "Cancel Registration"}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </SideDrawer>
   );

@@ -2,10 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { MdOutlineContentCopy } from "react-icons/md";
-import { Text } from "@geist-ui/core";
-
-// import { supabase } from '@/utils/supabase/client'; // REMOVED
-// We'll fetch from our new SSR route instead
+import { Text } from "@geist-ui/core"; // If you still need this, or remove if not used
 
 type Workout = {
   workoutid: string;
@@ -34,42 +31,52 @@ function convertJsonToHumanReadable(json: any): string {
             continue;
           }
 
-          let line = '';
+          let line = "";
           if (mov.reps) {
             if (Array.isArray(mov.reps)) {
-              line += mov.reps.join('-') + ' ';
+              line += mov.reps.join("-") + " ";
             } else {
-              line += mov.reps + ' ';
+              line += mov.reps + " ";
             }
           }
-          line += mov.name || 'Unknown Movement';
+          line += mov.name || "Unknown Movement";
           if (mov.distance) {
             line += ` ${mov.distance}`;
           }
           lines.push(line.trim());
         }
       } else if (block.name && block.reps) {
-        const repsText = Array.isArray(block.reps) ? block.reps.join('-') : block.reps;
+        const repsText = Array.isArray(block.reps)
+          ? block.reps.join("-")
+          : block.reps;
         lines.push(`${block.name}: ${repsText}`);
       }
     }
   }
 
-  return lines.length > 0 ? lines.join('\n') : "No details available.";
+  return lines.length > 0 ? lines.join("\n") : "No details available.";
 }
-const WorkoutIdeas: React.FC<WorkoutIdeasProps> = ({ setWorkoutBuilderText, setWorkoutBuilderId, category }) => {
+
+const WorkoutIdeas: React.FC<WorkoutIdeasProps> = ({
+  setWorkoutBuilderText,
+  setWorkoutBuilderId,
+  category,
+}) => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [search, setSearch] = useState("");
 
-  // 1) Replacing direct supabase calls with a fetch to our new SSR endpoint
+  // 1) Fetch from SSR endpoint
   useEffect(() => {
     if (!category) return;
 
     async function fetchWorkouts() {
       try {
-        const res = await fetch(`/api/workouts/ideas?category=${encodeURIComponent(category)}`, {
-          credentials: "include", // ensures cookies (for SSR auth) are sent
-        });
+        const res = await fetch(
+          `/api/workouts/ideas?category=${encodeURIComponent(category)}`,
+          {
+            credentials: "include",
+          }
+        );
         if (!res.ok) {
           const { error } = await res.json().catch(() => ({ error: "Failed" }));
           console.error("Error fetching workouts from SSR endpoint:", error);
@@ -85,9 +92,11 @@ const WorkoutIdeas: React.FC<WorkoutIdeasProps> = ({ setWorkoutBuilderText, setW
     fetchWorkouts();
   }, [category]);
 
-  // 2) Filter logic remains the same
+  // 2) Filter
   const filteredWorkouts = useMemo(() => {
-    return workouts.filter((w) => w.title.toLowerCase().includes(search.toLowerCase()));
+    return workouts.filter((w) =>
+      w.title.toLowerCase().includes(search.toLowerCase())
+    );
   }, [workouts, search]);
 
   // 3) Use the returned data
@@ -104,7 +113,8 @@ const WorkoutIdeas: React.FC<WorkoutIdeasProps> = ({ setWorkoutBuilderText, setW
         placeholder="Search workouts..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="w-full p-2 border border-gray-700 rounded bg-gray-800 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500"
+        className="w-full p-2 border border-border rounded bg-secondary text-secondary-foreground 
+          placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent"
       />
 
       {filteredWorkouts.map((workout) => {
@@ -115,17 +125,20 @@ const WorkoutIdeas: React.FC<WorkoutIdeasProps> = ({ setWorkoutBuilderText, setW
         return (
           <div
             key={workout.workoutid}
-            className="border border-gray-700 rounded p-4 bg-gray-800 hover:border-pink-500 transition"
+            className="border border-border rounded p-4 bg-card hover:border-accent transition"
           >
             <div className="flex items-center justify-between mb-2">
-              <Text b style={{ color: "#F9FAFB" }}>
+              {/* If you no longer need <Text> from @geist-ui, 
+                  just replace with <span> or <h3> etc. */}
+              <Text b style={{ color: "var(--foreground)" }}>
                 {workout.title}
               </Text>
               <button
                 onClick={() => handleUseWorkout(workout)}
-                className="text-xs py-1 px-2 bg-pink-500 hover:bg-pink-600 text-white rounded flex items-center space-x-1 focus:outline-none focus:ring-2 focus:ring-pink-500 transition"
+                className="text-xs py-1 px-2 bg-accent text-accent-foreground hover:bg-accent/90 
+                  rounded flex items-center space-x-1 focus:outline-none focus:ring-2 focus:ring-accent transition"
               >
-                <MdOutlineContentCopy className="text-white" />
+                <MdOutlineContentCopy />
                 <span>Use This Workout</span>
               </button>
             </div>
@@ -135,16 +148,13 @@ const WorkoutIdeas: React.FC<WorkoutIdeasProps> = ({ setWorkoutBuilderText, setW
               style={{
                 width: "100%",
                 padding: "8px",
-                border: "1px solid #4B5563",
                 borderRadius: "4px",
                 resize: "none",
                 overflow: "auto",
                 fontSize: "0.875rem",
-                backgroundColor: "#111827",
-                color: "#F9FAFB",
-                minHeight: "6em",
               }}
-              className="focus:outline-none focus:ring-2 focus:ring-pink-500 placeholder-gray-500 mt-2 transition-colors duration-300"
+              className="border border-border bg-secondary text-secondary-foreground focus:outline-none 
+                focus:ring-2 focus:ring-accent placeholder-muted-foreground mt-2 transition-colors duration-300"
             />
           </div>
         );
