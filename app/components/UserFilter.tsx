@@ -1,11 +1,10 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/utils/supabase/client";
-import { useAuth } from "../context/AuthContext";
+import { createClient } from "@/utils/supabase/client";
 import SideDrawer from "./SideDrawer";
 import EditUserDrawer from "./EditUserDrawer";
-import AsyncSelect from 'react-select/async';
+import AsyncSelect from "react-select/async";
 
 const isValidUUID = (id: string) =>
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(id);
@@ -24,8 +23,13 @@ type User = {
 // React Select option type
 type OptionType = { label: string; value: string };
 
-const UserFilter: React.FC = () => {
-  const { userData, isLoading: authLoading } = useAuth();
+interface UserFilterProps {
+  gymId: string | null; // from your SSR or parent page
+}
+
+export default function UserFilter({ gymId }: UserFilterProps) {
+  const supabase = createClient();
+
   const [users, setUsers] = useState<User[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,66 +37,83 @@ const UserFilter: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  const currentGymId = userData?.current_gym_id;
+  /**
+   * Optionally, you can do a permission check here:
+   * if (!gymId) { ...some fallback or error message... }
+   */
 
-  const fetchUsers = useCallback(async (query?: string): Promise<OptionType[]> => {
-    setError(null);
-    setIsLoadingUsers(true);
+  const fetchUsers = useCallback(
+    async (query?: string): Promise<OptionType[]> => {
+      setError(null);
+      setIsLoadingUsers(true);
 
-    if (authLoading || !currentGymId || !isValidUUID(currentGymId)) {
-      setIsLoadingUsers(false);
-      return [];
-    }
+      // If no gym, or invalid gymId, bail out
+      if (!gymId || !isValidUUID(gymId)) {
+        setIsLoadingUsers(false);
+        return [];
+      }
 
-    let q = supabase
-      .from("user_profiles")
-      .select("user_id, display_name, role, email, subscription_plan, activity_level, join_date, last_login")
-      .eq("current_gym_id", currentGymId);
+      let q = supabase
+        .from("user_profiles")
+        .select(
+          "user_id, display_name, role, email, subscription_plan, activity_level, join_date, last_login"
+        )
+        .eq("current_gym_id", gymId);
 
-    if (query && query.trim().length > 0) {
-      q = q.or(`display_name.ilike.%${query.trim()}%,email.ilike.%${query.trim()}%`);
-    }
+      if (query && query.trim().length > 0) {
+        // Searching by display_name OR email
+        q = q.or(`display_name.ilike.%${query.trim()}%,email.ilike.%${query.trim()}%`);
+      }
 
-    const { data, error: fetchError } = await q;
+      const { data, error: fetchError } = await q;
 
-    if (fetchError) {
-      setError("Error fetching users: " + fetchError.message);
-      setIsLoadingUsers(false);
-      return [];
-    } else {
-      const fetchedUsers = data || [];
-      setUsers(fetchedUsers);
-      const options = fetchedUsers.map(u => ({
-        label: `${u.display_name} (${u.email})`,
-        value: u.user_id
-      }));
-      setIsLoadingUsers(false);
-      return options;
-    }
-  }, [authLoading, currentGymId]);
+      if (fetchError) {
+        setError("Error fetching users: " + fetchError.message);
+        setIsLoadingUsers(false);
+        return [];
+      } else {
+        const fetchedUsers = (data as User[]) || [];
+        setUsers(fetchedUsers);
 
-  // Initially load all users without query
+        const options: OptionType[] = fetchedUsers.map((u) => ({
+          label: `${u.display_name} (${u.email})`,
+          value: u.user_id,
+        }));
+
+        setIsLoadingUsers(false);
+        return options;
+      }
+    },
+    [gymId, supabase]
+  );
+
+  // Load all users once on mount
   useEffect(() => {
-    if (!authLoading && currentGymId) {
+    if (gymId) {
+      // If you want to fetch initial user list without a query
       fetchUsers();
+    } else {
+      setIsLoadingUsers(false);
     }
-  }, [authLoading, currentGymId, fetchUsers]);
+  }, [gymId, fetchUsers]);
 
+  // Called when user selects something from the AsyncSelect
   const handleSelectChange = (option: OptionType | null) => {
     if (!option) return;
-    const user = users.find(u => u.user_id === option.value);
+    const user = users.find((u) => u.user_id === option.value);
     if (user) {
       setSelectedUser(user);
       setIsDrawerOpen(true);
     }
   };
 
+  // Refresh the user list (e.g. after editing)
   const refreshUsers = async () => {
     await fetchUsers();
   };
 
-  if ((authLoading || isLoadingUsers) && users.length === 0) {
-    return <p className="text-gray-300">Loading...</p>;
+  if (isLoadingUsers && users.length === 0) {
+    return <p className="text-gray-300">Loading users...</p>;
   }
 
   if (error) {
@@ -119,31 +140,31 @@ const UserFilter: React.FC = () => {
           styles={{
             control: (base) => ({
               ...base,
-              backgroundColor: '#2D2D2D',
-              borderColor: '#555',
-              color: '#FFF'
+              backgroundColor: "#2D2D2D",
+              borderColor: "#555",
+              color: "#FFF",
             }),
             menu: (base) => ({
               ...base,
-              backgroundColor: '#2D2D2D',
-              color: '#FFF'
+              backgroundColor: "#2D2D2D",
+              color: "#FFF",
             }),
             singleValue: (base) => ({
               ...base,
-              color: '#FFF'
+              color: "#FFF",
             }),
             input: (base) => ({
               ...base,
-              color: '#FFF'
+              color: "#FFF",
             }),
             placeholder: (base) => ({
               ...base,
-              color: '#9CA3AF'
+              color: "#9CA3AF",
             }),
             option: (base, state) => ({
               ...base,
-              backgroundColor: state.isFocused ? '#3B3B3B' : '#2D2D2D',
-              color: '#FFF',
+              backgroundColor: state.isFocused ? "#3B3B3B" : "#2D2D2D",
+              color: "#FFF",
             }),
           }}
         />
@@ -160,7 +181,9 @@ const UserFilter: React.FC = () => {
               <th className="px-4 py-3 text-left font-medium border-b border-gray-600">Plan</th>
               <th className="px-4 py-3 text-left font-medium border-b border-gray-600">Role</th>
               <th className="px-4 py-3 text-left font-medium border-b border-gray-600">Last Login</th>
-              <th className="px-4 py-3 text-left font-medium border-b border-gray-600">Activity Level</th>
+              <th className="px-4 py-3 text-left font-medium border-b border-gray-600">
+                Activity Level
+              </th>
               <th className="px-4 py-3 font-medium border-b border-gray-600">Actions</th>
             </tr>
           </thead>
@@ -202,17 +225,12 @@ const UserFilter: React.FC = () => {
         </table>
       </div>
 
+      {/* Drawer for user editing */}
       <SideDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}>
         {selectedUser && (
-          <EditUserDrawer
-            user={selectedUser}
-            onClose={() => setIsDrawerOpen(false)}
-            refreshUsers={refreshUsers}
-          />
+          <EditUserDrawer user={selectedUser} onClose={() => setIsDrawerOpen(false)} refreshUsers={refreshUsers} />
         )}
       </SideDrawer>
     </div>
   );
-};
-
-export default UserFilter;
+}
