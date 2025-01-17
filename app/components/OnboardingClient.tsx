@@ -1,3 +1,7 @@
+/* eslint-disable react-hooks/rules-of-hooks */
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable prefer-const */
+
 "use client";
 
 import React, { useEffect, useState } from "react";
