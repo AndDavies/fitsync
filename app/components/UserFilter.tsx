@@ -18,6 +18,7 @@ type User = {
   activity_level: string | null;
   join_date: string | null;
   last_login: string | null;
+  
 };
 
 // React Select option type
