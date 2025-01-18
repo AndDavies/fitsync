@@ -108,7 +108,7 @@ export default function LandingPage() {
           <div className="flex-1 md:ml-12 relative">
             <Image
               src="/images/hero_person_training.png"
-              alt="Athlete training with barbell"
+              alt="Athlete training with barbell - Training Hard hero Image"
               width={600}
               height={450}
               className="rounded-xl shadow-lg"
