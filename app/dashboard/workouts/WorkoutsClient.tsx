@@ -201,7 +201,7 @@ export default function WorkoutsClient({ userProfile }: WorkoutsClientProps) {
 
       toast.success("Workout successfully scheduled!");
       setIsSubmitting(false);
-      router.push("/plan");
+      router.push("/dashboard/plan");
     } catch (err: any) {
       console.error("Error scheduling workout:", err.message);
       toast.error("Failed to schedule workout. Please try again.");

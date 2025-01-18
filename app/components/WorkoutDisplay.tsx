@@ -128,8 +128,8 @@ const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
                 const lineOutputs = formatMovementLines(line);
                 return lineOutputs.map((lo, innerIdx) => (
                   <div key={`${lineIdx}-${innerIdx}`} className="flex items-start space-x-2">
-                    <span className="text-muted-foreground">—</span>
-                    <span className="text-sm">{lo}</span>
+                  
+                    <span className="text-xs">{lo}</span>
                   </div>
                 ));
               })}

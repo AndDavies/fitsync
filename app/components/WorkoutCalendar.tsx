@@ -183,9 +183,6 @@ export default function WorkoutCalendar({ defaultDate }: WorkoutCalendarProps) {
                       className="mb-2 rounded bg-secondary p-2 text-sm border-l-4 border-accent 
                         hover:scale-[1.01] transition-transform hover:bg-accent/10 cursor-pointer"
                     >
-                      <div className="font-semibold mb-1 text-accent">
-                        {workout.trackName}
-                      </div>
 
                       <WorkoutDisplay
                         workoutData={workout.workoutDetails}
